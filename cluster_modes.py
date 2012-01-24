@@ -4,7 +4,7 @@ Created on Dec 12, 2011
 @author: jan
 '''
 
-import pickle
+import glob
 import json
 import os
 import numpy as np
@@ -12,30 +12,27 @@ import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import linkage, dendrogram
 from scipy.spatial.distance import pdist
 
-pathraw = '/home/jan/Documents/dros/new_data/CVA_MSH_ACA_BEA_OCO_align/analysis/'
-#pathraw = '/home/jan/Documents/dros/new_data/2PA_PAC_ACP_BUT_OCO/analysis/'
-#pathraw = '/home/jan/Documents/dros/new_data/LIN_AAC_ABA_CO2_OCO_align/analysis/'
-
-path_extra = ['110901a', '110902a', '111012a', '111013a', '111014a']
-#path_extra = ['110817b_neu', '110817c', '110823a', '110823b', '111025a', '111025b']
-#path_extra = ['111026a', '111027a', '111107a', '111107b', '111108a']
-
-measIDs = ['111026a', '111027a', '111107a', '111107b', '111108a', '111108b', '120112b']
-prefix = 'LIN'
-data_path = '/Users/dedan/projects/fu/data/dros_calcium/'
-
-colorlist = ['r', 'g', 'b', 'c', 'm', 'k', 'r']
-
 all_mean_resp = []
 labels = []
-for j, measID in enumerate(measIDs):
 
-    info = json.load(open(data_path + prefix + '_' + measID + '.json')) 
+data_path = '/Users/dedan/projects/fu/data/dros_calcium/'
+save_path = os.path.join(data_path, 'out')
+prefix = 'LIN'
+colorlist = ['r', 'g', 'b', 'c', 'm', 'k', 'r']
+measIDs = []
+
+filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
+for ind, filename in enumerate(filelist):
+
+    # load data
+    meas_path = os.path.splitext(filename)[0]
+    tmp_save = os.path.join(save_path, os.path.basename(meas_path))
+    measIDs.append(os.path.basename(meas_path))
+    info = json.load(open(filename))
     names = [i.strip('.png') for i in info['labels'][::40]]
+    timecourse = np.load(tmp_save + '_time_sica.npy')
 
-    timecourse = np.load(os.path.join(data_path, 'out', prefix + '_' + measID + '_time_sica.npy'))
-    
-    num_modes = timecourse.shape[1] 
+    num_modes = timecourse.shape[1]
     stimuli = list(set(names))
     stimuli.sort()
     '''
@@ -45,7 +42,7 @@ for j, measID in enumerate(measIDs):
         pass
     '''
     ''' +++++++++++++ remove bad modes (low correlation over pseudo-trials(repeated odorstimuli)) +++++++++++++++'''
-    
+
     # TODO: if more than 2 stimuli, take avarage
     s1, s2 = [], []
     splitter = np.split(timecourse, len(names))
@@ -63,10 +60,10 @@ for j, measID in enumerate(measIDs):
         sel.append(simil > 0.3)
     print 'selected modes: ', np.sum(sel)
     sel = np.array(sel)
-    labels += [measIDs[j] + '-' + str(i) for i in np.arange(num_modes)[sel]]
+    labels += [os.path.basename(meas_path) + '-' + str(i) for i in np.arange(num_modes)[sel]]
     timecourse = timecourse.reshape((-1, 20, num_modes))[:, :, sel]
-    
-    
+
+
     ''' +++++++++++++ calculate mean response of all stimuli +++++++++++++++'''
     resp = []
     for stim in stimuli:
@@ -95,7 +92,7 @@ d = dendrogram(linkage(pdist(all_mean_resp.T, 'cosine') + 1E-10, 'average'), lab
 group_colors = []
 for i in d['ivl']:
     group_colors.append(colorlist[measIDs.index(i.split('-')[0])])
- 
+
 labelsn = ax.get_xticklabels()
 for j, i in enumerate(labelsn):
     i.set_color(group_colors[j])
