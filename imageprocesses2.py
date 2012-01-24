@@ -5,7 +5,6 @@ Created on 14.09.2010
 '''
 
 import copy as cp
-import dataimport
 import pickle
 import matplotlib.pyplot as plt
 from matplotlib import cm
@@ -16,10 +15,9 @@ import scipy.linalg as scilin
 import matplotlib.collections as collections
 import mdp
 #import nnma
-import nnmaRRI as nnma
-import scikits.learn.decomposition as sld
+# import nnmaRRI as nnma
+import sklearn.decomposition as sld
 
-reload(nnma)
 
 class Event(object):
     
@@ -122,35 +120,6 @@ class TimeSeries(object):
         out.label_sample = cp.copy(self.label_sample) 
         return out
                        
-class DBReader(Block):
-    
-    def __init__(self, data_selection, db=dataimport.instantJChemInterface()):
-        '''data_selection is a dictionary that contains which property from which table is returned'''
-        Block.__init__(self)
-        self.data_selection = data_selection
-        self.db = db
-        self.props = self.db.make_table_dict(self.data_selection['key'],
-                                             self.data_selection['properties'],
-                                             self.data_selection['table'],
-                                             col_select=self.data_selection['select_columns'],
-                                             val_select=self.data_selection['select_values'])
-        print self.props.keys()
-
-    def single(self, key):
-        combis = self.props[key]
-        combis.sort()
-        for object in combis:         
-            dict = {'name': key}        
-            for propnum, prop in enumerate(self.data_selection['properties']):
-                dict[prop] = object[propnum]
-            self.sent_event(dict)
-        self.sent_signal('single_end') 
-            
-    def all(self):
-        for odor_key in self.props.keys():
-            print odor_key
-            self.single(odor_key)
-        self.sent_signal('all_end')
                
 class ImageLoader(Block):
     '''requires a fileinfo dictionary containing filename, name, fileID and shape''' 
@@ -735,52 +704,6 @@ class Response2Mx(Block):
         out.label_sample = [common_substr(out.label_sample).strip('_')] 
         self.sent_event(out)
         
-class Activation2DB(Block):
-    
-    def __init__(self, name='DBwriter', db=dataimport.instantJChemInterface()):
-        Block.__init__(self, name)
-        self.db = db
-        
-    def set_receiving(self):
-        self.input = {'pca':'', 'latent':''} 
-    
-    def execute(self):
-        
-        molID = self.db.make_table_dict('Name', ['cd_id'], 'MOLECULE_PROPERTIES')
-        id_glom = max(self.db.fetch_data(['ID'], 'GLOMERULI'))[0] + 1
-        id_activation = max(self.db.fetch_data(['ID'], 'ACTIVATION'))[0] + 1
-        
-        self.db.write_data('GLOMERULI', 'LOCATION', 's', 'ID', {id_glom: str(self.input['pca'].name).replace(' ', '')})
-        self.db.write_data('GLOMERULI', 'measureID', 's', 'ID', {id_glom: self.input['pca'].origin[:-2]})
-        self.db.write_data('GLOMERULI', 'explainedVar1', 'f', 'ID', {id_glom: self.input['pca'].eigen[0]})
-        self.db.write_data('GLOMERULI', 'explainedVar2', 'f', 'ID', {id_glom: self.input['pca'].eigen[1]})
-        
-        latent1 = np.mean(self.input['latent'].data[:, 0])
-        latent2 = np.max(self.input['latent'].data[:, 1]) - np.min(self.input['latent'].data[:, 1])
-        sign_latent2 = np.sign(np.argmin(self.input['latent'].data[:, 1]) - np.argmax(self.input['latent'].data[:, 1]))
-        
-        self.db.write_data('GLOMERULI', 'PCA1_mean', 'f', 'ID', {id_glom: abs(latent1)})
-        self.db.write_data('GLOMERULI', 'PCA2_amp', 'f', 'ID', {id_glom: latent2})
-         
-        dict_glom = {}
-        dict_file = {}
-        dict_pca1 = {}
-        dict_pca2 = {}
-        dict_molID = {}
-         
-        for ind, measure in enumerate(self.input['pca'].id):
-            row = id_activation + ind
-            dict_glom[row] = id_glom
-            dict_file[row] = self.input['pca'].origin + measure
-            dict_pca1[row] = latent1 * self.input['pca'].data[0, ind]
-            dict_pca2[row] = sign_latent2 * latent2 * self.input['pca'].data[1, ind]
-            dict_molID[row] = molID[self.input['pca'].label_dim1[ind]][0][0]
-            
-        self.db.write_data('ACTIVATION', 'glomID', 'd', 'ID', dict_glom)    
-        self.db.write_data('ACTIVATION', 'filename', 's', 'ID', dict_file)   
-        self.db.write_data('ACTIVATION', 'PCA1', 'f', 'ID', dict_pca1)   
-        self.db.write_data('ACTIVATION', 'PCA2', 'f', 'ID', dict_pca2)   
-        self.db.write_data('ACTIVATION', 'molID', 'd', 'ID', dict_molID)
 
 class VisPCA2(Block):
     

@@ -3,48 +3,36 @@ Created on Aug 11, 2011
 
 @author: jan
 '''
-import sys
-sys.path.append("/home/jan/workspace/DataProcessing/src") 
 
-
+import os
+import pickle
+import json
+import csv
 import imageprocesses2 as ip
-
-
-import createTimeSeries as c
-reload(c)
 import pylab as plt
 import numpy as np
-import pickle
 import myview_wtogui_dros as vis
-import csv
 reload(vis)
 
 variance = 9
+lowpass = 0.5
+path = '/Users/dedan/projects/fu/data/dros_calcium/'
+
 #measIDs = ['111108b']
 #measIDs = ['110901a', '110902a', '111012a', '111013a', '111014a', '111014b']
 #measIDs = ['110817b_neu', '110817c', '110823a', '110823b', '111025a', '111025b']
 #measIDs = ['111017a', '111017b', '111018a', '111018b', '111024a', '111024c','120111a', '120111b']
+set_pref = 'LIN'
 measIDs = ['111026a', '111027a', '111107a', '111107b', '111108a', '111108b', '120112b']
 #measIDs = ['111117a', '111118a', '111124a']
 for measid in measIDs:
-    #path = '/home/jan/Documents/dros/new_data/CVA_MSH_ACA_BEA_OCO_align/' 
-    #path = '/home/jan/Documents/dros/new_data/2PA_PAC_ACP_BUT_OCO/' 
-    #path = '/home/jan/Documents/dros/new_data/OCO_GEO_PAA_ISO_BUT_align/' 
-    path = '/home/jan/Documents/dros/new_data/LIN_AAC_ABA_CO2_OCO_align/' 
-    #path = '/home/jan/Documents/dros/new_data/microlesion_stabilized/' 
-    pathr = path + measid + '/'
-    path_save = '/home/jan/Documents/dros/new_data/raw_f/' + measid + '_' #+ measid + '/unnormed_nnma' + str(variance) + '/'#'percent' + str(variance).split('.')[1] + '/'
+    pathr = os.path.join(path, set_pref + '_' + measid)
+    path_save = os.path.join(path, 'out', measid)
     extra = ''#'_f'
-    lowpass = 0.5
-
-
-
-
-
-    
-    blank = ip.Command()
-    
+        
     # blank block to put in times  
+    blank = ip.Command()
+
     provider = ip.Command(command=lambda x: x)
     provider.add_sender(blank)
     
@@ -138,7 +126,12 @@ for measid in measIDs:
     
     """  ==== create odor objects and pass them in the pipeline  ==== """
     
-    #TODO: load timeseries, shape and labels
+    # load timeseries, shape and labels
+    timeseries = np.load(pathr + '.npy')
+    info = json.load(open(pathr + '.json')) 
+    label = info['labels']
+    shape = info['shape']
+
     
     # divide whole stimuli set into seperate stimuli
     frames_per_trial = 40
@@ -167,25 +160,15 @@ for measid in measIDs:
         plt.subplot(dim0, dim1, j + 1)
         plt.imshow(col_resp.buffer[v].reshape(col_fil.image_container.shape))
         plt.title(label[v].split('.')[0])
-        plt.colorbar()
+        # plt.colorbar()
         plt.axis('off')
     plt.savefig(path_save + 'overview' + extra + '.png')
     
     # save data
     np.save(path_save + 'data' + extra, col_fil.image_container.data)
-    '''
-    np.save(path_save + 'shape' + extra, col_fil.image_container.shape)
-    np.save(path_save + 'base_sica' + extra, col_ica.image_container.base)
-    np.save(path_save + 'time_sica' + extra, col_ica.image_container.time)
-   
-    np.save(path_save + 'base_basevar' + extra, col_basevar.image_container.base)
-    np.save(path_save + 'time_basevar' + extra, col_basevar.image_container.time)
-    np.save(path_save + 'maxproj' + extra , np.max(col_fil.image_container.data, 0))
-    '''
-   
+    
     
     # visualize ica components
-    '''
     vis1 = vis.initme(path_save, '_sica', extra, reorderflag=True)
     vis1.figcon.savefig(path_save + 'contour_sica' + extra + '.png')
     vis1.figbase.savefig(path_save + 'bases_sica' + extra + '.png')
@@ -195,11 +178,5 @@ for measid in measIDs:
         vis1.fig.savefig(path_save + 'mode' + str(j) + extra + '.png')
     vis1.show_all()
     vis1.figall.savefig(path_save + 'decomposition' + extra + '.png')
-    
-    csvwriter = csv.writer(open(path_save + 'time_sica.csv', 'w'))
-    csvwriter.writerows(vis1.model['time'])
-    csvwriter = csv.writer(open(path_save + 'odors.csv', 'w'))
-    csvwriter.writerows(vis1.model['names'])
-    
    
     plt.close('all')
