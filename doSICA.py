@@ -7,7 +7,7 @@ Created on Aug 11, 2011
 import os
 import pickle
 import json
-import csv
+import glob
 import imageprocesses2 as ip
 import pylab as plt
 import numpy as np
@@ -16,23 +16,18 @@ reload(vis)
 
 variance = 9
 lowpass = 0.5
-path = '/Users/dedan/projects/fu/data/dros_calcium/'
+data_path = '/Users/dedan/projects/fu/data/dros_calcium/'
+prefix = 'LIN'
 
-#measIDs = ['111108b']
-#measIDs = ['110901a', '110902a', '111012a', '111013a', '111014a', '111014b']
-#measIDs = ['110817b_neu', '110817c', '110823a', '110823b', '111025a', '111025b']
-#measIDs = ['111017a', '111017b', '111018a', '111018b', '111024a', '111024c','120111a', '120111b']
-set_pref = 'LIN'
-measIDs = ['111026a', '111027a', '111107a', '111107b', '111108a', '111108b', '120112b']
-#measIDs = ['111117a', '111118a', '111124a']
-for measid in measIDs:
-    pathr = os.path.join(path, set_pref + '_' + measid)
-    path_save = os.path.join(path, 'out', measid)
-    extra = ''#'_f'
-        
+filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
+for filename in filelist:
+
+    meas_path = os.path.splitext(filename)[0]
+    meas_id = os.path.basename(meas_path)
+    save_path = os.path.join(data_path, 'out')
+
     # blank block to put in times  
     blank = ip.Command()
-
     provider = ip.Command(command=lambda x: x)
     provider.add_sender(blank)
     
@@ -62,46 +57,11 @@ for measid in measIDs:
     #filter.add_sender(rel_change)
     filter.add_sender(pixel_filter)      
     
-    '''
-    ====================== renorm data  =================================
-    
-    def norm(x):
-        
-        pixel = x.shape[1]
-        o = x.reshape((20, pixel))
- 
-        o[np.abs(o) < 0.03] = 0
-        print o.shape
-        norm = np.sqrt(np.sum(np.abs(o) ** 2))
-        print norm, norm.shape, o.shape
-        o /= norm + 1E-15#(norm.reshape((-1, 20, 1)) + 1E-15)
-        x = o.reshape((-1, pixel))
-        if mask != None:
-            x[:, mask] = 1E-10 * np.random.randn(np.sum(mask))
-        return x
-
-    wto_noise = ip.Command(command=norm)
-    wto_noise.add_sender(filter)
-            
-    =======================================================================
-    '''
-    
     #concatenate Timeseries objects
     staple = ip.Collector('end')
     staple.add_sender(pixel_filter)
 
-    '''  
-    nma = ip.NNMA(latents=variance)
-    #nma.add_sender(staple)
-    nma.param['sparse_par'] = 0.05
-    nma.param['sparse_par3'] = 0.5
-    nma.param['smoothness'] = 0.05
-    nma.maxcount = 50
-    nma.param['negbase'] = variance
-    
-    #ica = nma
-    '''
-    
+    # to ICA or NNMF
     ica = ip.sICA(variance=variance)
     ica.add_sender(staple)
     
@@ -112,11 +72,9 @@ for measid in measIDs:
     col_fil = ip.Collector('never')
     col_fil.add_sender(staple)
     
-    
     # create mean stimulus response of each odor
     signal_cut = ip.CutOut((6, 13))
     signal_cut.add_sender(pixel_filter)
-    
     mean_resp = ip.Mean()
     mean_resp.add_sender(signal_cut)
 
@@ -125,10 +83,10 @@ for measid in measIDs:
     
     
     """  ==== create odor objects and pass them in the pipeline  ==== """
-    
+        
     # load timeseries, shape and labels
-    timeseries = np.load(pathr + '.npy')
-    info = json.load(open(pathr + '.json')) 
+    timeseries = np.load(meas_path + '.npy')
+    info = json.load(open(meas_path + '.json')) 
     label = info['labels']
     shape = info['shape']
 
@@ -162,21 +120,22 @@ for measid in measIDs:
         plt.title(label[v].split('.')[0])
         # plt.colorbar()
         plt.axis('off')
-    plt.savefig(path_save + 'overview' + extra + '.png')
+    plt.savefig(os.path.join(save_path, meas_id + 'overview.png'))
     
     # save data
-    np.save(path_save + 'data' + extra, col_fil.image_container.data)
+    np.save(os.path.join(save_path, meas_id + '_data.npy'), col_fil.image_container.data)
+    np.save(os.path.join(save_path, meas_id + '_base_sica.npy'), col_ica.image_container.base)
+    np.save(os.path.join(save_path, meas_id + '_time_sica.npy'), col_ica.image_container.time)    
     
-    
-    # visualize ica components
-    vis1 = vis.initme(path_save, '_sica', extra, reorderflag=True)
-    vis1.figcon.savefig(path_save + 'contour_sica' + extra + '.png')
-    vis1.figbase.savefig(path_save + 'bases_sica' + extra + '.png')
-    for j, i in enumerate(vis1.model['im']):
-        vis1.showim(j)
-        plt.draw()
-        vis1.fig.savefig(path_save + 'mode' + str(j) + extra + '.png')
-    vis1.show_all()
-    vis1.figall.savefig(path_save + 'decomposition' + extra + '.png')
+    # # visualize ica components
+    # vis1 = vis.initme(path_save, '_sica', extra, reorderflag=True)
+    # vis1.figcon.savefig(path_save + 'contour_sica' + extra + '.png')
+    # vis1.figbase.savefig(path_save + 'bases_sica' + extra + '.png')
+    # for j, i in enumerate(vis1.model['im']):
+    #     vis1.showim(j)
+    #     plt.draw()
+    #     vis1.fig.savefig(path_save + 'mode' + str(j) + extra + '.png')
+    # vis1.show_all()
+    # vis1.figall.savefig(path_save + 'decomposition' + extra + '.png')
    
-    plt.close('all')
+    # plt.close('all')

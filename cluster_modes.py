@@ -5,6 +5,8 @@ Created on Dec 12, 2011
 '''
 
 import pickle
+import json
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import linkage, dendrogram
@@ -18,16 +20,21 @@ path_extra = ['110901a', '110902a', '111012a', '111013a', '111014a']
 #path_extra = ['110817b_neu', '110817c', '110823a', '110823b', '111025a', '111025b']
 #path_extra = ['111026a', '111027a', '111107a', '111107b', '111108a']
 
-pathes = [pathraw + extra for extra in path_extra]
-pathes = [i + '/earlynorm_sica5/' for i in pathes]
-measIDs = [i.strip('/')for i in path_extra]#['A', 'B', 'C', 'D', 'E']
-colorlist = ['r', 'g', 'b', 'c', 'm', 'k']
+measIDs = ['111026a', '111027a', '111107a', '111107b', '111108a', '111108b', '120112b']
+prefix = 'LIN'
+data_path = '/Users/dedan/projects/fu/data/dros_calcium/'
+
+colorlist = ['r', 'g', 'b', 'c', 'm', 'k', 'r']
 
 all_mean_resp = []
 labels = []
-for j, path in enumerate(pathes):
-    names = [i.strip('.png') for i in pickle.load(open(path + 'ids.pik'))]
-    timecourse = np.load(path + 'time_sica.npy')
+for j, measID in enumerate(measIDs):
+
+    info = json.load(open(data_path + prefix + '_' + measID + '.json')) 
+    names = [i.strip('.png') for i in info['labels'][::40]]
+
+    timecourse = np.load(os.path.join(data_path, 'out', prefix + '_' + measID + '_time_sica.npy'))
+    
     num_modes = timecourse.shape[1] 
     stimuli = list(set(names))
     stimuli.sort()

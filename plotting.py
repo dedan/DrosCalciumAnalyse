@@ -227,7 +227,7 @@ def initme(path, method, extra, reorderflag=True, timepoints=20):
     datafile = 'data' + extra
     model = {}
     model['timepoints'] = timepoints
-    s = np.load(path + 'shape' + extra + '.npy')    
+    s = np.load(path + 'data' + extra + '.npy')    
     
     
     model['shape'] = s
@@ -284,8 +284,4 @@ def initme(path, method, extra, reorderflag=True, timepoints=20):
     np.save(path + 'sortedtime' + method + extra, model['time'])
     vis = SelectRoi(model)
     return vis
-    
-if __name__ == '__main__':
-    vis = initme()
-
-    
+        
