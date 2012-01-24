@@ -4,7 +4,9 @@ Created on Dec 12, 2011
 @author: jan
 '''
 
+import os
 import pickle
+import json
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.cluster.hierarchy import linkage, dendrogram
@@ -14,20 +16,21 @@ cordist = {} # all similaritys
 #measIDs = ['110901a', '110902a', '111012a', '111013a', '111014a', '111014b']
 #measIDs = ['110817b_neu', '110817c', '110823a', '110823b', '111025a', '111025b']
 #measIDs = ['111017a', '111017b', '111018a', '111018b', '111024a', '111024c', '120111a', '120111b']
-measIDs = ['111026a', '111027a', '111107a', '111107b', '111108a', '111108b', '120111a', '120112b']
+measIDs = ['111026a', '111027a', '111107a', '111107b', '111108a', '111108b', '120112b']
+prefix = 'LIN'
+data_path = '/Users/dedan/projects/fu/data/dros_calcium/'
+
 for ind, measID in enumerate(measIDs):
     
-    pathr = '/home/jan/Documents/dros/new_data/raw_f/' + measID + '_'
     #pathr = '/home/jan/Documents/dros/new_data/CVA_MSH_ACA_BEA_OCO_align/analysis/' + measID 
     #pathr = '/home/jan/Documents/dros/new_data/2PA_PAC_ACP_BUT_OCO/analysis/' #+ measID 
     #pathr = '/home/jan/Documents/dros/new_data/OCO_GEO_PAA_ISO_BUT_align/analysis/' + measID 
     #pathr = '/home/jan/Documents/dros/new_data/LIN_AAC_ABA_CO2_OCO_align/analysis/' + measID 
-    path = pathr
-    path_save = pathr
 
-    timecourse = np.load(path + 'data.npy')
-    names = [i.strip('.png') for i in pickle.load(open(path + 'ids.pik'))]
-    
+    timecourse = np.load(os.path.join(data_path, 'out', prefix + '_' + measID + '_data.npy'))
+    info = json.load(open(data_path + prefix + '_' + measID + '.json')) 
+
+    names = [i.strip('.png') for i in info['labels'][::40]]
     
     cordist_loc = {} #self-similarity for one individual/ key:stimuli
     cordist_loc2 = {} #cross-similarity for one individual / key: stimuli-pair
@@ -92,8 +95,8 @@ for ind, measID in enumerate(measIDs):
     cax = plt.imshow(np.array([[0, 1], [1, 0]]))
     cbar = fig.colorbar(cax, ticks=[0, 0.3, 1])
     cbar.ax.set_yticklabels(['0', '0.1', '> 0.33'])
-    
-    fig.savefig(path_save + 'reproducibility.png')
+
+    fig.savefig(os.path.join(data_path, 'out', prefix + '_' + measID + 'reproducibility.png'))    
     plt.close('all')
 
 
@@ -118,11 +121,7 @@ for ind_i, i in enumerate(stimuli):
 
 ''' === for all animals calculate and draw mean distances of odors === '''
 
-'''            
 mean2 = mean - np.diag(np.diag(mean))
-
-#----------------------------------------------- for i in range(mean2.shape[0]):
-#----------------------------------------------------------- mean2[i, i] = 0
 
 dist = squareform(mean2)
 fig = plt.figure()
@@ -153,5 +152,4 @@ ax.set_yticks(range(len(stimuli)))
 ax.set_yticklabels(stimuli)
 ax.set_title('std correlation dist')
 fig.colorbar(im)
-'''
 
