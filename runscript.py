@@ -71,17 +71,24 @@ for filename in filelist:
     staple_mean_resp = bb.Collector('end')
     staple_mean_resp.add_sender(mean_resp)
 
-    # create filter mask
+    # create sample filter 
     filter_mask = bb.SampleSimilarity(0.2)
     filter_mask.add_sender(staple_mean_resp)
+    
+    # apply sample filter on raw data
+    masked = bb.SelectTrials()
+    masked.add_sender(staple)
+    masked.add_sender(filter_mask, 'mask')
 
     # collectors that do not receive a go signal to store computations       
     col_ica = bb.Collector('never')
     col_ica.add_sender(ica)
     col_fil = bb.Collector('never')
-    col_fil.add_sender(staple)
+    col_fil.add_sender(masked)
     col_resp = bb.Collector('never')
     col_resp.add_sender(mean_resp)
+
+    
 
     
     
@@ -103,9 +110,9 @@ for filename in filelist:
     
     # create objects and add them to the pipeline
     for ind, resp in enumerate(odor_resp):
-        ts = bb.TimeSeries(shape=shape, 
-                           series=resp, 
-                           name=[label[ind].strip('.png')], 
+        ts = bb.TimeSeries(shape=shape,
+                           series=resp,
+                           name=[label[ind].strip('.png')],
                            label_sample=[label[ind].strip('.png')])
         provider.receive_event(bb.Event('image_series', ts))
     provider.receive_event(bb.Event('signal', 'end'))

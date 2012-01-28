@@ -5,7 +5,8 @@ import scipy.ndimage.filters as filter
 import sklearn.decomposition as sld
 from scipy.spatial.distance import pdist
 
-
+#ToDo: remove set_receiving from Blocks 
+ 
 class Command(Block):
     ''' executes the ommited function '''
     
@@ -451,6 +452,20 @@ class SampleSimilarity(Block):
 
 
 # helper functions 
+
+class SelectTrials(Block):
+     
+    def __init__(self, name='SelectTrial'):
+        Block.__init__(self, name)
+        
+    def execute(self):
+        mask = self.input['mask'].timecourses
+        selected_timecourses = self.input['image_series'].trial_shaped()[mask]
+        out = self.input['image_series'].copy()
+        out.timecourses = selected_timecourses.reshape(-1, selected_timecourses.shape[-1])
+        out.label_sample = [out.label_sample[i] for i in np.where(mask)[0]]
+        self.sent_event(out) 
+
     
 def common_substr(data):
     substr = ''
