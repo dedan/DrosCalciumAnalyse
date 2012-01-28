@@ -91,11 +91,14 @@ class TimeSeries(object):
         self.typ = typ
         self.name = name
         self.label_dim1 = label_dim1
-        self.label_sample = label_sample
+        self.label_sample = label_sample    
     
     @property
     def timepoints(self):
         return self.timecourses.shape[0] / len(self.label_sample)
+    
+    def num_objects(self):
+        return self.timecourses.shape[-1]
                
     def shaped2D(self):
         return self.timecourses.reshape(-1, *self.shape)

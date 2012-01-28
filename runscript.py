@@ -14,6 +14,7 @@ import numpy as np
 variance = 9
 lowpass = 0.5
 similarity_threshold = 0.2
+modesim_threshold = 0.3
 data_path = '/Users/dedan/projects/fu/data/dros_calcium/test_data/'
 save_path = os.path.join(data_path, 'out')
 prefix = 'LIN'
@@ -76,16 +77,25 @@ for filename in filelist:
     filter_mask = bb.SampleSimilarity(similarity_threshold)
     filter_mask.add_sender(staple_mean_resp)
     
-    # apply sample filter on raw data
-    masked = bb.SelectTrials()
-    masked.add_sender(staple)
-    masked.add_sender(filter_mask, 'mask')
+    # apply sample filter on ica data
+    maskedstim = bb.SelectTrials()
+    maskedstim.add_sender(ica)
+    maskedstim.add_sender(filter_mask, 'mask')
+    
+    # create mode filter 
+    modefilter = bb.SelectStimulusDriven(modesim_threshold)
+    modefilter.add_sender(maskedstim)
+    
+    # apply mode filter on ica data
+    selectedmodes = bb.SelectModes()
+    selectedmodes.add_sender(maskedstim)
+    selectedmodes.add_sender(modefilter, 'mask')
 
     # collectors that do not receive a go signal to store computations       
     col_ica = bb.Collector('never')
-    col_ica.add_sender(ica)
+    col_ica.add_sender(selectedmodes)
     col_fil = bb.Collector('never')
-    col_fil.add_sender(masked)
+    col_fil.add_sender(staple)
     col_resp = bb.Collector('never')
     col_resp.add_sender(mean_resp)
 
@@ -140,7 +150,7 @@ for filename in filelist:
     plt.savefig(tmp_save + 'overview.png')
     np.save(tmp_save + '_data.npy', col_fil.image_container.timecourses)
     json.dump(col_fil.image_container.label_sample, open(tmp_save + '_data.json', 'w'))
-    np.save(tmp_save + '_base_sica.npy', col_ica.image_container.timecourses)
+    np.save(tmp_save + '_base_sica.npy', col_ica.image_container.base)
     np.save(tmp_save + '_time_sica.npy', col_ica.image_container.timecourses)    
     
     # # visualize ica components

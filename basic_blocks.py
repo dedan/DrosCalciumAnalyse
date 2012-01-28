@@ -410,7 +410,7 @@ class sICA(Block):
         print np.max(out.base)
         out.time = self.ica.transform(normed_time.T)
         out.time *= new_norm
-        out.timecourses = out.base
+        out.timecourses = out.time.T
         out.type = 'latent_series'
         self.sent_event(out)
 
@@ -466,6 +466,50 @@ class SelectTrials(Block):
         out.label_sample = [out.label_sample[i] for i in np.where(mask)[0]]
         self.sent_event(out) 
 
+class SelectStimulusDriven(Block):
+    
+    def __init__(self, threshold, metric='correlation', name='StiumlusDriven'):
+        Block.__init__(self, name)
+        self.threshold = threshold
+        self.metric = metric
+    
+    def execute(self):
+        timeseries = self.input['image_series']
+        labels = timeseries.label_sample
+        
+        stim_set = set(labels)
+        # create dictionary with key: stimulus and value: trial where stimulus was given
+        stim_pos = {}
+        for stimulus in stim_set:
+            stim_pos[stimulus] = np.where([i == stimulus for i in labels])[0]
+        min_len = min([len(i)for i in stim_pos.values()])
+        # create list of lists, where each sublist contains for all stimuli one exclusive trial
+        indices = []
+        for i in range(min_len):
+            indices.append([j[i] for j in stim_pos.values()])
+        # create pseudo-trial timecourses
+        trial_timecourses = np.array([timeseries.trial_shaped()[i].reshape(-1, timeseries.num_objects) for i in indices])    
+        # calculate correlation of pseudo-trials, aka stimulus dependency
+        cor = [] 
+        for object_num in range(timeseries.num_objects):
+            cor.append(np.mean(pdist(trial_timecourses[:, :, object_num], self.metric)))
+        mask = np.array(cor) < self.threshold
+        out = self.input['image_series'].copy()
+        out.timecourses = mask
+        self.sent_event(out) 
+
+
+class SelectModes(Block):
+     
+    def __init__(self, name='SelectTrial'):
+        Block.__init__(self, name)
+        
+    def execute(self):
+        mask = self.input['mask'].timecourses
+        selected_timecourses = self.input['image_series'][:, mask]
+        out = self.input['image_series'].copy()
+        out.timecourses = selected_timecourses     
+        self.sent_event(out) 
     
 def common_substr(data):
     substr = ''
