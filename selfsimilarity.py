@@ -15,7 +15,7 @@ from scipy.cluster.hierarchy import linkage, dendrogram
 from scipy.spatial.distance import pdist, squareform
 
 cordist = defaultdict(list) # all similaritys
-data_path = '/Users/dedan/projects/fu/data/dros_calcium/'
+data_path = '/Users/dedan/projects/fu/data/dros_calcium/test_data/'
 save_path = os.path.join(data_path, 'out')
 prefix = 'LIN'
 
@@ -27,7 +27,7 @@ for ind, filename in enumerate(filelist):
     tmp_save = os.path.join(save_path, os.path.basename(meas_path))
     timecourse = np.load(tmp_save + '_data.npy')
     info = json.load(open(filename)) 
-    names = [i.strip('.png') for i in info['labels'][::40]]
+    names = [i.strip('.png') for i in json.load(open(tmp_save + '_data.json'))]
     
     cordist_loc = defaultdict(list)     # self-sim for one individual
     cordist_loc2 = defaultdict(list)    # cross-sim for one individual

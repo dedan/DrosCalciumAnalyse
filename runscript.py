@@ -13,6 +13,7 @@ import numpy as np
 
 variance = 9
 lowpass = 0.5
+similarity_threshold = 0.2
 data_path = '/Users/dedan/projects/fu/data/dros_calcium/test_data/'
 save_path = os.path.join(data_path, 'out')
 prefix = 'LIN'
@@ -72,7 +73,7 @@ for filename in filelist:
     staple_mean_resp.add_sender(mean_resp)
 
     # create sample filter 
-    filter_mask = bb.SampleSimilarity(0.2)
+    filter_mask = bb.SampleSimilarity(similarity_threshold)
     filter_mask.add_sender(staple_mean_resp)
     
     # apply sample filter on raw data
@@ -138,6 +139,7 @@ for filename in filelist:
 
     plt.savefig(tmp_save + 'overview.png')
     np.save(tmp_save + '_data.npy', col_fil.image_container.timecourses)
+    json.dump(col_fil.image_container.label_sample, open(tmp_save + '_data.json', 'w'))
     np.save(tmp_save + '_base_sica.npy', col_ica.image_container.timecourses)
     np.save(tmp_save + '_time_sica.npy', col_ica.image_container.timecourses)    
     
