@@ -99,19 +99,32 @@ class Block(object):
         self.input = {}
 
 class TimeSeries(object):
-    ''' dim0: samples, dim2: features'''
+    ''' dim0: timepoints, dim1: objects'''
     
     def __init__(self, series='', name=['standard_series'], shape=(),
                  typ='2DImage', label_sample='', label_dim1=''):
-        self.data = series
+        self.timecourses = series
         self.shape = shape
         self.typ = typ
         self.name = name
         self.label_dim1 = label_dim1
         self.label_sample = label_sample
+    
+    @property
+    def timepoints(self):
+        return self.timecourses.shape[0] / len(self.label_sample)
                
     def shaped2D(self):
-        return self.data.reshape(-1, *self.shape)
+        return self.timecourses.reshape(-1, *self.shape)
+    
+    def trial_shaped(self):
+        return self.timecourses.reshape(len(self.label_sample), -1, np.prod(self.shape))
+    
+    def trial_shaped2D(self):
+        return self.timecourses.reshape(len(self.label_sample), -1, *self.shape)
+    
+    def bases_2D(self):
+        return self.base.reshape(-1, *self.shape)
                    
     def copy(self):
         out = cp.copy(self)
