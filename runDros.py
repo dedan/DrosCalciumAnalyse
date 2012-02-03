@@ -28,6 +28,9 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger()
 
 frames_per_trial = 40
+# explained variance that should be kept in the PCA preprocessing step. When the value
+# is between 0 and 1 it is the percentage of variance to be kept. If larger than 1 it
+# the number of bases.
 variance = 0.9
 lowpass = 0.5
 similarity_threshold = 0.2

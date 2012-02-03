@@ -34,6 +34,7 @@ class Filter():
         out.timecourses = np.vstack(filtered_images)
         return out
 
+
 class CutOut():
     ''' cuts out images of a series from range[0] to range[1]'''
 
@@ -44,6 +45,7 @@ class CutOut():
         image_cut = timeseries.copy()
         image_cut.set_timecourses(image_cut.trial_shaped()[:, self.cut_range[0]:self.cut_range[1]])
         return image_cut
+
 
 class TrialMean():
     ''' splits each trial in equal parts and calculates their means'''
@@ -58,20 +60,26 @@ class TrialMean():
         out.timecourses = np.vstack(averaged_im)
         return out
 
+
 class RelativeChange():
-    ''' gives relative change of trials to base_image '''
+    ''' relative change of trials in comparison to the base_image '''
 
     def __init__(self):
         pass
 
     def __call__(self, timeseries, baseseries):
         relative_change = timeseries.copy()
-        relative_change.set_timecourses((timeseries.trial_shaped() - baseseries.trial_shaped())
-                           / baseseries.trial_shaped())
+        base = baseseries.trial_shaped()
+        time = timeseries.trial_shaped()
+        tmp_rel_change = (time - base) / base
+        if np.any(np.isnan(tmp_rel_change)):
+            logger.warning('TimeSeries contains NaNs --> replaced be zeros')
+        tmp_rel_change[np.isnan(tmp_rel_change)] = 0
+        relative_change.set_timecourses(tmp_rel_change)
         return relative_change
 
 class Combine():
-    ''' combines two imageseries by cominefct '''
+    ''' combines two imageseries by combinefct '''
 
     def __init__(self, combine_fct):
         self.combine_fct = combine_fct
@@ -81,8 +89,9 @@ class Combine():
         change.timecourses = self.combine_fct(timeseries1.timecourses, timeseries2.timecourses)
         return change
 
-class PCA():
 
+class PCA():
+    ''' compute PCA of the given TimeSeries'''
     def __init__(self, variance=None):
         self.variance = variance
 
@@ -99,7 +108,9 @@ class PCA():
                               label_sample=out.label_objects)
         return out
 
+
 class sICA():
+    ''' compute PCA-ICA of the given TimeSeries'''
 
     def __init__(self, variance=None):
         self.variance = variance
@@ -113,7 +124,6 @@ class sICA():
 
         self.ica = sld.FastICA(whiten=False)
         self.ica.fit(normed_base)
-
 
         out = timeseries.copy()
         base = self.ica.components_.T
@@ -135,6 +145,7 @@ class sICA():
                               label_sample=out.label_objects)
 
         return out
+
 
 class SampleSimilarity():
     """calculate similarity of samples with the same Labels
@@ -169,7 +180,9 @@ class SampleSimilarity():
         out.timecourses = mask
         return out
 
+
 class SelectTrials():
+    ''' select only the trials specified by the boolean mask'''
 
     def __init__(self):
         pass
