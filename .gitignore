@@ -3,3 +3,5 @@
 .project
 .pydevproject
 *~
+*.sublime-workspace
+*.sublime-project

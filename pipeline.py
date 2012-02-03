@@ -1,5 +1,6 @@
 import copy as cp
 import numpy as np
+import json
 
 class Event(object):
     
@@ -85,20 +86,31 @@ class TimeSeries(object):
     ''' dim0: timepoints, dim1: objects'''
     
     def __init__(self, series='', name=['standard_series'], shape=(),
-                 typ='2DImage', label_sample='', label_dim1=''):
+                 typ='2DImage', label_sample=''):
         self.timecourses = series
         self.shape = shape
         self.typ = typ
         self.name = name
-        self.label_dim1 = label_dim1
         self.label_sample = label_sample    
     
     @property
     def timepoints(self):
         return self.timecourses.shape[0] / len(self.label_sample)
     
+    @property
+    def num_trials(self):
+        return len(self.label_sample)
+    
+    @property
     def num_objects(self):
-        return self.timecourses.shape[-1]
+        return np.prod(self.shape)
+    
+    @property
+    def samplepoints(self):
+        return self.timecourses.shape[0]
+    
+    def set_timecourses(self, timecourses):
+        self.timecourses = timecourses.reshape(-1, self.num_objects)
                
     def shaped2D(self):
         return self.timecourses.reshape(-1, *self.shape)
@@ -108,13 +120,24 @@ class TimeSeries(object):
     
     def trial_shaped2D(self):
         return self.timecourses.reshape(len(self.label_sample), -1, *self.shape)
-    
-    def bases_2D(self):
-        return self.base.reshape(-1, *self.shape)
-                   
+                    
     def copy(self):
         out = cp.copy(self)
         out.name = cp.copy(self.name)
-        out.label_dim1 = cp.copy(self.label_dim1)
         out.label_sample = cp.copy(self.label_sample) 
         return out
+    
+    def save(self, filename):
+        data = self.__dict__.copy()
+        np.save(filename, data.pop('timecourses'))
+        if self.typ == 'latent_series':
+            self.base.save(filename + '_base')
+            data.pop('base')
+        json.dump(data, open(filename + '.json', 'w'))
+            
+    def load(self, filename):
+        self.__dict__ = json.load(open(filename + '.json'))
+        self.timecourses = np.load(filename + '.npy')
+        if self.typ == 'latent_series':
+            self.base = TimeSeries()
+            self.base.load(filename + '_base')
