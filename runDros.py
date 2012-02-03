@@ -123,12 +123,12 @@ for filename in filelist:
 
     ####################################################################
     # plot and save results
-    ####################################################################    
-    
-    # save plot and data
-    tmp_save = os.path.join(save_path, os.path.basename(meas_path))
-    
-    
+    ####################################################################
+
+    # fig = plt.figure()
+    # plt.plot(raw_ica.eigen)
+    # plt.savefig(tmp_save + 'spektrum.png')
+
     # draw signal overview
     resp_overview = vis.VisualizeTimeseries()
     resp_overview.subplot(mean_resp.samplepoints)

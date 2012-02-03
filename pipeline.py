@@ -129,6 +129,8 @@ class TimeSeries(object):
     
     def save(self, filename):
         data = self.__dict__.copy()
+        if 'eigen' in data:
+            np.save(filename + '_eigen', data.pop('eigen'))
         np.save(filename, data.pop('timecourses'))
         if self.typ == 'latent_series':
             self.base.save(filename + '_base')

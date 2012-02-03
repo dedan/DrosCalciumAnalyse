@@ -143,7 +143,7 @@ class sICA():
         out.typ = 'latent_series'
         out.base = TimeSeries(base, shape=timeseries.shape, name='base',
                               label_sample=out.label_objects)
-
+        out.eigen = self.pca.explained_variance_
         return out
 
 
