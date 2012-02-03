@@ -7,6 +7,7 @@ Created on Aug 11, 2011
 import os
 import json
 import glob
+import logging
 
 import numpy as np
 import basic_functions as bf
@@ -19,6 +20,12 @@ from scipy.spatial.distance import pdist
 
 reload(bf)
 reload(vis)
+
+# logger setup
+logging.basicConfig(level=logging.DEBUG,
+                    format='%(asctime)s %(levelname)s %(message)s',
+                    datefmt='%m-%d %H:%M')
+logger = logging.getLogger()
 
 frames_per_trial = 40
 variance = 0.9
@@ -38,15 +45,15 @@ prefix = 'LIN'
 filelist = [os.path.join(data_path, 'LIN_111026a.json')]
 
 #####################################################
-#        initialize the processing functions
+#       initialize the processing functions
 #####################################################
 
-    
+
 # temporal downsampling by factor 2 (originally 40 frames)
-temporal_downsampling = bf.TrialMean(20)    
+temporal_downsampling = bf.TrialMean(20)
 # cut baseline signal (odor starts at frame 4 (original frame8))
-baseline_cut = bf.CutOut((0, 3))    
-# signal cut 
+baseline_cut = bf.CutOut((0, 3))
+# signal cut
 signal_cut = bf.CutOut((6, 13))
 # calculate trial mean
 trial_mean = bf.TrialMean()
@@ -70,22 +77,24 @@ select_modes = bf.SelectModes(modesim_threshold)
 standard_response = bf.MeanSampleResponse()
 
 
-for filename in filelist:  
-    
+for filename in filelist:
+
+    logger.info(filename)
+
     # load timeseries, shape and labels
     meas_path = os.path.splitext(filename)[0]
     timeseries = np.load(meas_path + '.npy')
-    info = json.load(open(meas_path + '.json')) 
+    info = json.load(open(meas_path + '.json'))
     label = info['labels']
     shape = info['shape']
 
-    # create trial labels 
+    # create trial labels
     label = [i.strip('.png') for i in label[::frames_per_trial]]
-    
+
     # create timeseries
     ts = bf.TimeSeries(shape=shape, series=timeseries, name=os.path.basename(meas_path),
                        label_sample=label)
-    
+
     ts = temporal_downsampling(ts)
     baseline = trial_mean(baseline_cut(ts))
     preprocessed = sorted_trials(pixel_filter(rel_change(ts, baseline)))
@@ -95,12 +104,15 @@ for filename in filelist:
     mode_cor = modefilter(stimuli_filter(raw_ica, stimuli_selection))
     selected_ica = select_modes(raw_ica, mode_cor)
     selected_ica_and_trial = stimuli_filter(selected_ica, stimuli_selection)
-    full_selection_condensed = trial_mean(selected_ica_and_trial)
-    
+    full_selection_condensed = trial_mean(signal_cut(selected_ica_and_trial))
+
     ####################################################################
     # cluster modes
-    ####################################################################    
-    
+    ####################################################################
+
+    # save plot and data
+    tmp_save = os.path.join(save_path, os.path.basename(meas_path))
+
     #modedist = -(np.abs(pdist(selected_ica_and_trial.timecourses.T, 'correlation') - 1) - 1)
     modedist = pdist(full_selection_condensed.timecourses.T, 'correlation')
     d = dendrogram(linkage(modedist + 1E-10, 'single'), labels=selected_ica_and_trial.label_objects, leaf_font_size=12)
