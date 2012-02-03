@@ -7,19 +7,30 @@ Created on Aug 11, 2011
 import os
 import json
 import glob
-import basic_blocks as bb
 import pylab as plt
 import numpy as np
+
+import basic_blocks as bb
+import illustrate_decomposition as vis
+
+reload(bb)
+reload(vis)
 
 variance = 9
 lowpass = 0.5
 similarity_threshold = 0.2
 modesim_threshold = 0.3
-data_path = '/Users/dedan/projects/fu/data/dros_calcium/test_data/'
-save_path = os.path.join(data_path, 'out')
+medianfilter = 8
+data_path = '/home/jan/Documents/dros/new_data/numpyfiles/'
+#data_path='/Users/dedan/projects/fu/data/dros_calcium/test_data/'
+savefolder = 'med' + str(medianfilter) + 'simil' + str(similarity_threshold * 10) + 'mode' + str(modesim_threshold * 10)
+save_path = os.path.join(data_path, savefolder)
+if not os.path.exists(save_path):
+    os.mkdir(save_path)
 prefix = 'LIN'
 
-filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
+#filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
+filelist = [os.path.join(data_path, 'LIN_111026a.json')]
 for filename in filelist:
 
     #####################################################
@@ -50,7 +61,7 @@ for filename in filelist:
     rel_change.add_sender(temporal_down)
     
     # MedianFilter
-    pixel_filter = bb.MedianFilter(size=10, downscale=2)
+    pixel_filter = bb.MedianFilter(size=medianfilter, downscale=2)
     pixel_filter.add_sender(rel_change)
     
     #Smoothing with GaussFilter
@@ -64,15 +75,25 @@ for filename in filelist:
     # do ICA
     ica = bb.sICA(variance=variance)
     ica.add_sender(staple)
+           
+    #sort by stimuliname
+    sorted_ica = bb.SortBySamplename()
+    sorted_ica.add_sender(ica)
     
     # create mean stimulus response of each odor
     signal_cut = bb.CutOut((6, 13))
     signal_cut.add_sender(pixel_filter)
+    
     mean_resp = bb.Mean()
     mean_resp.add_sender(signal_cut)
+    
     staple_mean_resp = bb.Collector('end')
     staple_mean_resp.add_sender(mean_resp)
-
+    
+    #sort by stimuliname
+    sorted_resp = bb.SortBySamplename()
+    sorted_resp.add_sender(staple_mean_resp)
+    
     # create sample filter 
     filter_mask = bb.SampleSimilarity(similarity_threshold)
     filter_mask.add_sender(staple_mean_resp)
@@ -83,26 +104,33 @@ for filename in filelist:
     maskedstim.add_sender(filter_mask, 'mask')
     
     # create mode filter 
-    modefilter = bb.SelectStimulusDriven(modesim_threshold)
+    modefilter = bb.CalcStimulusDrive()
     modefilter.add_sender(maskedstim)
     
     # apply mode filter on ica data
-    selectedmodes = bb.SelectModes()
+    selectedmodes = bb.SelectModes(modesim_threshold)
     selectedmodes.add_sender(maskedstim)
-    selectedmodes.add_sender(modefilter, 'mask')
+    selectedmodes.add_sender(modefilter, 'filtervalue')
+    
+    #collapse identical stimuli to mean timecourse
+    standard_response = bb.MeanSampleResponse()
+    standard_response.add_sender(selectedmodes)
 
     # collectors that do not receive a go signal to store computations       
     col_ica = bb.Collector('never')
-    col_ica.add_sender(selectedmodes)
+    col_ica.add_sender(sorted_ica)
     col_fil = bb.Collector('never')
     col_fil.add_sender(staple)
     col_resp = bb.Collector('never')
-    col_resp.add_sender(mean_resp)
-
+    col_resp.add_sender(sorted_resp)
+    col_selection = bb.Collector('never')
+    col_selection.add_sender(standard_response)
+    col_modecor = bb.Collector('never')
+    col_modecor.add_sender(modefilter)    
+    
+    
     
 
-    
-    
     ####################################################################
     #       create odor objects and pass them in the pipeline
     ####################################################################
@@ -133,35 +161,31 @@ for filename in filelist:
     # plot and save results
     ####################################################################    
     
-    # draw signal overview
-    plt.figure(figsize=(17, 15))
-    dim0 = np.ceil(np.sqrt(len(col_resp.buffer)))
-    dim1 = np.ceil(len(col_resp.buffer) / dim0)
-    for j, v in enumerate(np.argsort(label)):
-        plt.subplot(dim0, dim1, j + 1)
-        plt.imshow(col_resp.buffer[v].reshape(col_fil.image_container.shape))
-        plt.title(label[v].split('.')[0])
-        # plt.colorbar()
-        plt.axis('off')
-
     # save plot and data
     tmp_save = os.path.join(save_path, os.path.basename(meas_path))
-
-    plt.savefig(tmp_save + 'overview.png')
-    np.save(tmp_save + '_data.npy', col_fil.image_container.timecourses)
-    json.dump(col_fil.image_container.label_sample, open(tmp_save + '_data.json', 'w'))
-    np.save(tmp_save + '_base_sica.npy', col_ica.image_container.base)
-    np.save(tmp_save + '_time_sica.npy', col_ica.image_container.timecourses)    
     
-    # # visualize ica components
-    # vis1 = vis.initme(path_save, '_sica', extra, reorderflag=True)
-    # vis1.figcon.savefig(path_save + 'contour_sica' + extra + '.png')
-    # vis1.figbase.savefig(path_save + 'bases_sica' + extra + '.png')
-    # for j, i in enumerate(vis1.model['im']):
-    #     vis1.showim(j)
-    #     plt.draw()
-    #     vis1.fig.savefig(path_save + 'mode' + str(j) + extra + '.png')
-    # vis1.show_all()
-    # vis1.figall.savefig(path_save + 'decomposition' + extra + '.png')
-   
-    # plt.close('all')
+    
+    # draw signal overview
+    resp_overview = vis.VisualizeTimeseries()
+    resp_overview.subplot(col_resp.image_container.samplepoints)
+    resp_overview.imshow('base', 'onetoone', col_resp.image_container, title=True, colorbar=True)
+    
+    # draw ica overview
+    ica_overview = vis.VisualizeTimeseries()
+    ica_overview.base_and_time(col_ica.image_container.num_objects)
+    ica_overview.imshow('base', 'onetoone', col_ica.image_container.base)
+    ica_overview.plot('time', 'onetoone', col_ica.image_container)
+    ica_overview.add_labelshade('time', 'onetoall', col_ica.image_container)
+    ica_overview.add_samplelabel([-1], col_ica.image_container, rotation='45', toppos=True)
+    
+    plt.savefig(tmp_save + '_overview.png')
+    np.save(tmp_save + '_data.npy', col_fil.image_container.timecourses)
+    np.save(tmp_save + '_base_sica.npy', col_ica.image_container.base)
+    np.save(tmp_save + '_time_sica.npy', col_ica.image_container.timecourses)
+    np.save(tmp_save + '_selectedtime.npy', col_selection.image_container.timecourses)
+    np.save(tmp_save + '_modecor.npy', col_modecor.image_container.timecourses)
+    selected_metainfo = {'objects': col_selection.image_container.label_objects, 'label':col_selection.image_container.label_sample}
+    json.dump(selected_metainfo, open(tmp_save + '_selected.json', 'w'))  
+        
+    
+    

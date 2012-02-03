@@ -13,9 +13,6 @@ class Command(Block):
     def __init__(self, name='Command', command=''):
         Block.__init__(self, name)
         self.command = command
-
-    def set_receiving(self):
-        self.input = {'image_series':''}
         
     def execute(self):
         out = self.input['image_series'].copy()
@@ -401,17 +398,19 @@ class sICA(Block):
             out = self.input['latent_series'].copy()
         else:
             out = self.input['image_series'].copy()
-        out.base = self.ica.components_.T
-        #out.base2 = self.ica.transform(base2.T)
-        #out.time2 = self.ica.transform(time)
-        new_norm = np.diag(out.base[:, np.argmax(np.abs(out.base), 1)])
-        print out.base.shape, new_norm.shape
-        out.base /= new_norm.reshape((-1, 1))
-        print np.max(out.base)
+        base = self.ica.components_.T
+        new_norm = np.diag(base[:, np.argmax(np.abs(base), 1)])
+        base /= new_norm.reshape((-1, 1))
+        
         out.time = self.ica.transform(normed_time.T)
         out.time *= new_norm
-        out.timecourses = out.time.T
-        out.type = 'latent_series'
+        out.timecourses = out.time
+        out.label_objects = ['mode' + str(i) for i in range(base.shape[0])]
+        out.shape = (len(out.label_objects),)
+        out.type = 'latent_series'  
+        out.base = TimeSeries(base, shape=self.input['image_series'].shape, name='base',
+                              label_sample=out.label_objects)
+        
         self.sent_event(out)
 
 class SampleSimilarity(Block):
@@ -451,8 +450,6 @@ class SampleSimilarity(Block):
         self.sent_event(out)         
 
 
-# helper functions 
-
 class SelectTrials(Block):
      
     def __init__(self, name='SelectTrial'):
@@ -460,17 +457,19 @@ class SelectTrials(Block):
         
     def execute(self):
         mask = self.input['mask'].timecourses
+        print self.input['image_series'].label_sample
+        print len(self.input['image_series'].label_sample)
+        print self.input['image_series'].timecourses.shape
         selected_timecourses = self.input['image_series'].trial_shaped()[mask]
         out = self.input['image_series'].copy()
         out.timecourses = selected_timecourses.reshape(-1, selected_timecourses.shape[-1])
         out.label_sample = [out.label_sample[i] for i in np.where(mask)[0]]
         self.sent_event(out) 
 
-class SelectStimulusDriven(Block):
+class CalcStimulusDrive(Block):
     
-    def __init__(self, threshold, metric='correlation', name='StiumlusDriven'):
+    def __init__(self, metric='correlation', name='StiumlusDriven'):
         Block.__init__(self, name)
-        self.threshold = threshold
         self.metric = metric
     
     def execute(self):
@@ -493,23 +492,63 @@ class SelectStimulusDriven(Block):
         cor = [] 
         for object_num in range(timeseries.num_objects):
             cor.append(np.mean(pdist(trial_timecourses[:, :, object_num], self.metric)))
-        mask = np.array(cor) < self.threshold
         out = self.input['image_series'].copy()
-        out.timecourses = mask
+        out.timecourses = np.array(cor)
         self.sent_event(out) 
-
 
 class SelectModes(Block):
      
-    def __init__(self, name='SelectTrial'):
+    def __init__(self, threshold, name='SelectTrial'):
+        Block.__init__(self, name)
+        self.threshold = threshold
+        
+    def execute(self):
+        mask = self.input['filtervalue'].timecourses < self.threshold
+        selected_timecourses = self.input['image_series'].timecourses[:, mask]
+        out = self.input['image_series'].copy()
+        out.timecourses = selected_timecourses     
+        out.label_objects = [out.label_objects[i] for i in np.where(mask)[0]]
+        out.shape = (len(out.label_objects),)
+        self.sent_event(out) 
+
+class MeanSampleResponse(Block):
+    
+    def __init__(self, name='MeanSampleResponse'):
         Block.__init__(self, name)
         
     def execute(self):
-        mask = self.input['mask'].timecourses
-        selected_timecourses = self.input['image_series'][:, mask]
+        timecourses = self.input['image_series'].trial_shaped()
+        labels = self.input['image_series'].label_sample
+        label_set = list(set(labels))       
+        new_labels, new_timecourses = [], []
+        for label in label_set:
+            label_index = [i for i, tmp_label in enumerate(labels) if tmp_label == label]
+            mean_timecourse = np.mean(timecourses[label_index], 0) 
+            new_labels.append(label)
+            new_timecourses.append(mean_timecourse)
+        new_timecourses = np.hstack(new_timecourses)
+    
         out = self.input['image_series'].copy()
-        out.timecourses = selected_timecourses     
-        self.sent_event(out) 
+        out.timecourses = new_timecourses
+        out.label_sample = new_labels
+        self.sent_event(out)     
+
+class SortBySamplename(Block):
+    
+    def __init__(self, name='MeanSampleResponse'):
+        Block.__init__(self, name)
+        
+    def execute(self):
+        timecourses = self.input['image_series'].trial_shaped()
+        labels = self.input['image_series'].label_sample
+        label_ind = np.argsort(labels)
+        timecourses = timecourses[label_ind]
+        out = self.input['image_series'].copy()
+        out.set_timecourses(timecourses)
+        out.label_sample = [labels[i] for i in label_ind]
+        self.sent_event(out)  
+
+# helper functions 
     
 def common_substr(data):
     substr = ''
