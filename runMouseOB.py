@@ -14,7 +14,7 @@ import special_functions as sf
 from scipy.io import loadmat
 from scipy.ndimage import filters as filters
 reload(bf)
-reload(sb)
+reload(sf)
 #globalminima = pickle.load(open('minima.pik'))
 
 measureID = '111221sph'
