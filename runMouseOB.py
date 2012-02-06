@@ -30,7 +30,7 @@ bulb = loadmat(path + 'raw/outline.mat')['outline']
 
 nma_param = {'sparse_par': 1, 'sparse_par2' :7, 'negbase': 0, 'smoothness': 0.5}
 
-loader = sf.DBnpyLoader(data_selection, path)
+loader = sf.DBnpyLoader(data_selection, path + 'converted/')
 timeseries = loader()
 
 "============================================================================="
@@ -41,10 +41,10 @@ signal_cut = bf.CutOut((30, 60))
 trial_mean = bf.TrialMean()
 rel_change = bf.RelativeChange()
 temporal_downsampling = bf.TrialMean(5)  
-lowpass = bf.Filter(filters.median_filter, {'size':3}, downscale=2)
-highpass = bf.Filter(filters.gaussian_filter, {'size':10}, downscale=2)
+lowpass = bf.Filter(filters.uniform_filter, {'size':2}, downscale=2)
+highpass = bf.Filter(filters.gaussian_filter, {'sigma':10}, downscale=2)
 bandpass = bf.Combine(np.subtract)
-nma = bf.NNMA(latents=81, maxcount=70, nma_param)
+nma = bf.NNMA(latents=81, maxcount=70, param=nma_param)
 ica = bf.sICA(variance=150)
 
 "=============================================================================="

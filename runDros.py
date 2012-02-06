@@ -21,10 +21,10 @@ reload(bf)
 reload(vis)
 
 frames_per_trial = 40
-variance = 0.9
+variance = 12
 lowpass = 0.5
 similarity_threshold = 0.2
-modesim_threshold = 0.3
+modesim_threshold = 0.4
 medianfilter = 8
 data_path = '/home/jan/Documents/dros/new_data/numpyfiles/'
 #data_path='/Users/dedan/projects/fu/data/dros_calcium/test_data/'
@@ -57,7 +57,7 @@ pixel_filter = bf.Filter(filters.median_filter, {'size':medianfilter}, downscale
 #sorting
 sorted_trials = bf.SortBySamplename()
 # ICA
-ica = bf.sICA(variance=variance)
+ica = bf.stICA(variance=variance, param={'alpha':0.01})
 # select stimuli such that their mean correlation is below similarity_threshold
 stimuli_mask = bf.SampleSimilarity(similarity_threshold)
 # select stimuli bases on stimuli mask
@@ -95,14 +95,15 @@ for filename in filelist:
     mode_cor = modefilter(stimuli_filter(raw_ica, stimuli_selection))
     selected_ica = select_modes(raw_ica, mode_cor)
     selected_ica_and_trial = stimuli_filter(selected_ica, stimuli_selection)
-    full_selection_condensed = trial_mean(selected_ica_and_trial)
+    full_selection_condensed = trial_mean(signal_cut(selected_ica_and_trial))
+    raw_ica_condensed = trial_mean(signal_cut(raw_ica))
     
     ####################################################################
     # cluster modes
     ####################################################################    
     
     #modedist = -(np.abs(pdist(selected_ica_and_trial.timecourses.T, 'correlation') - 1) - 1)
-    modedist = pdist(full_selection_condensed.timecourses.T, 'correlation')
+    modedist = pdist(selected_ica_and_trial.timecourses.T, 'correlation')
     d = dendrogram(linkage(modedist + 1E-10, 'single'), labels=selected_ica_and_trial.label_objects, leaf_font_size=12)
 
 

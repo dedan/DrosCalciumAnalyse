@@ -185,31 +185,7 @@ def initmouseob(path='/media/Iomega_HDD/Experiments/Messungen/111210sph/',
                   shape=shape, typ='Timeseries', label_sample=labels)
     
     
-    """ ======== load in 2p selected ROIs ======== """
-    rois_vert = loadmat(path + 'nrois.mat')
-    num_rois = rois_vert['nxis'].shape[1]
-    
-    temp_grid = np.indices(shape)
-    grid = np.array(zip(temp_grid[1].flatten(), temp_grid[0].flatten()))
-    
-    rois = []
-    for roi_ind in range(num_rois):
-        x_edge = rois_vert['nxis'][:, roi_ind] / 16
-        y_edge = rois_vert['nyis'][:, roi_ind] / 16
-        num_edges = np.sum(x_edge != 0)
-        verts = np.array(zip(x_edge, y_edge))[:num_edges]
-        rois.append(points_inside_poly(grid, verts))
-    rois = np.array(rois)   
-    roidata = ip.TimeSeries('', name=[measID],
-                  shape=shape, typ='Decomposition', label_sample=labels)
-    roidata.base = rois
-    
-    # filter rois, such that their main weight is in the center
-    for roi_ind, roi in roidata.bases_2D():
-        roidata.base[roi_ind] = filter.gaussian_filter(roi, 2).flatten()
-               
-    # create roi timecourse as convolution with data
-    roidata.timecourses = np.dot(preprocessed_timecourse, roidata.base.T)
+
     
     """ ====== combine Timeseries ===== """
     combi = TimeSeriesDecomposition()

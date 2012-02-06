@@ -45,8 +45,8 @@ class RRI(object):
         # alpha = < Y.flatten(), AX.flatten() > / < AX.flatten(),AX.flatten() >
 
         alpha = np.dot(Y.flatten(), AX) / np.dot(AX, AX)
-        A /= math.sqrt(alpha)
-        X /= math.sqrt(alpha)
+        A /= np.sqrt(np.abs(alpha) + 1E-10)
+        X /= np.sqrt(np.abs(alpha) + 1E-10)
         
         return A, X
 

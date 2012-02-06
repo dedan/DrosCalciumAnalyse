@@ -163,8 +163,11 @@ class NNMA():
     
     def __init__(self, latents=100, maxcount=100, param=None):
         self.latents = latents
+        self.maxcount = maxcount
         if not(param):
             self.param = dict(sparse_par=0, sparse_par3=0, psi=1e-12, eps=1e-7)
+        else:
+            self.param = param
         self.A = None
         self.X = None
              

@@ -10,6 +10,8 @@ import dataimport
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import Normalize
+from matplotlib.nxutils import points_inside_poly
+from scipy.io import loadmat
 import matplotlib.collections as collections
 import nnmaRRI as nnma
 import sklearn.decomposition as sld
@@ -17,7 +19,7 @@ import sklearn.decomposition as sld
 reload(nnma)
                     
 class DBnpyLoader():
-    
+   
     def __init__(self, data_selection, data_location, db=dataimport.instantJChemInterface()):
         '''data_selection is a dictionary that contains which property from which table is returned'''
         self.data_selection = data_selection
@@ -39,10 +41,10 @@ class DBnpyLoader():
                 for propnum, prop in enumerate(self.data_selection['properties']):
                     prop_dict[prop] = single_trial[propnum]                     
                 # load data
-                filename = self.data_location + prop_dict['filename'] + self.format  
+                filename = self.data_location + prop_dict['filename'] + '.npy'
                 timecourses.append(np.load(filename))
                 # create label
-                trial_label = str(prop_dict['name']) + '_' + str(prop_dict['fileID'])
+                trial_label = str(key) + '_' + str(prop_dict['fileID'])
                 if prop_dict['concentration']:
                     trial_label += '_' + str(int(prop_dict['concentration']))
                 if prop_dict['extraInfo']:
@@ -50,12 +52,53 @@ class DBnpyLoader():
                 label_sample.append(trial_label)
         
         shape = tuple([int(i) for i in prop_dict['shape'].strip('()').split(', ')])        
-        name = '_'.join([i.strip() for i in self.props['select_values'].split('=')])
+        name = '_'.join([i.split('"')[1] for i in self.data_selection['select_values']])
         
-        image_series = TimeSeries(np.hstack(timecourses), shape=shape, name=name,
+        image_series = TimeSeries(np.vstack(timecourses), shape=shape, name=name,
                                   label_sample=label_sample)
         return image_series
-   
+
+
+class LoadRoi():
+    
+    """ ======== load in 2p selected ROIs ======== """
+    
+    def __init__(self, path): 
+        self.path = path
+    
+    def _call__(self, shape):
+        rois_vert = loadmat(self.path + 'nrois.mat')
+        num_rois = rois_vert['nxis'].shape[1]
+    
+        temp_grid = np.indices(shape)
+        grid = np.array(zip(temp_grid[1].flatten(), temp_grid[0].flatten()))
+    
+        rois = []
+        for roi_ind in range(num_rois):
+            x_edge = rois_vert['nxis'][:, roi_ind] / 16
+            y_edge = rois_vert['nyis'][:, roi_ind] / 16
+            num_edges = np.sum(x_edge != 0)
+            verts = np.array(zip(x_edge, y_edge))[:num_edges]
+            rois.append(points_inside_poly(grid, verts))
+        rois = np.array(rois)   
+        rois = TimeSeries('', name=[self.path], typ='mask',
+                          label_sample=['ROI' + str(i) for i in range(rois.shape[0])])
+
+    
+class Project():
+    
+    def __call__(self, timeseries, base):               
+        # create roi timecourse as convolution with data
+        proj_timecourses = np.dot(timeseries.timecourses, base.T)
+        out = timeseries.copy()
+        out.timecourses = proj_timecourses
+        out.label_objects = base.label_samples
+        out.shape = (len(base.label_samples),)
+        out.type = 'latent_series'
+        out.base = base.copy()
+        return out
+        
+  
 '''      
 class Response2DB(Block):
     
