@@ -2,7 +2,7 @@ from pipeline import TimeSeries
 import numpy as np
 import sklearn.decomposition as sld
 from scipy.spatial.distance import pdist
-
+from nnmaRRI import stJADE, RRI
        
             
 class Filter():
@@ -127,6 +127,64 @@ class sICA():
         out.base = TimeSeries(base, shape=timeseries.shape, name='base',
                               label_sample=out.label_objects)
         
+        return out
+
+class stICA():
+    
+    def __init__(self, variance=None, param={}):
+        param['latents'] = variance
+        self.param = param
+           
+    def __call__(self, timeseries):
+        
+        base, time = stJADE(timeseries.timecourses.T, **self.param)
+        
+        out = timeseries.copy()
+        new_norm = np.diag(base[:, np.argmax(np.abs(base), 1)])
+        base /= new_norm.reshape((-1, 1))
+        
+        time = time.T
+        time *= new_norm
+        
+        timesign = np.sign(np.sum(time[np.abs(time) > 0.05], 0))
+        time *= timesign
+        base *= timesign.reshape((-1, 1))
+        
+        out.timecourses = time
+        out.label_objects = ['mode' + str(i) for i in range(base.shape[0])]
+        out.shape = (len(out.label_objects),)
+        out.typ = 'latent_series'  
+        out.base = TimeSeries(base, shape=timeseries.shape, name='base',
+                              label_sample=out.label_objects)
+        
+        return out
+    
+class NNMA():
+    
+    def __init__(self, latents=100, maxcount=100, param=None):
+        self.latents = latents
+        if not(param):
+            self.param = dict(sparse_par=0, sparse_par3=0, psi=1e-12, eps=1e-7)
+        self.A = None
+        self.X = None
+             
+    def __call__(self, timeseries):
+        self.A, self.X, self.obj, count, converged = RRI()(timeseries.timecourses,
+                                              self.latents, A=self.A, X=self.X, verbose=5,
+                                              maxcount=self.maxcount, shape=timeseries.shape, **self.param)
+        out = timeseries.copy()      
+
+        base = self.X
+        new_norm = np.diag(base[:, np.argmax(np.abs(base), 1)])
+        base /= new_norm.reshape((-1, 1))
+        out.timecourses = self.A
+        out.timecourses *= new_norm
+
+        out.label_objects = ['mode' + str(i) for i in range(base.shape[0])]
+        out.shape = (len(out.label_objects),)
+        out.typ = 'latent_series'  
+        out.base = TimeSeries(base, shape=timeseries.shape, name='base',
+                              label_sample=out.label_objects)
         return out
 
 class SampleSimilarity():
