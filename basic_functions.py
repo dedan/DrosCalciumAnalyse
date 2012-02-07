@@ -2,16 +2,19 @@ from pipeline import TimeSeries
 import numpy as np
 import sklearn.decomposition as sld
 from scipy.spatial.distance import pdist
+from scipy.ndimage import filters as filters 
 from nnmaRRI import stJADE, RRI
-       
+
+FILT = {'median': filters.median_filter, 'gauss':filters.gaussian_filter, 'uniform':filters.uniform_filter}
+FILTARG = {'median': 'size', 'gauss':'sigma', 'uniform':'size'}       
             
 class Filter():
     ''' filter series with filterop in 2D'''
     
-    def __init__(self, filterop, args, downscale):
+    def __init__(self, filterop, extend, downscale):
         self.downscale = downscale
-        self.filterop = filterop
-        self.args = args
+        self.filterop = FILT['filterop']
+        self.args = {FILTARG['filterop']:extend}
         
                
     def __call__(self, timeseries):    
@@ -315,7 +318,27 @@ class SortBySamplename():
         out.label_sample = [labels[i] for i in label_ind]
         return out  
 
-# helper functions 
+class Distance():
+    
+    def __init__(self, metric='correlation', direction='temporal'):
+        self.metric = metric
+        self.direction = direction
+    
+    def __call__(self, timeseries):
+        if self.direction == 'temporal':
+            dist = pdist(timeseries.timecourses.T, self.metric)
+            labels = timeseries.label_objects
+        elif self.direction == 'spatial':
+            dist = pdist(timeseries.timecourses, self.metric)
+            labels = timeseries.label_sample
+        new_labels = [[labels[i] + ':' + labels[j] for i in range(j, len(labels))] for j in range(len(labels))]  
+        out = timeseries.copy()
+        out.timecourses = dist
+        out.label_sample = new_labels
+        out.shape = (1,)
+        return out    
+
+# helper functions
     
 def common_substr(data):
     substr = ''
