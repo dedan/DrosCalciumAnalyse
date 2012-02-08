@@ -4,6 +4,7 @@ Created on 14.09.2010
 @author: jan
 '''
 
+from os.path import join as pjoin
 from pipeline import *
 import copy as cp
 import dataimport
@@ -41,7 +42,7 @@ class DBnpyLoader():
                 for propnum, prop in enumerate(self.data_selection['properties']):
                     prop_dict[prop] = single_trial[propnum]                     
                 # load data
-                filename = self.data_location + prop_dict['filename'] + '.npy'
+                filename = pjoin(self.data_location, prop_dict['filename'] + '.npy')
                 timecourses.append(np.load(filename))
                 # create label
                 trial_label = str(key) + '_' + str(prop_dict['fileID'])
