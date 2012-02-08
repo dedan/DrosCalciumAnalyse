@@ -13,8 +13,8 @@ class Filter():
     
     def __init__(self, filterop, extend, downscale):
         self.downscale = downscale
-        self.filterop = FILT['filterop']
-        self.args = {FILTARG['filterop']:extend}
+        self.filterop = FILT[filterop]
+        self.args = {FILTARG[filterop]:extend}
         
                
     def __call__(self, timeseries):    
@@ -48,6 +48,7 @@ class TrialMean():
         self.parts = parts
        
     def __call__(self, timeseries):
+        print timeseries.timecourses.shape, timeseries.num_trials
         splits = np.vsplit(timeseries.timecourses, self.parts * timeseries.num_trials)
         averaged_im = [np.mean(im, 0) for im in splits]
         out = timeseries.copy()
