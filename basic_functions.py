@@ -2,19 +2,22 @@ from pipeline import TimeSeries
 import numpy as np
 import sklearn.decomposition as sld
 from scipy.spatial.distance import pdist
-from scipy.ndimage import filters as filters 
+import scipy.ndimage as sn 
 from nnmaRRI import stJADE, RRI
 
-FILT = {'median': filters.median_filter, 'gauss':filters.gaussian_filter, 'uniform':filters.uniform_filter}
-FILTARG = {'median': 'size', 'gauss':'sigma', 'uniform':'size'}       
+FILT = {'median': sn.filters.median_filter, 'gauss':sn.filters.gaussian_filter,
+        'uniform':sn.filters.uniform_filter, 'erosion': sn.binary_erosion}
+FILTARG = {'median': lambda value: {'size':value}, 'gauss':lambda value: {'sigma':value},
+           'uniform':lambda value: {'size':value},
+           'erosion':lambda value: {'structure':sn.iterate_structure(sn.generate_binary_structure(2, 1), value)}}       
             
 class Filter():
     ''' filter series with filterop in 2D'''
     
-    def __init__(self, filterop, extend, downscale):
+    def __init__(self, filterop, extend, downscale=1):
         self.downscale = downscale
         self.filterop = FILT[filterop]
-        self.args = {FILTARG[filterop]:extend}
+        self.args = FILTARG[filterop](extend)
         
                
     def __call__(self, timeseries):    
@@ -48,7 +51,6 @@ class TrialMean():
         self.parts = parts
        
     def __call__(self, timeseries):
-        print timeseries.timecourses.shape, timeseries.num_trials
         splits = np.vsplit(timeseries.timecourses, self.parts * timeseries.num_trials)
         averaged_im = [np.mean(im, 0) for im in splits]
         out = timeseries.copy()
@@ -127,8 +129,9 @@ class sICA():
         out.timecourses = time
         out.label_objects = ['mode' + str(i) for i in range(base.shape[0])]
         out.shape = (len(out.label_objects),)
-        out.typ = 'latent_series'  
-        out.base = TimeSeries(base, shape=timeseries.shape, name='base',
+        out.typ = 'latent_series'
+        out.name += '_sica'  
+        out.base = TimeSeries(base, shape=timeseries.shape, name=out.name,
                               label_sample=out.label_objects)
         
         return out
@@ -157,8 +160,9 @@ class stICA():
         out.timecourses = time
         out.label_objects = ['mode' + str(i) for i in range(base.shape[0])]
         out.shape = (len(out.label_objects),)
-        out.typ = 'latent_series'  
-        out.base = TimeSeries(base, shape=timeseries.shape, name='base',
+        out.typ = 'latent_series'
+        out.name += '_sica'  
+        out.base = TimeSeries(base, shape=timeseries.shape, name=out.name,
                               label_sample=out.label_objects)
         
         return out
@@ -190,7 +194,8 @@ class NNMA():
         out.label_objects = ['mode' + str(i) for i in range(base.shape[0])]
         out.shape = (len(out.label_objects),)
         out.typ = 'latent_series'  
-        out.base = TimeSeries(base, shape=timeseries.shape, name='base',
+        out.name += '_nnma'
+        out.base = TimeSeries(base, shape=timeseries.shape, name=out.name,
                               label_sample=out.label_objects)
         return out
 
@@ -262,10 +267,13 @@ class CalcStimulusDrive():
         trial_timecourses = np.array([timeseries.trial_shaped()[i].reshape(-1, timeseries.num_objects) for i in indices])    
         # calculate correlation of pseudo-trials, aka stimulus dependency
         cor = [] 
+        print trial_timecourses.shape
         for object_num in range(timeseries.num_objects):
-            cor.append(np.mean(pdist(trial_timecourses[:, :, object_num], self.metric)))
+            dists = pdist(trial_timecourses[:, :, object_num], self.metric)
+            cor.append(np.mean(dists))
         out = timeseries.copy()
-        out.timecourses = np.array(cor)
+        out.timecourses = np.array(cor).reshape((1, -1))
+        out.label_sample = [out.name]
         return out 
 
 class SelectModes():
@@ -274,12 +282,16 @@ class SelectModes():
         self.threshold = threshold
         
     def __call__(self, timeseries, filtervalues):
-        mask = filtervalues.timecourses < self.threshold
+        mask = filtervalues.timecourses.squeeze() < self.threshold
         selected_timecourses = timeseries.timecourses[:, mask]
         out = timeseries.copy()
         out.timecourses = selected_timecourses     
         out.label_objects = [out.label_objects[i] for i in np.where(mask)[0]]
         out.shape = (len(out.label_objects),)
+        if timeseries.typ == 'latent_series':
+            out.base = out.base[mask]
+            out.base.label_sample = out.label_objects
+        
         return out
 
 class MeanSampleResponse():
@@ -332,13 +344,27 @@ class Distance():
         elif self.direction == 'spatial':
             dist = pdist(timeseries.timecourses, self.metric)
             labels = timeseries.label_sample
-        new_labels = [[labels[i] + ':' + labels[j] for i in range(j, len(labels))] for j in range(len(labels))]  
+        new_labels = reduce(lambda x, y:x + y, [[labels[i] + ':' + labels[j] for i in range(j + 1, len(labels))] for j in range(len(labels))])  
         out = timeseries.copy()
-        out.timecourses = dist
-        out.label_sample = new_labels
-        out.shape = (1,)
+        out.timecourses = dist.reshape((1, -1))
+        out.label_objects = new_labels
+        out.shape = (len(new_labels),)
+        out.label_sample = [timeseries.name]
         return out    
 
+class SampleConcat():
+    
+    def __call__(self, timeserieses):
+        out = timeserieses[0].copy()
+        out.timecourses, out.name, out.label_sample = [], [], []
+        for ts in timeserieses:
+            assert ts.label_objects == out.label_objects, 'objects do not match'
+            out.timecourses.append(ts.timecourses)
+            out.label_sample += ts.label_sample
+            out.name.append(ts.name) 
+        out.timecourses = np.vstack([i.timecourses for i in timeserieses])
+        out.name = common_substr(out.name)
+        return out
 # helper functions
     
 def common_substr(data):
@@ -359,3 +385,4 @@ def is_substr(find, data):
         if find not in data[i]:
             return False
     return True
+

@@ -21,17 +21,20 @@ import special_functions as sf
 reload(bf)
 reload(sf)
 
-measureIDs = ['111221sph']
+measureIDs = ['111210sph', '111212sph', '111221sph', '111222sph', '120107']#']
 raw_path = '/media/Iomega_HDD/Experiments/Messungen/'
 
 for measureID in measureIDs:
     path = pjoin(raw_path, measureID)
-    cfgfiles = glob.glob(pjoin(path, 'prepro' + '*.ini'))
+    prepropath = pjoin(path, 'analysis', 'prepro')
+    cfgfiles = glob.glob(pjoin(raw_path, 'configfiles', 'prepro', '*.ini'))
     
     for cfgfile in cfgfiles:
-        #read in config
+        #read in config      
+        if glob.glob(pjoin(prepropath, pbase(cfgfile).strip('.ini') + '.npy')):
+            print pbase(cfgfile), ' already done for ', measureID
+            continue
         cfg = ConfigObj(pjoin(path, cfgfile), unrepr=True)
-        
         data_selection = {'key': 'molID',
                           'properties': ['concentration', 'extraInfo', 'filename', 'fileID', 'shape'],
                           'table': 'FILES',
@@ -80,7 +83,7 @@ for measureID in measureIDs:
         
         "=============================================================================="
         
-        preprocessed.save(pjoin(path, 'analysis', pbase(cfgfile).strip('.ini')))
+        preprocessed.save(pjoin(prepropath, pbase(cfgfile).strip('.ini')))
 
 
     

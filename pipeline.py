@@ -136,7 +136,7 @@ class TimeSeries(object):
         json.dump(data, open(filename + '.json', 'w'))
             
     def load(self, filename):
-        self.__dict__ = json.load(open(filename + '.json'))
+        self.__dict__.update(json.load(open(filename + '.json')))
         self.timecourses = np.load(filename + '.npy')
         if self.typ == 'latent_series':
             self.base = TimeSeries()

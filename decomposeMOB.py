@@ -7,11 +7,10 @@ AnalysisScript
 '''
 
 import glob
-import ConfigParser
-
+from configobj import ConfigObj
 from pipeline import TimeSeries
-import os.path.join as pjoin
-import os.path.basename as pbase
+from os.path import join as pjoin
+from os.path import basename as pbase
 import basic_functions as bf
 import special_functions as sf
 
@@ -20,39 +19,52 @@ reload(bf)
 reload(sf)
 
 
-measureIDs = ['111221sph']
-methods = ['sica, nnma, roifilt']
+measureIDs = ['111221sph'] #['111210sph', '111212sph', '111222sph', '120107'] #,
+methods = ['sica', 'roifilt' , 'nnma']
 raw_path = '/media/Iomega_HDD/Experiments/Messungen'
+
 
 for measureID in measureIDs:
     for method in methods:
-        path = pjoin(raw_path, measureID, 'analysis')
+        base_path = pjoin(raw_path, measureID)
+        path = pjoin(base_path, 'analysis')
         
-        datafiles = glob.glob(pjoin(path, 'prepro*.npy'))
-        cfgfiles = glob.glob(pjoin(path, method + '*.ini'))
+        datafiles = glob.glob(pjoin(path, 'prepro', 'prepro*.npy'))
+        cfgfiles = glob.glob(pjoin(raw_path, 'configfiles', 'decompose', method + '*.ini'))
         
         for datafile in datafiles:
             datafile = datafile.strip('.npy')
             ts = TimeSeries()
             ts.load(datafile)
             for cfgfile in cfgfiles:
-                cfg = ConfigParser()
-                cfg.read(cfgfile)
+                print pbase(datafile), pbase(cfgfile)
+                configname = pbase(cfgfile).strip('.ini') + '_' + pbase(datafile).strip('prepro_')
+                if glob.glob(pjoin(path, 'decompose', configname + '.npy')):
+                    print configname, ' already done for ', measureID
+                    continue
+                
+                cfg = ConfigObj(pjoin(path, cfgfile), unrepr=True)
                 if method == 'nnma':
-                    decompose = bf.NNMA(cfg.latents, cfg.maxcount, param=cfg.nma_param)
+                    decompose = bf.NNMA(cfg['latents'], cfg['maxcount'], param=cfg['nma_param'])
+                    decomposition = decompose(ts)
                 elif method == 'sica':
-                    decompose = bf.sICA(cfg.variance)
+                    decompose = bf.sICA(cfg['variance'])
+                    decomposition = decompose(ts)
                 elif method == 'roifilt':
-                    roiload = sf.LoadRoi(path)
-                    roi_smooth = bf.Filter('gauss', cfg.smoothfiltextend)
+                    roiload = sf.LoadRoi(base_path)
                     roiprojection = sf.Project()
-                    
                     rois = roiload(ts.shape)
-                    decomposition = roiprojection(ts, roi_smooth(rois))
+                    if 'erode' in cfg:
+                        roi_erode = bf.Filter('erosion', cfg['erode']['filtextend'])
+                        rois = roi_erode(rois)
+                    rois.timecourses = rois.timecourses.astype('float')
+                    if 'smooth' in cfg:                   
+                        roi_smooth = bf.Filter('gauss', cfg['smooth']['filtextend'])
+                        rois = roi_smooth(rois)
+                    decomposition = roiprojection(ts, rois)
                          
-                decomposition = decompose(ts)                
-                decomposition.save(pjoin(path, pbase(cfgfile).strip('.ini')) + '_' 
-                             + pbase(datafile.strip('prepro_')))
+                                
+                decomposition.save(pjoin(path, 'decompose', configname))
 
     
     

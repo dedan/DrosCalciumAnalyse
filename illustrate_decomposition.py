@@ -15,7 +15,14 @@ class VisualizeTimeseries(object):
     def __init__(self):
         self.fig = None
         self.axes = {'base':[], 'time':[]}
-        self.mappings = {'onetoone':self.onetoone, 'onetoall':self.onetoall, 'alltoall':self.alltoall}
+        self.mappings = {'onetoone':self.onetoone, 'onetoall':self.onetoall}
+    
+    def oneaxes(self):
+        self.fig = plt.figure(figsize=(15, 12))
+        ax = self.fig.add_subplot(111)
+        self.axes['base'].append(ax)
+        self.axes['time'].append(ax)
+
     
     def base_and_time(self, num_objects):
         if not(self.fig):
@@ -42,19 +49,20 @@ class VisualizeTimeseries(object):
             self.axes['base'].append(axhandle)
     
 
-    
+    '''
     def alltoall(self, num_axes, num_objects):
         for ax_ind in range(num_axes):
             for obj_ind in range(num_objects):
                 yield ax_ind, obj_ind
- 
+    '''
+            
     def onetoall(self, num_axes, num_objects):
         for ax_ind in range(num_axes):
             yield ax_ind, range(num_objects)
     
     def onetoone(self, num_axes, num_objects):
         for ax_ind in range(num_axes):
-            yield ax_ind, ax_ind   
+            yield ax_ind, [ax_ind]  
               
 
            
@@ -135,32 +143,47 @@ class VisualizeTimeseries(object):
                     tick[0].label2.set_size('x-small')
                     tick[0].label2.set_stretch('extra-condensed')
                     tick[0].label2.set_family('sans-serif')
+
+    def add_violine(self, where, how, timeseries, color='b', rotation='0'):   
+        axes = self.axes[where]
+        for ax_ind, obj_ind in self.mappings[how](len(axes), timeseries.num_trials):
+            ax = axes[ax_ind]
+            violin_plot(ax, timeseries.timecourses[:, obj_ind], range(len(obj_ind)), color)
+            ax.set_xlim((-0.5, len(obj_ind) - 0.5))
+            ax.set_xticks(range(len(obj_ind)))
+            ax.set_xticklabels([timeseries.label_sample[i] for i in obj_ind], rotation=rotation)
+            
                     
     def add_axescolor(self, where, how, timeseries, ec='g', lw=2):
         axes = self.axes[where]
         for ax_ind, obj_ind in self.mappings[how](len(axes), timeseries.num_objects):
-            ax = axes[ax_ind]
-            for spine in ax.spines.values():
-                spine.set_edgecolor(ec)
-                spine.set_linewidth(lw)
+            if timeseries[obj_ind]:
+                ax = axes[ax_ind]
+                for spine in ax.spines.values():
+                    spine.set_edgecolor(ec)
+                    spine.set_linewidth(lw)
 
 
 
-def violin_plot(ax, data, pos):
+def violin_plot(ax, data, pos, color):
     '''
     create violin plots on an axis
     '''
     dist = max(pos) - min(pos)
     w = min(0.15 * max(dist, 1.0), 0.5)
     for d, p in zip(data, pos):
+        #where_nan = np.isnan(d)
+        #where_inf = np.isinf(d)
+        #print 'number of nans/infs: ', np.sum(where_nan), np.sum(where_inf) 
+        #d = d[np.logical_not(where_nan * where_inf)]
         k = gaussian_kde(d) #calculates the kernel density
         m = k.dataset.min() #lower bound of violin
         M = k.dataset.max() #upper bound of violin
         x = np.arange(m, M, (M - m) / 100.) # support for violin
         v = k.evaluate(x) #violin profile (density curve)
         v = v / v.max() * w #scaling the violin to the available space
-        ax.fill_betweenx(x, p, v + p, facecolor='b', alpha=0.3)
-        ax.fill_betweenx(x, p, -v + p, facecolor='b', alpha=0.3)
+        ax.fill_betweenx(x, p, v + p, facecolor=color, edgecolor=None, alpha=0.3)
+        ax.fill_betweenx(x, p, -v + p, facecolor=color, edgecolor='None', alpha=0.3)
 
 '''
 def initmouseob(path='/media/Iomega_HDD/Experiments/Messungen/111210sph/',

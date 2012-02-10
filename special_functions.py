@@ -67,8 +67,8 @@ class LoadRoi():
     def __init__(self, path): 
         self.path = path
     
-    def _call__(self, shape):
-        rois_vert = loadmat(self.path + 'nrois.mat')
+    def __call__(self, shape):
+        rois_vert = loadmat(pjoin(self.path, 'nrois.mat'))
         num_rois = rois_vert['nxis'].shape[1]
     
         temp_grid = np.indices(shape)
@@ -82,20 +82,20 @@ class LoadRoi():
             verts = np.array(zip(x_edge, y_edge))[:num_edges]
             rois.append(points_inside_poly(grid, verts))
         rois = np.array(rois)   
-        rois = TimeSeries('', name=[self.path], typ='mask',
+        rois = TimeSeries(rois, name=[self.path], typ='mask', shape=shape,
                           label_sample=['ROI' + str(i) for i in range(rois.shape[0])])
-
+        return rois
     
 class Project():
     
     def __call__(self, timeseries, base):               
         # create roi timecourse as convolution with data
-        proj_timecourses = np.dot(timeseries.timecourses, base.T)
+        proj_timecourses = np.dot(timeseries.timecourses, base.timecourses.T)
         out = timeseries.copy()
         out.timecourses = proj_timecourses
-        out.label_objects = base.label_samples
-        out.shape = (len(base.label_samples),)
-        out.type = 'latent_series'
+        out.label_objects = base.label_sample
+        out.shape = (len(base.label_sample),)
+        out.typ = 'latent_series'
         out.base = base.copy()
         return out
         
