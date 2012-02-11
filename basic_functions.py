@@ -161,7 +161,7 @@ class stICA():
         out.label_objects = ['mode' + str(i) for i in range(base.shape[0])]
         out.shape = (len(out.label_objects),)
         out.typ = 'latent_series'
-        out.name += '_sica'  
+        out.name += '_stica'  
         out.base = TimeSeries(base, shape=timeseries.shape, name=out.name,
                               label_sample=out.label_objects)
         
@@ -267,7 +267,6 @@ class CalcStimulusDrive():
         trial_timecourses = np.array([timeseries.trial_shaped()[i].reshape(-1, timeseries.num_objects) for i in indices])    
         # calculate correlation of pseudo-trials, aka stimulus dependency
         cor = [] 
-        print trial_timecourses.shape
         for object_num in range(timeseries.num_objects):
             dists = pdist(trial_timecourses[:, :, object_num], self.metric)
             cor.append(np.mean(dists))
@@ -289,15 +288,17 @@ class SelectModes():
         out.label_objects = [out.label_objects[i] for i in np.where(mask)[0]]
         out.shape = (len(out.label_objects),)
         if timeseries.typ == 'latent_series':
-            out.base = out.base[mask]
+            out.base.timecourses = out.base.timecourses[mask]
             out.base.label_sample = out.label_objects
         
         return out
 
-class MeanSampleResponse():
+class SingleSampleResponse():
+    ''' attetntion: reorders labels '''
     
-    def __init__(self):
-        pass
+    
+    def __init__(self, method='mean'):
+        self.method = 'mean'
         
     def __call__(self, timeseries):
         timecourses = timeseries.trial_shaped()
@@ -306,10 +307,15 @@ class MeanSampleResponse():
         new_labels, new_timecourses = [], []
         for label in label_set:
             label_index = [i for i, tmp_label in enumerate(labels) if tmp_label == label]
-            mean_timecourse = np.mean(timecourses[label_index], 0) 
+            if self.method == 'mean':
+                single_timecourse = np.mean(timecourses[label_index], 0) 
+            elif self.method == 'best':
+                #select trial with most signal
+                besttime = np.argmax([np.sum(np.abs(timecourses[l_ind])) for l_ind in label_index])
+                single_timecourse = timecourses[label_index[besttime]]
             new_labels.append(label)
-            new_timecourses.append(mean_timecourse)
-        new_timecourses = np.hstack(new_timecourses)
+            new_timecourses.append(single_timecourse)
+        new_timecourses = np.vstack(new_timecourses)
     
         out = timeseries.copy()
         out.timecourses = new_timecourses
@@ -352,6 +358,23 @@ class Distance():
         out.label_sample = [timeseries.name]
         return out    
 
+class ObjectConcat():
+    
+    def __init__(self, unequal=False):
+        self.unequal = unequal
+        
+    def __call__(self, timeserieses):
+        out = timeserieses[0].copy()
+        out.timecourses, out.name, out.label_objects = [], [], []
+        for ts in timeserieses:
+            assert ts.label_sample == out.label_sample, 'samples do not match'
+            out.timecourses.append(ts.timecourses)
+            out.label_objects += [ts.name + '_' + lab for lab in ts.label_objects]   
+            out.name.append(ts.name)
+        out.timecourses = np.hstack(out.timecourses)
+        out.name = common_substr(out.name)
+        return out
+            
 class SampleConcat():
     
     def __call__(self, timeserieses):
@@ -362,7 +385,7 @@ class SampleConcat():
             out.timecourses.append(ts.timecourses)
             out.label_sample += ts.label_sample
             out.name.append(ts.name) 
-        out.timecourses = np.vstack([i.timecourses for i in timeserieses])
+        out.timecourses = np.vstack(out.timecourses)
         out.name = common_substr(out.name)
         return out
 # helper functions

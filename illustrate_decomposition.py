@@ -62,10 +62,9 @@ class VisualizeTimeseries(object):
     
     def onetoone(self, num_axes, num_objects):
         for ax_ind in range(num_axes):
-            yield ax_ind, [ax_ind]  
+            yield ax_ind, ax_ind  
               
-
-           
+    
     def contourfaces(self, where, how, timeseries):   
         axes = self.axes[where]
         for ax_ind, im_ind in self.mappings[how](len(axes), timeseries.samplepoints):
@@ -90,7 +89,8 @@ class VisualizeTimeseries(object):
         axes = self.axes[where]
         for ax_ind, im_ind in self.mappings[how](len(axes), timeseries.samplepoints):
             ax = axes[ax_ind]
-            im = ax.imshow(timeseries.shaped2D()[im_ind], aspect='equal', interpolation='nearest', cmap=plt.cm.jet) 
+            im = timeseries.shaped2D()[im_ind].squeeze()
+            im = ax.imshow(im, aspect='equal', interpolation='nearest', cmap=plt.cm.jet) 
             ax.set_axis_off()
             if title:
                 ax.set_title(timeseries.label_sample[im_ind])

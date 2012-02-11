@@ -91,7 +91,8 @@ class TimeSeries(object):
         self.shape = shape
         self.typ = typ
         self.name = name
-        self.label_sample = label_sample    
+        self.label_sample = label_sample 
+        self.label_objects = []   
     
     @property
     def timepoints(self):
@@ -120,11 +121,21 @@ class TimeSeries(object):
     
     def trial_shaped2D(self):
         return self.timecourses.reshape(len(self.label_sample), -1, *self.shape)
-                    
+    
+    def as_dict(self, aggregate=None):
+        if aggregate == 'objects':
+            outdict = zip(self.label_objects, self.timecourses.T)
+        if aggregate == 'trials':
+            outdict = zip(self.label_sample, self.trial_shaped())
+        return outdict
+                
     def copy(self):
         out = cp.copy(self)
         out.name = cp.copy(self.name)
-        out.label_sample = cp.copy(self.label_sample) 
+        out.label_sample = cp.copy(self.label_sample)
+        out.label_objects = cp.copy(self.label_objects)        
+        if self.typ == 'latent_series':
+            out.base = self.base.copy() 
         return out
     
     def save(self, filename):

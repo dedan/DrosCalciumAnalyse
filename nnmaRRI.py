@@ -244,7 +244,6 @@ def stJADE(X, **param):
         print('stJADE: centering data...')
 
         # remove the spatiotemporal mean
-        print X.shape, np.mean(X, 0).shape
         Xc = X - np.mean(X, 0)
         Xc = Xc - np.mean(Xc, 1).reshape((-1, 1))
 
@@ -323,9 +322,6 @@ def stJADE(X, **param):
     pSs = scipy.linalg.pinv(Ss).T
     pSt = scipy.linalg.pinv(St).T
 
-    print pSs.shape, meant.shape
-    print pSt.shape, means.shape
-
     Smeant = np.dot(pSs, meant)
     Smeans = np.dot(pSt, means)
     
@@ -357,7 +353,6 @@ def jadeCummulantMatrices(X, useUnitCov=False):
         C = np.dot(np.outer(scale, (X[p, :] * X[p, :])) * X , X.T)
         E = np.zeros((n, n))
         E[p, p] = 1
-        print C.shape, E.shape, R.shape
         M[:, :, k] = C - np.dot(R, np.dot(E, R)) - np.trace(np.dot(E, R)) * R - np.dot(np.dot(R, E.T), R)
         k = k + 1;
         # case q < p
@@ -463,7 +458,6 @@ def rjd(A, threshold=np.finfo(float).eps):
                 c = math.cos(theta)
                 s = math.sin(theta)
                 encore = np.logical_or(encore, (abs(s) > threshold))
-                print abs(s), encore
                 # update of the A and V matrices 
                 if (abs(s) > threshold):
                     Mp = A[:, p:nm:m]

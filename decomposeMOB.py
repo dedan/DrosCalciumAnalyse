@@ -19,7 +19,7 @@ reload(bf)
 reload(sf)
 
 
-measureIDs = ['111221sph'] #['111210sph', '111212sph', '111222sph', '120107'] #,
+measureIDs = ['111222sph', '120107'] #['111210sph', '111212sph'] #, ' #,['111221sph']
 methods = ['sica', 'roifilt' , 'nnma']
 raw_path = '/media/Iomega_HDD/Experiments/Messungen'
 
@@ -33,12 +33,12 @@ for measureID in measureIDs:
         cfgfiles = glob.glob(pjoin(raw_path, 'configfiles', 'decompose', method + '*.ini'))
         
         for datafile in datafiles:
-            datafile = datafile.strip('.npy')
+            datafile = datafile.split('.')[0]
             ts = TimeSeries()
             ts.load(datafile)
             for cfgfile in cfgfiles:
                 print pbase(datafile), pbase(cfgfile)
-                configname = pbase(cfgfile).strip('.ini') + '_' + pbase(datafile).strip('prepro_')
+                configname = pbase(cfgfile).split('.')[0] + '_' + pbase(datafile).strip('prepro_')
                 if glob.glob(pjoin(path, 'decompose', configname + '.npy')):
                     print configname, ' already done for ', measureID
                     continue
