@@ -29,7 +29,7 @@ if not os.path.exists(save_path):
     os.mkdir(save_path)
 
 prefixes = ['LIN', '2PA', 'CVA', 'OCO']
-thresholds =  np.linspace(0.1, 1, 10)
+thresholds =  [round(t,1) for t in np.linspace(0.1, 1, 10)]
 res = {}
 
 #####################################################
