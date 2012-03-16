@@ -4,66 +4,43 @@ Created on Aug 11, 2011
 @author: jan
 '''
 
-import os
-import glob
-import sys
+import os, glob, sys
+import pickle
 import itertools as it
-
 import numpy as np
 import pylab as plt
-
 from scipy.cluster.hierarchy import dendrogram, linkage
-
 from NeuralImageProcessing import basic_functions as bf
 from NeuralImageProcessing import illustrate_decomposition as vis
-
+import utils
 reload(bf)
 reload(vis)
 
+n_best = 3
 frames_per_trial = 40
 variance = 5
 lowpass = 2
-similarity_threshold = 0.5
+similarity_threshold = 0.6
 modesim_threshold = 0.5
 medianfilter = 5
 data_path = '/Users/dedan/projects/fu/data/dros_calcium_new/'
-#data_path='/Users/dedan/projects/fu/data/dros_calcium/test_data/'
-savefolder = 'med' + str(medianfilter) + 'simil' + str(int(similarity_threshold * 100)) + 'mode' + str(int(modesim_threshold * 100)) + 'latents' + str(variance)
+loadfolder = 'common_channels'
+savefolder = 'simil' + str(int(similarity_threshold * 100)) + 'n_best' + str(n_best)
 save_path = os.path.join(data_path, savefolder)
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 
-
-
 prefix = 'LIN'
 
 
-
-filelist = [os.path.join(data_path, i) for i in ['LIN_111108a.json', 'LIN_111108b.json', 'LIN_111107b.json', 'LIN_111107a.json', 'LIN_111027a.json']]
-#filelist = [os.path.join(data_path, i) for i in ['OCO_111017a_neu.json', 'OCO_111018a.json', 'OCO_111024c.json']]
-#filelist = [os.path.join(data_path, i) for i in ['2PA_120223a.json', '2PA_111025a.json', '2PA_111025b.json']]
-#filelist = [os.path.join(data_path, i) for i in ['CVA_111014a.json', 'CVA_110902a.json', 'CVA_120307b.json', 'CVA_120308c.json', 'CVA_111013a', ]] # 'CVA_120307c']] #'CVA_110901a.json'
-
 filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
-
 colorlist = {}
 
+# use only the n_best animals --> most stable odors in common
+res = pickle.load(open(os.path.join(data_path, loadfolder, 'thres_res.pckl')))
+best = utils.select_n_channels(res[prefix][0.3], n_best)
+filelist = [filelist[i] for i in best]
 
-def select_n_channels(data, n):
-    """ select n rows which have the most possible odors (columns) in common
-
-        Not for all animals the same odors are available because sometimes they
-        are not consistend over stimulus repetition and are therefore sorted out.
-        This function helps to find the subset of odors which are available for
-        n out of size(data, 0) animals.
-    """
-    best = 0
-    for comb in it.combinations(range(np.size(data, 0)), n):
-        s = (np.sum(data[comb, :], 0) == n).astype('int')
-        if np.sum(s) > best:
-            best = np.sum(s)
-            best_comb = comb
-    return best_comb
 
 
 #####################################################
@@ -111,25 +88,16 @@ cor_dist = bf.Distance()
 
 #create lists to collect results
 all_sel_modes, all_sel_modes_condensed, all_raw = [], [], []
+baselines = []
 all_stimulifilter = []
 
 for file_ind, filename in enumerate(filelist):
 
     # load timeseries, shape and labels
     meas_path = os.path.splitext(filename)[0]
-    '''
-    timeseries = np.load(meas_path + '.npy')
-    info = json.load(open(meas_path + '.json'))
-    label = info['labels']
-    shape = info['shape']
-    # create trial labels
-    label = [i.strip('.png') for i in label[::frames_per_trial]]
-    '''
 
     #assign each file a color:
     colorlist[os.path.basename(meas_path)] = plt.cm.jet(file_ind / (len(filelist) - 1.))
-
-
 
     # create timeseries
     ts = bf.TimeSeries()
@@ -140,6 +108,7 @@ for file_ind, filename in enumerate(filelist):
 
     ts = temporal_downsampling(ts)
     baseline = trial_mean(baseline_cut(ts))
+    baselines.append(baseline)
     preprocessed = gauss_filter(pixel_filter(rel_change(ts, baseline)))
     preprocessed.timecourses[np.isnan(preprocessed.timecourses)] = 0
     preprocessed.timecourses[np.isinf(preprocessed.timecourses)] = 0
@@ -179,12 +148,14 @@ for file_ind, filename in enumerate(filelist):
     qual_view = vis.VisualizeTimeseries()
     qual_view.oneaxes()
     data = zip(*distancecross.items())
-    vis.violin_plot(qual_view.axes['time'][0], [i.flatten() for i in data[1]] , range(len(distancecross)), 'b')
+    vis.violin_plot(qual_view.axes['time'][0], [i.flatten() for i in data[1]] ,
+                    range(len(distancecross)), 'b')
     qual_view.axes['time'][0].set_xticks(range(len(distancecross)))
     qual_view.axes['time'][0].set_xticklabels(data[0])
     qual_view.axes['time'][0].set_title(ts.name)
     for pos, stim in enumerate(data[0]):
-        qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]), distanceself[stim], 'o', mew=2, mec='k', mfc='None')
+        qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]),
+                                       distanceself[stim], 'o', mew=2, mec='k', mfc='None')
 
     qual_view.fig.savefig(tmp_save + '_quality')
 
@@ -231,7 +202,6 @@ allodors.sort()
 quality_mx = np.zeros((len(all_raw), len(allodors)))
 for t_ind, t in enumerate(all_raw):
     for od in set(t.label_sample):
-        print od
         quality_mx[t_ind, allodors.index(od)] = 1
 
 fig = plt.figure()
@@ -251,38 +221,46 @@ mo = pca(intersection)
 mo2 = icaend(intersection)
 
 fig = plt.figure()
+fig.suptitle(np.sum(mo.eigen))
 num_bases = len(filelist)
 names = [t.name for t in all_raw]
 for modenum in range(variance):
     single_bases = mo2.base.objects_sample(modenum)
     for base_num in range(num_bases):
-        ax = fig.add_subplot(variance, num_bases, num_bases * modenum + base_num + 1)
+        ax = fig.add_subplot(variance+1, num_bases, base_num+1)
+        ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
+        ax.set_axis_off()
+        ax.set_title(names[base_num])
+        ax = fig.add_subplot(variance+1, num_bases, ((num_bases * modenum) + num_bases) + base_num + 1)
         ax.imshow(single_bases[base_num] * -1, cmap=plt.cm.hsv, vmin= -1, vmax=1)
         ax.set_axis_off()
-        if modenum == 0:
-            ax.set_title(names[base_num])
+
 fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan.png')
 
 fig = plt.figure()
+fig.suptitle(np.sum(mo.eigen))
 num_bases = len(filelist)
 names = [t.name for t in all_raw]
 for modenum in range(variance):
     single_bases = mo2.base.objects_sample(modenum)
     for base_num in range(num_bases):
-        ax = fig.add_subplot(variance, num_bases, num_bases * modenum + base_num + 1)
+        ax = fig.add_subplot(variance+1, num_bases, base_num+1)
+        ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
+        ax.set_axis_off()
+        ax.set_title(names[base_num])
+        ax = fig.add_subplot(variance+1, num_bases, ((num_bases * modenum) + num_bases) + base_num + 1)
         ax.imshow(single_bases[base_num], cmap=plt.cm.jet)
         ax.set_axis_off()
-        if modenum == 0:
-            ax.set_title(names[base_num])
 fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_scaled.png')
 
 fig = plt.figure()
 for modenum in range(variance):
     ax = fig.add_subplot(variance, 1, modenum + 1)
     ax.plot(mo2.timecourses[:, modenum])
-    ax.set_xticks(np.arange(3, mo2.samplepoints, mo2.timepoints))
-    ax.set_xticklabels(mo2.label_sample, fontsize=12)
+    ax.set_xticklabels([], fontsize=12, rotation=45)
     ax.grid(True)
+ax.set_xticks(np.arange(3, mo2.samplepoints, mo2.timepoints))
+ax.set_xticklabels(mo2.label_sample, fontsize=12, rotation=45)
 fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_time.png')
 
 
