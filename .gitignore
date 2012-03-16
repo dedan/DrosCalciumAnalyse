@@ -6,3 +6,4 @@
 *.sublime-workspace
 *.sublime-project
 scratch.py
+.DS_Store
