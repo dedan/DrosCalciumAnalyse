@@ -83,7 +83,7 @@ select_modes = bf.SelectModes(modesim_threshold)
 standard_response = bf.SingleSampleResponse(method='best')
 # and calculate distance between modes
 combine = bf.ObjectConcat()
-combine_common = bf.ObjectConcat(unequalsample=True, unequalobj=True)
+combine_common = bf.ObjectConcat(unequalsample=2, unequalobj=True)
 cor_dist = bf.Distance()
 
 #create lists to collect results
@@ -162,13 +162,21 @@ for file_ind, filename in enumerate(filelist):
     # draw signal overview
     resp_overview = vis.VisualizeTimeseries()
     resp_overview.subplot(mean_resp.samplepoints)
-    resp_overview.imshow('base', 'onetoone', mean_resp, title=True, colorbar=True)
+    for ind, resp in enumerate(mean_resp.shaped2D()):
+        resp_overview.imshow(resp_overview.axes['base'][ind],
+                             resp,
+                             title=mean_resp.label_sample[ind],
+                             colorbar=False)
     resp_overview.fig.savefig(tmp_save + '_overview')
 
     # draw unsorted signal overview
     uresp_overview = vis.VisualizeTimeseries()
     uresp_overview.subplot(mean_resp_unsort.samplepoints)
-    uresp_overview.imshow('base', 'onetoone', mean_resp_unsort, title=True, colorbar=True)
+    for ind, resp in enumerate(mean_resp_unsort.shaped2D()):
+        uresp_overview.imshow(uresp_overview.axes['base'][ind],
+                              resp,
+                              title=mean_resp_unsort.label_sample[ind],
+                              colorbar=False)
     uresp_overview.fig.savefig(tmp_save + '_overview_unsort')
 
     '''
