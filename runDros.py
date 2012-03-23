@@ -10,8 +10,6 @@ import itertools as it
 import numpy as np
 import pylab as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
-import sys
-sys.path.append('/home/jan/repos/NeuralImageProcessing/NeuralImageProcessing')
 
 import basic_functions as bf
 import illustrate_decomposition as vis
@@ -19,31 +17,40 @@ import utils
 reload(bf)
 reload(vis)
 
+' +++ jan specific +++'
+base_path = '/home/jan/Documents/dros/new_data/'
+data_path = os.path.join(base_path, 'aligned')
+loadfolder = os.path.join(base_path, 'common_channels')
+
+' +++ dedan specific +++'
+base_path = '/Users/dedan/projects/fu'
+data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
+loadfolder = os.path.join(base_path, 'results', 'common_channels')
+
 n_best = 5
 frames_per_trial = 40
 variance = 9
 lowpass = 2
 similarity_threshold = 0.6
+normalize = False
 modesim_threshold = 0.5
 medianfilter = 5
-data_path = '/home/jan/Documents/dros/new_data/aligned'
-#data_path = '/Users/dedan/projects/fu/data/dros_calcium_new/'
-loadfolder = 'common_channels'
-savefolder = 'simil' + str(int(similarity_threshold * 100)) + 'n_best' + str(n_best)
-save_path = os.path.join(data_path, savefolder)
+
+format = 'svg'
+
+add = ''
+if normalize:
+    add = '_maxnorm'
+
+savefolder = 'simil' + str(int(similarity_threshold * 100)) + 'n_best' + str(n_best) + add + '_' + format
+save_path = os.path.join(base_path, 'results', savefolder)
+
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 
 prefix = 'LIN'
 
-
-filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
-colorlist = {}
-
-# use only the n_best animals --> most stable odors in common
-res = pickle.load(open(os.path.join(data_path, loadfolder, 'thres_res.pckl')))
-best = utils.select_n_channels(res[prefix][0.3], n_best)
-filelist = [filelist[i] for i in best]
+prefixes = ['OCO', '2PA', 'LIN', 'CVA']
 
 
 
@@ -92,6 +99,15 @@ combine = bf.ObjectConcat()
 combine_common = bf.ObjectScrambledConcat(n_best)
 cor_dist = bf.Distance()
 
+filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
+colorlist = {}
+
+# use only the n_best animals --> most stable odors in common
+res = pickle.load(open(os.path.join(data_path, loadfolder, 'thres_res.pckl')))
+best = utils.select_n_channels(res[prefix][0.3], n_best)
+filelist = [filelist[i] for i in best]
+
+
 #create lists to collect results
 all_sel_modes, all_sel_modes_condensed, all_raw = [], [], []
 baselines = []
@@ -118,6 +134,9 @@ for file_ind, filename in enumerate(filelist):
     preprocessed = gauss_filter(pixel_filter(rel_change(ts, baseline)))
     preprocessed.timecourses[np.isnan(preprocessed.timecourses)] = 0
     preprocessed.timecourses[np.isinf(preprocessed.timecourses)] = 0
+
+    if normalize:
+        preprocessed.timecourses = preprocessed.timecourses / np.max(preprocessed.timecourses)
     mean_resp_unsort = trial_mean(signal_cut(preprocessed))
     mean_resp = sorted_trials(mean_resp_unsort)
     preprocessed = sorted_trials(preprocessed)
@@ -212,7 +231,6 @@ for file_ind, filename in enumerate(filelist):
 #plt.close('all')
 
 
-
 intersection = sorted_trials(combine_common(all_raw))
 mo = pca(intersection)
 #mo2 = icaend(mo)
@@ -233,7 +251,9 @@ for modenum in range(variance):
         ax.imshow(single_bases[base_num] * -1, cmap=plt.cm.hsv, vmin= -1, vmax=1)
         ax.set_axis_off()
 
-fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan.svg')
+
+fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan.' + format)
+
 
 fig = plt.figure()
 fig.suptitle(np.sum(mo.eigen))
@@ -249,17 +269,23 @@ for modenum in range(variance):
         ax = fig.add_subplot(variance + 1, num_bases, ((num_bases * modenum) + num_bases) + base_num + 1)
         ax.imshow(single_bases[base_num], cmap=plt.cm.jet)
         ax.set_axis_off()
-fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_scaled.svg')
+
+fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_scaled.' + format)
+
 
 fig = plt.figure()
+stim_driven = modefilter(mo2).timecourses
 for modenum in range(variance):
     ax = fig.add_subplot(variance, 1, modenum + 1)
     ax.plot(mo2.timecourses[:, modenum])
     ax.set_xticklabels([], fontsize=12, rotation=45)
+    ax.set_ylabel("%1.2f" % stim_driven[0, modenum])
     ax.grid(True)
 ax.set_xticks(np.arange(3, mo2.samplepoints, mo2.timepoints))
 ax.set_xticklabels(mo2.label_sample, fontsize=12, rotation=45)
-fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_time.svg')
+
+fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_time.' + format)
+
 
 
 
