@@ -17,24 +17,17 @@ import utils
 reload(bf)
 reload(vis)
 
-' +++ jan specific +++'
-base_path = '/home/jan/Documents/dros/new_data/'
-data_path = os.path.join(base_path, 'aligned')
-loadfolder = os.path.join(base_path, 'common_channels')
 
-' +++ dedan specific +++'
-base_path = '/Users/dedan/projects/fu'
-data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
-loadfolder = os.path.join(base_path, 'results', 'common_channels')
 
 n_best = 5
 frames_per_trial = 40
-variance = 9
+variance = 5
 lowpass = 2
 similarity_threshold = 0.6
-normalize = False
+normalize = True
 modesim_threshold = 0.5
 medianfilter = 5
+alpha = 0.1
 
 format = 'svg'
 
@@ -42,8 +35,19 @@ add = ''
 if normalize:
     add = '_maxnorm'
 
+' +++ jan specific +++'
+base_path = '/home/jan/Documents/dros/new_data/'
+data_path = os.path.join(base_path, 'aligned')
+loadfolder = os.path.join(base_path, 'aligned', 'common_channels')
 savefolder = 'simil' + str(int(similarity_threshold * 100)) + 'n_best' + str(n_best) + add + '_' + format
-save_path = os.path.join(base_path, 'results', savefolder)
+save_path = os.path.join(base_path, savefolder)
+
+#' +++ dedan specific +++'
+#base_path = '/Users/dedan/projects/fu'
+#data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
+#loadfolder = os.path.join(base_path, 'results', 'common_channels')
+#savefolder = 'simil' + str(int(similarity_threshold * 100)) + 'n_best' + str(n_best) + add + '_' + format
+#save_path = os.path.join(base_path, 'results', savefolder)
 
 if not os.path.exists(save_path):
     os.mkdir(save_path)
@@ -78,7 +82,7 @@ sorted_trials = bf.SortBySamplename()
 #ica = bf.sICA(variance=variance)
 pca = bf.PCA(variance)
 #icaend = bf.sICA(latent_series=True)
-icaend = bf.stICA(variance, {'alpha':0.1})
+icaend = bf.stICA(variance, {'alpha':alpha})
 icain = bf.sICA(variance)
 
 # select stimuli such that their mean correlation is below similarity_threshold
