@@ -10,20 +10,24 @@ import itertools as it
 import numpy as np
 import pylab as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
-from NeuralImageProcessing import basic_functions as bf
-from NeuralImageProcessing import illustrate_decomposition as vis
+import sys
+sys.path.append('/home/jan/repos/NeuralImageProcessing/NeuralImageProcessing')
+
+import basic_functions as bf
+import illustrate_decomposition as vis
 import utils
 reload(bf)
 reload(vis)
 
-n_best = 3
+n_best = 5
 frames_per_trial = 40
-variance = 5
+variance = 9
 lowpass = 2
 similarity_threshold = 0.6
 modesim_threshold = 0.5
 medianfilter = 5
-data_path = '/Users/dedan/projects/fu/data/dros_calcium_new/'
+data_path = '/home/jan/Documents/dros/new_data/aligned'
+#data_path = '/Users/dedan/projects/fu/data/dros_calcium_new/'
 loadfolder = 'common_channels'
 savefolder = 'simil' + str(int(similarity_threshold * 100)) + 'n_best' + str(n_best)
 save_path = os.path.join(data_path, savefolder)
@@ -67,7 +71,7 @@ sorted_trials = bf.SortBySamplename()
 #ica = bf.sICA(variance=variance)
 pca = bf.PCA(variance)
 #icaend = bf.sICA(latent_series=True)
-icaend = bf.stICA(variance, {'alpha':0.9})
+icaend = bf.stICA(variance, {'alpha':0.1})
 icain = bf.sICA(variance)
 
 # select stimuli such that their mean correlation is below similarity_threshold
@@ -83,7 +87,9 @@ select_modes = bf.SelectModes(modesim_threshold)
 standard_response = bf.SingleSampleResponse(method='best')
 # and calculate distance between modes
 combine = bf.ObjectConcat()
-combine_common = bf.ObjectConcat(unequalsample=2, unequalobj=True)
+#combine_common = bf.ObjectConcat(unequalsample=2, unequalobj=True)
+#combine_common = bf.ObjectScrambledConcat(4, 'three')
+combine_common = bf.ObjectScrambledConcat(n_best)
 cor_dist = bf.Distance()
 
 #create lists to collect results
@@ -205,22 +211,6 @@ for file_ind, filename in enumerate(filelist):
 
 #plt.close('all')
 
-allodors = list(set(ts.label_sample + reduce(lambda x, y: x + y, [t.label_sample for t in all_raw])))
-allodors.sort()
-quality_mx = np.zeros((len(all_raw), len(allodors)))
-for t_ind, t in enumerate(all_raw):
-    for od in set(t.label_sample):
-        quality_mx[t_ind, allodors.index(od)] = 1
-
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.imshow(quality_mx, interpolation='nearest', cmap=plt.cm.bone)
-ax.set_yticks(range(len(all_raw)))
-ax.set_yticklabels([t.name for t in all_raw])
-ax.set_xticks(range(len(allodors)))
-ax.set_xticklabels(allodors, rotation='45')
-plt.title(prefix + '_' + str(similarity_threshold))
-plt.savefig('_'.join(tmp_save.split('_')[:-1]) + 'mask.png')
 
 
 intersection = sorted_trials(combine_common(all_raw))
@@ -235,15 +225,15 @@ names = [t.name for t in all_raw]
 for modenum in range(variance):
     single_bases = mo2.base.objects_sample(modenum)
     for base_num in range(num_bases):
-        ax = fig.add_subplot(variance+1, num_bases, base_num+1)
+        ax = fig.add_subplot(variance + 1, num_bases, base_num + 1)
         ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
         ax.set_axis_off()
         ax.set_title(names[base_num])
-        ax = fig.add_subplot(variance+1, num_bases, ((num_bases * modenum) + num_bases) + base_num + 1)
+        ax = fig.add_subplot(variance + 1, num_bases, ((num_bases * modenum) + num_bases) + base_num + 1)
         ax.imshow(single_bases[base_num] * -1, cmap=plt.cm.hsv, vmin= -1, vmax=1)
         ax.set_axis_off()
 
-fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan.png')
+fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan.svg')
 
 fig = plt.figure()
 fig.suptitle(np.sum(mo.eigen))
@@ -252,14 +242,14 @@ names = [t.name for t in all_raw]
 for modenum in range(variance):
     single_bases = mo2.base.objects_sample(modenum)
     for base_num in range(num_bases):
-        ax = fig.add_subplot(variance+1, num_bases, base_num+1)
+        ax = fig.add_subplot(variance + 1, num_bases, base_num + 1)
         ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
         ax.set_axis_off()
         ax.set_title(names[base_num])
-        ax = fig.add_subplot(variance+1, num_bases, ((num_bases * modenum) + num_bases) + base_num + 1)
+        ax = fig.add_subplot(variance + 1, num_bases, ((num_bases * modenum) + num_bases) + base_num + 1)
         ax.imshow(single_bases[base_num], cmap=plt.cm.jet)
         ax.set_axis_off()
-fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_scaled.png')
+fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_scaled.svg')
 
 fig = plt.figure()
 for modenum in range(variance):
@@ -269,7 +259,7 @@ for modenum in range(variance):
     ax.grid(True)
 ax.set_xticks(np.arange(3, mo2.samplepoints, mo2.timepoints))
 ax.set_xticklabels(mo2.label_sample, fontsize=12, rotation=45)
-fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_time.png')
+fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_time.svg')
 
 
 

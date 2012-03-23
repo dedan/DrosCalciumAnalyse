@@ -12,7 +12,10 @@ import numpy as np
 import pylab as plt
 import utils
 from collections import defaultdict
-from NeuralImageProcessing import basic_functions as bf
+import sys
+sys.path.append('/home/jan/repos/NeuralImageProcessing/NeuralImageProcessing')
+
+import basic_functions as bf
 import matplotlib.gridspec as gridspec
 reload(bf)
 
@@ -22,14 +25,15 @@ lowpass = 2
 similarity_threshold = 0.3
 modesim_threshold = 0.5
 medianfilter = 5
-data_path = '/Users/dedan/projects/fu/data/dros_calcium_new/'
+data_path = '/home/jan/Documents/dros/new_data/aligned'
+#data_path = '/Users/dedan/projects/fu/data/dros_calcium_new/'
 savefolder = 'common_channels'
 save_path = os.path.join(data_path, savefolder)
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 
-prefixes = ['LIN', '2PA', 'CVA', 'OCO']
-thresholds =  [round(t,1) for t in np.linspace(0.1, 1, 10)]
+prefixes = ['LIN', '2PA', 'CVA', 'OCO'] #, 'mic']
+thresholds = [round(t, 1) for t in np.linspace(0.1, 1, 10)]
 res = {}
 
 #####################################################
@@ -91,7 +95,8 @@ for prefix in prefixes:
             collect[thres].append(stimuli_filter(preprocessed, stimuli_selection))
 
     for thres in thresholds:
-        allodors = list(set(ts.label_sample + np.sum([t.label_sample for t in collect[thres]])))
+        print ts.label_sample
+        allodors = list(set(ts.label_sample + sum([t.label_sample for t in collect[thres]], [])))
         allodors.sort()
         quality_mx = np.zeros((len(collect[thres]), len(allodors)))
         for t_ind, t in enumerate(collect[thres]):
@@ -112,7 +117,7 @@ for prefix in res.keys():
     thresholds = sorted(res[prefix].keys())
     for n in range(2, 7):
 
-        p = fig.add_subplot(gs[n-2, 0])
+        p = fig.add_subplot(gs[n - 2, 0])
         channels = np.zeros(len(thresholds))
         for i, thres in enumerate(thresholds):
 
