@@ -19,16 +19,17 @@ reload(vis)
 
 
 
-n_best = 5
+n_best = 6
 frames_per_trial = 40
 variance = 5
 lowpass = 2
-similarity_threshold = 0.6
+similarity_threshold = 0.8
 normalize = True
-modesim_threshold = 0.5
+modesim_threshold = 0.9
 medianfilter = 5
-alpha = 0.1
+alpha = 0.5
 
+animal_select_value = 0.8
 format = 'svg'
 
 add = ''
@@ -54,7 +55,7 @@ if not os.path.exists(save_path):
 
 prefix = 'LIN'
 
-prefixes = ['OCO', '2PA', 'LIN', 'CVA']
+#prefixes = ['OCO', '2PA', 'LIN', 'CVA']
 
 
 
@@ -81,9 +82,10 @@ sorted_trials = bf.SortBySamplename()
 #ica = bf.stICA(variance=variance, param={'alpha':0.001})
 #ica = bf.sICA(variance=variance)
 pca = bf.PCA(variance)
-#icaend = bf.sICA(latent_series=True)
+#icaend = bf.sICA(variance)
+#icaend = bf.NNMA(variance, 30, {'sparse_par': 0.'smoothness':0, 'sparse_par2':0.3})
 icaend = bf.stICA(variance, {'alpha':alpha})
-icain = bf.sICA(variance)
+icain = bf.stICA(variance, {'alpha':alpha})
 
 # select stimuli such that their mean correlation is below similarity_threshold
 stimuli_mask = bf.SampleSimilarity(similarity_threshold)
@@ -95,7 +97,7 @@ modefilter = bf.CalcStimulusDrive()
 # select modes based on where mask are below threshold
 select_modes = bf.SelectModes(modesim_threshold)
 #create mean stimuli response
-standard_response = bf.SingleSampleResponse(method='best')
+standard_response = bf.SingleSampleResponse(method='mean')
 # and calculate distance between modes
 combine = bf.ObjectConcat()
 #combine_common = bf.ObjectConcat(unequalsample=2, unequalobj=True)
@@ -108,9 +110,8 @@ colorlist = {}
 
 # use only the n_best animals --> most stable odors in common
 res = pickle.load(open(os.path.join(data_path, loadfolder, 'thres_res.pckl')))
-best = utils.select_n_channels(res[prefix][0.3], n_best)
+best = utils.select_n_channels(res[prefix][animal_select_value], n_best)
 filelist = [filelist[i] for i in best]
-
 
 #create lists to collect results
 all_sel_modes, all_sel_modes_condensed, all_raw = [], [], []
@@ -164,7 +165,9 @@ for file_ind, filename in enumerate(filelist):
     all_sel_modes.append(final_modes)
     all_sel_modes_condensed.append(final_modes_condensed)
     '''
-    all_raw.append(stimuli_filter(preprocessed, stimuli_selection))
+    selected = stimuli_filter(preprocessed, stimuli_selection)
+    all_raw.append(selected)
+    #all_raw.append(preprocessed)
     distanceself, distancecross = stimulirep(mean_resp)
     ####################################################################
     # plot and save results
@@ -172,7 +175,8 @@ for file_ind, filename in enumerate(filelist):
 
     # save plot and data
     tmp_save = os.path.join(save_path, os.path.basename(meas_path))
-
+    print tmp_save
+    
     #draw quality overview
     qual_view = vis.VisualizeTimeseries()
     qual_view.oneaxes()
@@ -213,12 +217,13 @@ for file_ind, filename in enumerate(filelist):
     toplot = raw_ica
     ica_overview = vis.VisualizeTimeseries()
     ica_overview.base_and_time(toplot.num_objects)
-    ica_overview.imshow('base', 'onetoone', toplot.base)
-    ica_overview.plot('time', 'onetoone', toplot)
-    ica_overview.add_labelshade('time', 'onetoall', toplot)
-    ica_overview.add_shade('time', 'onetoall', stimuli_selection, 20)
-    ica_overview.add_samplelabel([-1], toplot, rotation='45', toppos=True)
-    [ax.set_title(toplot.label_objects[i]) for i, ax in enumerate(ica_overview.axes['base'])]
+    for ind, resp in enumerate(toplot.base.shaped2D()):
+        ica_overview.imshow(ica_overview.axes['base'][ind], resp)
+        ica_overview.plot(ica_overview.axes['time'][ind], toplot.timecourses[:, ind])
+        ica_overview.add_labelshade(ica_overview.axes['time'][ind], toplot)
+        #ica_overview.add_shade('time', 'onetoall', stimuli_selection, 20)
+    ica_overview.add_samplelabel(ica_overview.axes['time'][-1], toplot, rotation='45', toppos=True)
+    #[ax.set_title(toplot.label_objects[i]) for i, ax in enumerate(ica_overview.axes['base'])]
     ica_overview.fig.savefig(tmp_save + '_goodmodes.svg')
     '''
     '''
@@ -239,6 +244,7 @@ intersection = sorted_trials(combine_common(all_raw))
 mo = pca(intersection)
 #mo2 = icaend(mo)
 mo2 = icaend(intersection)
+mo3 = sorted_trials(standard_response(mo2))
 
 fig = plt.figure()
 fig.suptitle(np.sum(mo.eigen))
@@ -281,12 +287,12 @@ fig = plt.figure()
 stim_driven = modefilter(mo2).timecourses
 for modenum in range(variance):
     ax = fig.add_subplot(variance, 1, modenum + 1)
-    ax.plot(mo2.timecourses[:, modenum])
+    ax.plot(mo3.timecourses[:, modenum])
     ax.set_xticklabels([], fontsize=12, rotation=45)
     ax.set_ylabel("%1.2f" % stim_driven[0, modenum])
     ax.grid(True)
-ax.set_xticks(np.arange(3, mo2.samplepoints, mo2.timepoints))
-ax.set_xticklabels(mo2.label_sample, fontsize=12, rotation=45)
+    ax.set_xticks(np.arange(3, mo3.samplepoints, mo3.timepoints))
+ax.set_xticklabels(mo3.label_sample, fontsize=12, rotation=45)
 
 fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_time.' + format)
 
