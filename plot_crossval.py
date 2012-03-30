@@ -14,6 +14,7 @@
 import glob, pickle, os, json
 import numpy as np
 from NeuralImageProcessing import basic_functions as bf
+from NeuralImageProcessing import illustrate_decomposition as ic
 import pylab as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
 
@@ -59,15 +60,11 @@ def dict2pdist(dic):
                 new_pdist.append(dic[':'.join([key_parts[j], key_parts[i]])])
     return new_pdist, new_labels
 
-def onpick(event):
-    print event.artist.name
-    print dir(event)
-    # event.artist.figure.axes[0].texts = []
-    # plt.annotate(event.artist.name, (event.artist._x, event.artist._y))
-
 
 inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-80/'
 prefixes = ['OCO', '2PA', 'LIN', 'CVA']
+# prefixes = ['LIN']
+stimulus_offset = 4
 
 cor_dist = bf.Distance()
 stimuli_filter = bf.SelectTrials()
@@ -84,7 +81,10 @@ for prefix in prefixes:
     for i, fname in enumerate(files):
 
         mo = pickle.load(open(fname))
-        mo.name = os.path.splitext(os.path.basename(fname))[0].split("-")[-1]
+        if 'all' in os.path.splitext(os.path.basename(fname))[0]:
+            mo.name = 'all'
+        else:
+            mo.name = os.path.splitext(os.path.basename(fname))[0].split("-")[-1]
         mode_dict[mo.name] = mo
         modelist.append(mo)
 
@@ -95,8 +95,6 @@ for prefix in prefixes:
     fig = plt.figure()
     axes = plt.Axes(fig, [.25,.1,.7,.8])
     fig.add_axes(axes)
-    # TODO: try again to make it clickable
-    fig.canvas.mpl_connect('pick_event', onpick)
 
     d = dendrogram(linkage(np.array(modedist).squeeze() + 1E-10, 'average'),
                    labels=lables,
@@ -107,14 +105,31 @@ for prefix in prefixes:
 
     if os.path.exists(os.path.join(inpath, prefix + '_time_plot.json')):
         info = json.load(open(os.path.join(inpath, prefix + '_time_plot.json')))
-        fig = plt.figure()
+        vis = ic.VisualizeTimeseries()
+        vis.fig = plt.figure()
+
         for i, key in enumerate(info):
-            plt.subplot(len(info), 1, i+1)
-            plt.title(key)
+            ax = vis.fig.add_subplot(len(info), 1, i+1)
+            vis.axes['time'].append(ax)
+            ax.set_title(key)
             for mode in info[key]:
-                mo = mode_dict["_".join(mode.split("_")[0:2])]
-                plt.plot(mo.timecourses[:, int(mode[-1])])
-            for xlabel_i in fig.axes[i].get_xticklabels():
-                xlabel_i.set_visible(False)
+                if 'all' in mode:
+                    all_mode = mode
+                    continue
+                mo = mode_dict["_".join(mode.split("_")[0:-1])]
+                vis.plot(ax, mo.timecourses[:, int(mode[-1])], linewidth=1.0, color='0.7')
+            mo = mode_dict['all']
+            vis.plot(ax, mo.timecourses[:, int(all_mode[-1])], linewidth=3.0, color='0.0')
+            vis.add_onsets(ax, mo, stimulus_offset)
+            vis.add_labelshade(ax, mo)
+            for l in ax.get_xticklabels():
+                l.set_visible(False)
+            for l in ax.get_yticklabels():
+                l.set_visible(False)
+
+
+            if i == 0:
+                vis.add_samplelabel(ax, mo, rotation='45', toppos=True)
+
         plt.savefig(os.path.join(inpath, prefix + '_time_series.svg'))
 

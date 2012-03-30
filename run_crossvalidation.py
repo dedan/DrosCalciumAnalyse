@@ -119,13 +119,17 @@ for prefix in prefixes:
     best = utils.select_n_channels(res[prefix][selection_thres], n_best)
     filelist = [filelist[i] for i in best]
 
-    for i in range(len(filelist)):
+    for i in range(len(filelist)+1):
 
-        filelist_fold = [filelist[j] for j in range(len(filelist)) if j != i]
-        name_list = [os.path.splitext(os.path.basename(f))[0] for f in filelist_fold]
-        name_list = [f.split('_')[1] for f in name_list]
-        save_name = prefix + "_" + "_".join(sorted(name_list))
-        save_name = save_name + "-" + os.path.splitext(os.path.basename(filelist[i]))[0]
+        if i == len(filelist):
+            filelist_fold = filelist
+            save_name = prefix + '_all'
+        else:
+            filelist_fold = [filelist[j] for j in range(len(filelist)) if j != i]
+            name_list = [os.path.splitext(os.path.basename(f))[0] for f in filelist_fold]
+            name_list = [f.split('_')[1] for f in name_list]
+            save_name = prefix + "_" + "_".join(sorted(name_list))
+            save_name = save_name + "-" + os.path.splitext(os.path.basename(filelist[i]))[0]
         print save_name
 
         if os.path.exists(os.path.join(save_path, save_name + '.pckl')):
@@ -188,6 +192,6 @@ for prefix in prefixes:
         intersection = sorted_trials(combine_common(all_raw))
         mo2 = icaend(intersection)
         mo2.name = save_name
-        mo2 = standard_response(mo2)
+        mo2 = sorted_trials(standard_response(mo2))
         pickle.dump(mo2, open(os.path.join(save_path, save_name + '.pckl'), 'w'))
 
