@@ -53,7 +53,7 @@ if normalize:
 base_path = '/Users/dedan/projects/fu'
 data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
 loadfolder = os.path.join(base_path, 'results', 'common_channels')
-savefolder = 'nbest-' + str(n_best) + '_thresh-' + str(int(selection_thres*100))
+savefolder = 'nbest-' + str(n_best) + '_thresh-' + str(int(selection_thres * 100))
 save_path = os.path.join(base_path, 'results', 'cross_val', savefolder)
 
 if not os.path.exists(save_path):
@@ -119,7 +119,7 @@ for prefix in prefixes:
     best = utils.select_n_channels(res[prefix][selection_thres], n_best)
     filelist = [filelist[i] for i in best]
 
-    for i in range(len(filelist)+1):
+    for i in range(len(filelist) + 1):
 
         if i == len(filelist):
             filelist_fold = filelist
