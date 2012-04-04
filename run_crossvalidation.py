@@ -181,7 +181,6 @@ for prefix in prefixes:
                 for i, label in enumerate(filtered.label_sample):
                     if label in allodors:
                         all_mask[i] = 1
-                print all_mask
                 all_filtered = stimuli_filter(filtered, TimeSeries(series=all_mask))
                 all_raw.append(all_filtered)
 
@@ -191,5 +190,6 @@ for prefix in prefixes:
         mo2 = icaend(intersection)
         mo2.name = save_name
         mo2 = sorted_trials(standard_response(mo2))
-        pickle.dump(mo2, open(os.path.join(save_path, save_name + '.pckl'), 'w'))
+        res = {'base': mo2, 'baselines': baselines, 'names': filelist_fold}
+        pickle.dump(res, open(os.path.join(save_path, save_name + '.pckl'), 'w'))
 

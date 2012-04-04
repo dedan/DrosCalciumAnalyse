@@ -48,7 +48,8 @@ for prefix in prefixes:
     files = glob.glob(os.path.join(inpath, prefix + '*.pckl'))
     for i, fname in enumerate(files):
         print fname
-        mo = pickle.load(open(fname))
+        res = pickle.load(open(fname))
+        mo = res['base']
         #check if all files have same stimuli
         if i == 0:
             stimuli = mo.label_sample
@@ -103,7 +104,10 @@ for prefix in prefixes:
             #ax.set_yticklabels([ylim[0] + 0.05, 0, ylim[1] - 0.05])
             ax.grid(True)
             if i == 0:
-                vis.add_samplelabel(ax, mo, rotation='45', toppos=True, stimuli_offset=stimulus_offset)
+                vis.add_samplelabel(ax, mo,
+                                    rotation='45',
+                                    toppos=True,
+                                    stimuli_offset=stimulus_offset)
         plt.savefig(os.path.join(inpath, prefix + '_time_series.svg'))
 
         # base plot compare
@@ -128,17 +132,23 @@ for prefix in prefixes:
                     ax.imshow(data, cmap=plt.cm.hsv, vmin= -data_max, vmax=data_max)
             fig.savefig(os.path.join(inpath, prefix + '_' + key + '_simultan.svg'))
         '''
-            
+
         # base plot alltogether
         fig = plt.figure()
-        for i, key in enumerate(info):         
+        for i, key in enumerate(info):
             for modenum, mode in enumerate(info[key]):
                 if 'all' in mode:
                     mo = mode_dict["_".join(mode.split("_")[0:-1])]
                     single_bases = mo.base.objects_sample(int(mode[-1]))
                     for base_num in range(len(single_bases)):
-                        ax = fig.add_subplot(len(info), len(single_bases),
-                                         (i * len(single_bases)) + base_num + 1)
+                        ax = fig.add_subplot(len(info)+1, len(single_bases),
+                                             base_num + 1)
+                        ax.imshow(np.mean(res['baselines'][base_num].shaped2D(), 0),
+                                  cmap=plt.cm.gray)
+                        ax.set_yticks([])
+                        ax.set_xticks([])
+                        ax = fig.add_subplot(len(info)+1, len(single_bases),
+                                             (i + 1) * len(single_bases) + base_num + 1)
                         if base_num == 0:
                             ax.set_ylabel(key)
                         data = (single_bases[base_num])
@@ -146,10 +156,13 @@ for prefix in prefixes:
                         ax.imshow(data, cmap=mycolormap[key], vmin= -data_max, vmax=data_max)
                         ax.set_yticks([])
                         ax.set_xticks([])
+                        if i == len(info)-1:
+                            name = os.path.splitext(os.path.basename(res['names'][base_num]))[0]
+                            ax.set_xlabel(name, fontsize=10)
                         ax.set_title('%.2f' % data_max, fontsize=8)
         fig.savefig(os.path.join(inpath, prefix + '_bases.svg'))
-        
-        
+
+
 #plt.close('all')
 
 
