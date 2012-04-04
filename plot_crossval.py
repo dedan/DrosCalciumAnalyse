@@ -22,63 +22,24 @@
 
 import glob, pickle, os, json
 import numpy as np
-from NeuralImageProcessing import basic_functions as bf
-from NeuralImageProcessing import illustrate_decomposition as ic
 import pylab as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
+from NeuralImageProcessing import basic_functions as bf
+from NeuralImageProcessing import illustrate_decomposition as ic
+import utils
+reload(ic)
+reload(utils)
 
 mycolormap = {'key1': plt.cm.hsv_r, 'key2': plt.cm.hsv_r, 'key3': plt.cm.hsv_r,
               'key4': plt.cm.hsv_r, 'key5': plt.cm.hsv_r, 'key6': plt.cm.hsv_r,
               'iPN': plt.cm.hsv_r, 'vlPrc': plt.cm.hsv_r , 'acid':plt.cm.hsv_r,
               'iPNph': plt.cm.hsv_r }
 
-#create dictionary with mode distances
-def cordist(modelist):
-    alldist_dic = {}
-    for i in range(len(modelist)):
-        stimuli_i = modelist[i].label_sample
-        if len(stimuli_i) < 8:
-            print 'skipped: ', modelist[i].name
-            continue
-        for j in range(i + 1, len(modelist)):
-            stimuli_j = modelist[j].label_sample
-            if len(stimuli_j) < 8:
-                print 'skipped: ', modelist[j].name
-                continue
-            common = set(stimuli_i).intersection(stimuli_j)
-            mask_i = np.zeros(len(stimuli_i), dtype='bool')
-            mask_j = np.zeros(len(stimuli_j), dtype='bool')
-            for stim in common:
-                mask_i[stimuli_i.index(stim)] = True
-                mask_j[stimuli_j.index(stim)] = True
-            ts1 = stimuli_filter(modelist[i], bf.TimeSeries(mask_i))
-            ts2 = stimuli_filter(modelist[j], bf.TimeSeries(mask_j))
-            cor = cor_dist(combine([ts1, ts2]))
-            alldist_dic.update(cor.as_dict('objects'))
-    return alldist_dic
-
-# helper function to convert dictionary to pdist format
-def dict2pdist(dic):
-    key_parts = list(set(sum([i.split(':') for i in dic.keys()], [])))
-    new_pdist = []
-    for i in range(len(key_parts)):
-        for j in range(i + 1, len(key_parts)):
-            try:
-                new_pdist.append(dic[':'.join([key_parts[i], key_parts[j]])])
-            except KeyError:
-                new_pdist.append(dic[':'.join([key_parts[j], key_parts[i]])])
-    return new_pdist, key_parts
-
-
-#inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-60/'
-inpath = '/home/jan/Documents/dros/new_data/fromStephan/nbest-5_thresh-80/'
+inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-80/'
+# inpath = '/home/jan/Documents/dros/new_data/fromStephan/nbest-5_thresh-80/'
 prefixes = ['OCO', '2PA', 'LIN', 'CVA']
-prefixes = ['CVA']
+prefixes = ['OCO']
 stimulus_offset = 4
-
-cor_dist = bf.Distance()
-stimuli_filter = bf.SelectTrials()
-combine = bf.ObjectConcat()
 
 for prefix in prefixes:
 
@@ -101,8 +62,8 @@ for prefix in prefixes:
         else:
             mo.name = os.path.splitext(os.path.basename(fname))[0].split("-")[-1]
         mode_dict[mo.name] = mo
-    modedist_dic = cordist(mode_dict.values())
-    modedist, labels = dict2pdist(modedist_dic)
+    modedist_dic = utils.cordist(mode_dict.values())
+    modedist, labels = utils.dict2pdist(modedist_dic)
 
     # compute and plot the dendrogram
     fig = plt.figure()
