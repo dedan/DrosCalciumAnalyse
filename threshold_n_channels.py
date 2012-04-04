@@ -8,7 +8,7 @@ value that shows how consistent the response is over repetitions.
 
 import os
 import glob
-import pickle
+import pickle, json
 import numpy as np
 import pylab as plt
 import utils
@@ -71,6 +71,10 @@ for prefix in prefixes:
     for file_ind, filename in enumerate(filelist):
 
         print filename
+        info = json.load(open(filename))
+        if 'bad_data' in info:
+            print 'skip this file: bad_data flag found'
+            continue
         # create timeseries
         meas_path = os.path.splitext(filename)[0]
         ts = bf.TimeSeries()

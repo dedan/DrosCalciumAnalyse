@@ -14,7 +14,7 @@
 '''
 
 import os, glob, sys
-import pickle
+import pickle, json
 import itertools as it
 import numpy as np
 import pylab as plt
@@ -106,16 +106,24 @@ select_modes = bf.SelectModes(modesim_threshold)
 standard_response = bf.SingleSampleResponse(method='mean')
 # and calculate distance between modes
 combine = bf.ObjectConcat()
-#combine_common = bf.ObjectConcat(unequalsample=2, unequalobj=True)
-#combine_common = bf.ObjectScrambledConcat(4, 'three')
 combine_common = bf.ObjectScrambledConcat(n_best)
 cor_dist = bf.Distance()
 
 for prefix in prefixes:
 
     filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
-    colorlist = {}
-    allodors = []
+    tmp_filelist = []
+    for filename in filelist:
+        info = json.load(open(filename))
+        print "checking file: ", filename
+        if 'bad_data' in info:
+            print 'skip this file: bad_data flag found'
+            continue
+        else:
+            tmp_filelist.append(filename)
+    filelist = tmp_filelist
+
+    colorlist, allodors = {}, []
 
     # use only the n_best animals --> most stable odors in common
     res = pickle.load(open(os.path.join(data_path, loadfolder, 'thres_res.pckl')))
