@@ -30,13 +30,13 @@ n_best = 5
 frames_per_trial = 40
 variance = 5
 lowpass = 2
-similarity_threshold = 0.8
+similarity_threshold = 0.3
+selection_thres = 0.3
 normalize = True
 modesim_threshold = 0.5
 medianfilter = 5
 alpha = 0.9
-selection_thres = 0.8
-
+prefixes = ['OCO', '2PA', 'LIN', 'CVA']
 format = 'svg'
 
 add = ''
@@ -55,15 +55,11 @@ if normalize:
 base_path = '/Users/dedan/projects/fu'
 data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
 loadfolder = os.path.join(base_path, 'results', 'common_channels')
-savefolder = 'nbest-' + str(n_best) + '_thresh-' + str(int(selection_thres * 100))
+savefolder = 'nbest-' + str(n_best) + '_thresh-' + str(int(similarity_threshold * 100))
 save_path = os.path.join(base_path, 'results', 'cross_val', savefolder)
 
 if not os.path.exists(save_path):
     os.mkdir(save_path)
-
-prefixes = ['OCO', '2PA', 'LIN', 'CVA']
-prefix = 'LIN'
-# prefixes = ['LIN']
 
 
 #####################################################
@@ -86,12 +82,7 @@ gauss_filter = bf.Filter('gauss', lowpass, downscale=3)
 #sorting
 sorted_trials = bf.SortBySamplename()
 # ICA
-#ica = bf.stICA(variance=variance, param={'alpha':0.001})
-#ica = bf.sICA(variance=variance)
-pca = bf.PCA(variance)
-#icaend = bf.sICA(latent_series=True)
 icaend = bf.stICA(variance, {'alpha':alpha})
-icain = bf.sICA(variance)
 
 # select stimuli such that their mean correlation is below similarity_threshold
 stimuli_mask = bf.SampleSimilarity(similarity_threshold)
@@ -143,9 +134,7 @@ for prefix in prefixes:
             save_name = save_name + "-" + os.path.splitext(os.path.basename(filelist[i]))[0]
         print save_name
 
-        #create lists to collect results
         all_raw, baselines = [], []
-
         for file_ind, filename in enumerate(filelist_fold):
 
             # load timeseries, shape and labels
@@ -158,7 +147,7 @@ for prefix in prefixes:
             ts = bf.TimeSeries()
             ts.load(meas_path)
 
-            # change shape from list to tuple!!
+            # change shape from list to tuple to treat timecourse as one image
             ts.shape = tuple(ts.shape)
 
             ts = temporal_downsampling(ts)
