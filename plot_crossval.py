@@ -111,27 +111,40 @@ for prefix in prefixes:
         plt.savefig(os.path.join(inpath, prefix + '_time_series.svg'))
 
         # base plot compare
-        '''
+        names = [os.path.splitext(os.path.basename(name))[0] for name in res['names']]
+        plot_idx = {}
+        for i_name, name in enumerate(names):
+            plot_idx[name] = i_name
+
         num_bases = mode_dict.values()[0].num_objects
         for i, key in enumerate(info):
 
             fig = plt.figure()
             for modenum, mode in enumerate(info[key]):
+                mode_name = "_".join(mode.split("_")[0:-1])
+                base_names = [name for name in names if not name == mode_name]
                 cluster_size = len(info[key])
-                mo = mode_dict["_".join(mode.split("_")[0:-1])]
+                mo = mode_dict[mode_name]
                 single_bases = mo.base.objects_sample(int(mode[-1]))
-                for base_num in range(len(single_bases)):
+                for base_num, base_name in enumerate(base_names):
                     ax = fig.add_subplot(num_bases,
                                          cluster_size,
-                                         (base_num * cluster_size) + modenum + 1)
-                    if base_num == 0:
-                        ax.set_title(mo.name, fontsize=8)
-                    ax.set_axis_off()
+                                         (plot_idx[base_name] * cluster_size) + modenum + 1)
+                    ax.set_yticks([])
+                    ax.set_xticks([])
                     data = single_bases[base_num] * -1
                     data_max = np.max(np.abs(data))
                     ax.imshow(data, cmap=plt.cm.hsv, vmin= -data_max, vmax=data_max)
+                    if modenum == 0:
+                        ax.set_ylabel(base_name, rotation='horizontal')
+                    if base_num == 0:
+                        ax = fig.add_subplot(num_bases,
+                                             cluster_size,
+                                             (base_num * cluster_size) + modenum + 1)
+                        ax.set_title(mo.name, fontsize=8)
+                        ax.set_yticks([])
+                        ax.set_xticks([])
             fig.savefig(os.path.join(inpath, prefix + '_' + key + '_simultan.svg'))
-        '''
 
         # base plot alltogether
         fig = plt.figure()
@@ -163,7 +176,6 @@ for prefix in prefixes:
         fig.savefig(os.path.join(inpath, prefix + '_bases.svg'))
 
 
-#plt.close('all')
-
+plt.close('all')
 
 
