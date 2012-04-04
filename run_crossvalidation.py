@@ -163,7 +163,7 @@ for prefix in prefixes:
 
             ts = temporal_downsampling(ts)
             baseline = trial_mean(baseline_cut(ts))
-            baselines.append(baseline)
+            baselines.append(np.mean(baseline.shaped2D(), 0))
             preprocessed = gauss_filter(pixel_filter(rel_change(ts, baseline)))
             preprocessed.timecourses[np.isnan(preprocessed.timecourses)] = 0
             preprocessed.timecourses[np.isinf(preprocessed.timecourses)] = 0

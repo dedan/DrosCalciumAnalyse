@@ -143,7 +143,7 @@ for prefix in prefixes:
                     for base_num in range(len(single_bases)):
                         ax = fig.add_subplot(len(info)+1, len(single_bases),
                                              base_num + 1)
-                        ax.imshow(np.mean(res['baselines'][base_num].shaped2D(), 0),
+                        ax.imshow(res['baselines'][base_num],
                                   cmap=plt.cm.gray)
                         ax.set_yticks([])
                         ax.set_xticks([])
