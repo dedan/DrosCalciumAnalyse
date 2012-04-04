@@ -1,6 +1,7 @@
 '''
-investigate the influence of the threshold on how many common channels
-are available for a group of n animals
+investigate the influence of the sample similarity threshold on how many common
+channels are available for a group of n animals. The sample similarity is a
+value that shows how consistent the response is over repetitions.
 
 @author: stephan.gabler@gmail.com
 '''
@@ -13,9 +14,7 @@ import pylab as plt
 import utils
 from collections import defaultdict
 import sys
-sys.path.append('/home/jan/repos/NeuralImageProcessing/NeuralImageProcessing')
-
-import basic_functions as bf
+from NeuralImageProcessing import basic_functions as bf
 import matplotlib.gridspec as gridspec
 reload(bf)
 
