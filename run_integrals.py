@@ -26,6 +26,7 @@ for prefix in prefixes:
         res[prefix][key] = {}
         for j, label in enumerate(integrated.label_sample):
             res[prefix][key][label] = integrated.timecourses[j, int(mode[-1])]
+json.dump(res, open(os.path.join(inpath, 'integrals.json'), 'w'), indent=2)
 
 
 
