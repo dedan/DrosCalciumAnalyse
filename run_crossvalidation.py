@@ -102,6 +102,11 @@ cor_dist = bf.Distance()
 
 for prefix in prefixes:
 
+    # remove all previously computed pckls
+    oldies = glob.glob(os.path.join(save_path, prefix + '*.pckl'))
+    for oldy in oldies:
+        os.remove(oldy)
+
     filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
     tmp_filelist = []
     for filename in filelist:
@@ -182,7 +187,7 @@ for prefix in prefixes:
                 all_raw.append(all_filtered)
 
 
-        # stimultanieous ICA
+        # simultanieous ICA
         intersection = sorted_trials(combine_common(all_raw))
         mo2 = icaend(intersection)
         mo2.name = save_name
