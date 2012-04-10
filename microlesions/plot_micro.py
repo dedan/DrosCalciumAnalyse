@@ -15,46 +15,39 @@ titles = {'lm': 'left, lesioned',
 format = 'png'
 
 results = pickle.load(open(os.path.join(save_path, 'res.pckl')))
-sessions = set(['_'.join(key.split('_')[0:2]) for key in results.keys()])
 
-for session in sessions:
+for session in results.keys():
 
+    result = results[session]
     print session
-    fig_base = plt.figure()
-    fig_base.suptitle(session)
+    fig = plt.figure()
+    fig.suptitle(session)
 
-    for i_part, part in enumerate(parts):
-
-        result = results['_'.join([session, part])]
-        fig = plt.figure()
-        fig.suptitle(titles[part])
-
-        base_size = result['mo2'].num_objects
-        for modenum in range(base_size):
-
-            ax = fig_base.add_subplot(base_size + 1, len(parts), i_part+1)
-            ax.imshow(result['mean_base'], cmap=plt.cm.gray)
+    base_size = result['mo2'].num_objects
+    num_bases = len(result['filenames'])
+    for modenum in range(base_size):
+        single_bases = result['mo2'].base.objects_sample(modenum)
+        for base_num in range(num_bases):
+            ax = fig.add_subplot(base_size+1, num_bases, base_num+1)
+            ax.imshow(result['mean_bases'][base_num], cmap=plt.cm.gray)
             ax.set_axis_off()
-            ax.set_title(titles[part])
-            ax = fig_base.add_subplot(base_size + 1,
-                                 len(parts),
-                                 (modenum + 1) * len(parts) + i_part+1)
-            base2d = result['mo2'].base.shaped2D()
-            ax.imshow(base2d[modenum, :, :] * -1, cmap=plt.cm.hsv, vmin= -1, vmax=1)
+            ax.set_title(titles[result['filenames'][base_num][-2:]])
+            ax = fig.add_subplot(base_size+1, num_bases,
+                                 ((num_bases * modenum) + num_bases) + base_num + 1)
+            data = single_bases[base_num] * -1
+            data_max = np.max(np.abs(data))
+            ax.imshow(data, cmap=plt.cm.hsv, vmin= -data_max, vmax=data_max)
             ax.set_axis_off()
-
-            # plot timecourses
-            ax = fig.add_subplot(base_size, 1, modenum + 1)
-            ax.plot(result['mo2'].timecourses[:, modenum])
-            ax.set_xticklabels([], fontsize=12, rotation=45)
-            ax.grid(True)
-            ax.set_xticks(np.arange(3, result['mo2'].samplepoints, result['mo2'].timepoints))
-            ax.set_xticklabels(result['mo2'].label_sample, fontsize=12, rotation=45)
-        plt.figure(fig.number)
-        plt.savefig(os.path.join(save_path, 'time_' + '_'.join([session, part]) + '.' + format))
-
-
-    plt.figure(fig_base.number)
     plt.savefig(os.path.join(save_path, 'ica_' + session + '.' + format))
+
+    fig = plt.figure()
+    for modenum in range(base_size):
+        ax = fig.add_subplot(base_size, 1, modenum + 1)
+        ax.plot(result['mo2'].timecourses[:, modenum])
+        ax.set_xticklabels([], fontsize=12, rotation=45)
+        ax.grid(True)
+    ax.set_xticks(np.arange(3, result['mo2'].samplepoints, result['mo2'].timepoints))
+    ax.set_xticklabels(result['mo2'].label_sample, fontsize=12, rotation=45)
+    plt.savefig(os.path.join(save_path, 'time_' + session + '.' + format))
 
 plt.close('all')
