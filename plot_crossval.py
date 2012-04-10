@@ -26,14 +26,16 @@ import pylab as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
 from NeuralImageProcessing import basic_functions as bf
 from NeuralImageProcessing import illustrate_decomposition as ic
+from collections import defaultdict
 import utils
 reload(ic)
 reload(utils)
 
-mycolormap = {'key1': plt.cm.hsv_r, 'key2': plt.cm.hsv_r, 'key3': plt.cm.hsv_r,
+mycolormap = defaultdict(lambda: plt.cm.hsv_r)
+mycolormap.update({'key1': plt.cm.hsv_r, 'key2': plt.cm.hsv_r, 'key3': plt.cm.hsv_r,
               'key4': plt.cm.hsv_r, 'key5': plt.cm.hsv_r, 'key6': plt.cm.hsv_r,
               'iPN': plt.cm.hsv_r, 'vlPrc': plt.cm.hsv_r , 'acid':plt.cm.hsv_r,
-              'iPNph': plt.cm.hsv_r }
+              'iPNph': plt.cm.hsv_r })
 
 inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-80/'
 # inpath = '/home/jan/Documents/dros/new_data/fromStephan/nbest-5_thresh-80/'
