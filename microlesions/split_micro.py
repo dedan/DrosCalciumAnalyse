@@ -40,27 +40,42 @@ for fname in filelist:
     lesion_labels = [ts.label_sample[i] for i in np.where(np.invert(normal_mask))[0]]
     trial_shaped_2d = ts.trial_shaped2D()
 
-    left_normal = trial_shaped_2d[normal_mask,:,:,:ts.shape[1]/2]
-    new_ts = pl.TimeSeries(series=left_normal,
-                           shape=((ts.shape[0], ts.shape[1]/2)),
-                           label_sample=normal_labels)
-    new_ts.save(os.path.join(outpath, fbase + '_ln'))
+    if fbase[-1] in 'rl':
+        print 'already right-left splitted'
+        normal = trial_shaped_2d[normal_mask,:,:,:]
+        new_ts = pl.TimeSeries(series=normal,
+                               shape=(ts.shape),
+                               label_sample=normal_labels)
+        new_ts.save(os.path.join(outpath, fbase[-2:] + '_' + fbase[-1] + 'n'))
 
-    right_normal = trial_shaped_2d[normal_mask,:,:,ts.shape[1]/2:]
-    new_ts = pl.TimeSeries(series=right_normal,
-                           shape=((ts.shape[0], ts.shape[1]/2)),
-                           label_sample=normal_labels)
-    new_ts.save(os.path.join(outpath, fbase + '_rn'))
+        lesion = trial_shaped_2d[np.invert(normal_mask),:,:,:]
+        new_ts = pl.TimeSeries(series=lesion,
+                               shape=(ts.shape),
+                               label_sample=lesion_labels)
+        new_ts.save(os.path.join(outpath, fbase[-2:] + '_' + fbase[-1] + 'm'))
+
+    else:
+        left_normal = trial_shaped_2d[normal_mask,:,:,:ts.shape[1]/2]
+        new_ts = pl.TimeSeries(series=left_normal,
+                               shape=((ts.shape[0], ts.shape[1]/2)),
+                               label_sample=normal_labels)
+        new_ts.save(os.path.join(outpath, fbase + '_ln'))
+
+        right_normal = trial_shaped_2d[normal_mask,:,:,ts.shape[1]/2:]
+        new_ts = pl.TimeSeries(series=right_normal,
+                               shape=((ts.shape[0], ts.shape[1]/2)),
+                               label_sample=normal_labels)
+        new_ts.save(os.path.join(outpath, fbase + '_rn'))
 
 
-    left_lesion = trial_shaped_2d[np.invert(normal_mask),:,:,:ts.shape[1]/2]
-    new_ts = pl.TimeSeries(series=left_lesion,
-                           shape=((ts.shape[0], ts.shape[1]/2)),
-                           label_sample=lesion_labels)
-    new_ts.save(os.path.join(outpath, fbase + '_lm'))
+        left_lesion = trial_shaped_2d[np.invert(normal_mask),:,:,:ts.shape[1]/2]
+        new_ts = pl.TimeSeries(series=left_lesion,
+                               shape=((ts.shape[0], ts.shape[1]/2)),
+                               label_sample=lesion_labels)
+        new_ts.save(os.path.join(outpath, fbase + '_lm'))
 
-    right_lesion = trial_shaped_2d[np.invert(normal_mask),:,:,ts.shape[1]/2:]
-    new_ts = pl.TimeSeries(series=right_lesion,
-                           shape=((ts.shape[0], ts.shape[1]/2)),
-                           label_sample=lesion_labels)
-    new_ts.save(os.path.join(outpath, fbase + '_rm'))
+        right_lesion = trial_shaped_2d[np.invert(normal_mask),:,:,ts.shape[1]/2:]
+        new_ts = pl.TimeSeries(series=right_lesion,
+                               shape=((ts.shape[0], ts.shape[1]/2)),
+                               label_sample=lesion_labels)
+        new_ts.save(os.path.join(outpath, fbase + '_rm'))
