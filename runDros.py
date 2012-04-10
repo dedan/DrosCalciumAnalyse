@@ -122,7 +122,8 @@ for prefix in prefixes:
         meas_path = os.path.splitext(filename)[0]
 
         #assign each file a color:
-        colorlist[os.path.basename(meas_path)] = plt.cm.jet(file_ind / (len(filelist) - 1.))
+        f_ind = file_ind / (len(filelist) - 1.)
+        colorlist[os.path.basename(meas_path)] = plt.cm.jet(f_ind)
 
         # create timeseries
         ts = bf.TimeSeries()
@@ -134,35 +135,17 @@ for prefix in prefixes:
         ts = temporal_downsampling(ts)
         baseline = trial_mean(baseline_cut(ts))
         baselines.append(baseline)
-        preprocessed = gauss_filter(pixel_filter(rel_change(ts, baseline)))
-        preprocessed.timecourses[np.isnan(preprocessed.timecourses)] = 0
-        preprocessed.timecourses[np.isinf(preprocessed.timecourses)] = 0
+        pp = gauss_filter(pixel_filter(rel_change(ts, baseline)))
+        pp.timecourses[np.isnan(pp.timecourses)] = 0
+        pp.timecourses[np.isinf(pp.timecourses)] = 0
 
         if normalize:
-            preprocessed.timecourses = preprocessed.timecourses / np.max(preprocessed.timecourses)
-        mean_resp_unsort = trial_mean(signal_cut(preprocessed))
+            pp.timecourses = pp.timecourses / np.max(pp.timecourses)
+        mean_resp_unsort = trial_mean(signal_cut(pp))
         mean_resp = sorted_trials(mean_resp_unsort)
-        preprocessed = sorted_trials(preprocessed)
+        pp = sorted_trials(pp)
         stimuli_selection = stimuli_mask(mean_resp)
 
-        #raw_ica = icain(preprocessed)
-        '''
-        ica = bf.NNMA(variance, 30, {'sparse_par': 0.1, 'smoothness':0.2, 'sparse_par2':0.3})
-        raw_ica = ica(preprocessed)
-
-        #stim_ica = ica(stimuli_filter(preprocessed, stimuli_selection))
-        mode_cor = modefilter(stimuli_filter(raw_ica, stimuli_selection))
-        #mode_cor = modefilter(stim_ica)
-        selected_ica = select_modes(raw_ica, mode_cor)
-        #selected_ica = select_modes(stim_ica, mode_cor)
-        selected_ica_and_trial = stimuli_filter(selected_ica, stimuli_selection)
-        final_modes = sorted_trials(standard_response(selected_ica_and_trial))
-        final_modes_condensed = trial_mean(signal_cut(final_modes))
-
-
-        all_sel_modes.append(final_modes)
-        all_sel_modes_condensed.append(final_modes_condensed)
-        '''
         all_raw.append(stimuli_filter(preprocessed, stimuli_selection))
         distanceself, distancecross = stimulirep(mean_resp)
         ####################################################################
@@ -183,7 +166,8 @@ for prefix in prefixes:
         # qual_view.axes['time'][0].set_title(ts.name)
         # for pos, stim in enumerate(data[0]):
         #     qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]),
-        #                                    distanceself[stim], 'o', mew=2, mec='k', mfc='None')
+        #                                    distanceself[stim], 'o',
+        #                                    mew=2, mec='k', mfc='None')
 
         # qual_view.fig.savefig(tmp_save + '_quality')
 
@@ -207,33 +191,13 @@ for prefix in prefixes:
         #                           colorbar=False)
         # uresp_overview.fig.savefig(tmp_save + '_overview_unsort')
 
-        '''
-        # draw ica overview
-        toplot = raw_ica
-        ica_overview = vis.VisualizeTimeseries()
-        ica_overview.base_and_time(toplot.num_objects)
-        ica_overview.imshow('base', 'onetoone', toplot.base)
-        ica_overview.plot('time', 'onetoone', toplot)
-        ica_overview.add_labelshade('time', 'onetoall', toplot)
-        ica_overview.add_shade('time', 'onetoall', stimuli_selection, 20)
-        ica_overview.add_samplelabel([-1], toplot, rotation='45', toppos=True)
-        [ax.set_title(toplot.label_objects[i]) for i, ax in enumerate(ica_overview.axes['base'])]
-        ica_overview.fig.savefig(tmp_save + '_goodmodes.svg')
-        '''
-        '''
-        preprocessed.save(tmp_save + '_prepocess')
-        raw_ica.save(tmp_save + '_rawica')
-        #stim_ica.save(tmp_save + '_stimica')
-        '''
-
         plt.close('all')
+
     ####################################################################
     # stimultanieous ICA
     ####################################################################
 
-    #plt.close('all')
-
-    allodors = list(set(ts.label_sample + reduce(lambda x, y: x + y, [t.label_sample for t in all_raw])))
+    allodors = list(set(ts.label_sample + sum([t.label_sample for t in all_raw])))
     allodors.sort()
     quality_mx = np.zeros((len(all_raw), len(allodors)))
     for t_ind, t in enumerate(all_raw):
@@ -267,7 +231,8 @@ for prefix in prefixes:
             ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
             ax.set_axis_off()
             ax.set_title(names[base_num])
-            ax = fig.add_subplot(variance+1, num_bases, ((num_bases * modenum) + num_bases) + base_num + 1)
+            ax = fig.add_subplot(variance+1, num_bases,
+                                 ((num_bases * modenum) + num_bases) + base_num + 1)
             ax.imshow(single_bases[base_num] * -1, cmap=plt.cm.hsv, vmin= -1, vmax=1)
             ax.set_axis_off()
 
@@ -284,7 +249,8 @@ for prefix in prefixes:
             ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
             ax.set_axis_off()
             ax.set_title(names[base_num])
-            ax = fig.add_subplot(variance+1, num_bases, ((num_bases * modenum) + num_bases) + base_num + 1)
+            ax = fig.add_subplot(variance+1, num_bases,
+                                 ((num_bases * modenum) + num_bases) + base_num + 1)
             ax.imshow(single_bases[base_num], cmap=plt.cm.jet)
             ax.set_axis_off()
     fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_scaled.' + format)
@@ -301,3 +267,4 @@ for prefix in prefixes:
     ax.set_xticks(np.arange(3, mo2.samplepoints, mo2.timepoints))
     ax.set_xticklabels(mo2.label_sample, fontsize=12, rotation=45)
     fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_time.' + format)
+    plt.close('all')
