@@ -29,6 +29,7 @@ filelist = glob.glob(os.path.join(inpath, prefix + '*.json'))
 
 for fname in filelist:
 
+    print 'splitting', fname
     fbase = os.path.splitext(os.path.basename(fname))[0]
 
     ts = pl.TimeSeries()
@@ -58,7 +59,7 @@ for fname in filelist:
                            label_sample=lesion_labels)
     new_ts.save(os.path.join(outpath, fbase + '_lm'))
 
-    right_lesion = trial_shaped_2d[np.invert(normal_mask),:,:,:ts.shape[1]/2]
+    right_lesion = trial_shaped_2d[np.invert(normal_mask),:,:,ts.shape[1]/2:]
     new_ts = pl.TimeSeries(series=right_lesion,
                            shape=((ts.shape[0], ts.shape[1]/2)),
                            label_sample=lesion_labels)
