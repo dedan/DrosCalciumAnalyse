@@ -65,6 +65,17 @@ for prefix in prefixes:
 
     print prefix
     filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
+    tmp_filelist = []
+    for filename in filelist:
+        info = json.load(open(filename))
+        print "checking file: ", filename
+        if 'bad_data' in info:
+            print 'skip this file: bad_data flag found'
+            continue
+        else:
+            tmp_filelist.append(filename)
+    filelist = tmp_filelist
+
     collect = defaultdict(list)
     res[prefix] = {}
 
