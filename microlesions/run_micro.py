@@ -13,17 +13,25 @@ reload(vis)
 frames_per_trial = 40
 variance = 5
 lowpass = 2
-normalize = True
+normalize = False
 medianfilter = 5
 alpha = 0.1
 format = 'svg'
 prefix = 'mic'
 res = {}
 
-base_path = '/Users/dedan/projects/fu'
-data_path = os.path.join(base_path, 'data', 'dros_calcium_new', 'mic_split')
+# #dedan specific
+# base_path = '/Users/dedan/projects/fu'
+# data_path = os.path.join(base_path, 'data', 'dros_calcium_new', 'mic_split')
+# savefolder = 'micro'
+# save_path = os.path.join(base_path, 'results', savefolder)
+
+#jan specific
+base_path = '/home/jan/Documents/dros/new_data/aligned'
+data_path = os.path.join(base_path, 'mic_split')
 savefolder = 'micro'
 save_path = os.path.join(base_path, 'results', savefolder)
+
 
 filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
 filenames = [os.path.splitext(os.path.basename(filename))[0] for filename in filelist]
@@ -53,20 +61,20 @@ for session in sessions:
         baseline_cut = bf.CutOut((0, 3))
         trial_mean = bf.TrialMean()
         baseline = trial_mean(baseline_cut(ts))
-        plt.figure()
-        plt.title(filename)
-        mean_base = np.mean(baseline.shaped2D(), 0)
-        mean_bases.append(mean_base)
-        plt.imshow(mean_base, cmap=plt.cm.gray)
-        plt.savefig(os.path.join(save_path, 'baseline_' + f_basename + '.' + format))
+#        plt.figure()
+#        plt.title(filename)
+#        mean_base = np.mean(baseline.shaped2D(), 0)
+#        mean_bases.append(mean_base)
+#        plt.imshow(mean_base, cmap=plt.cm.gray)
+#        plt.savefig(os.path.join(save_path, 'baseline_' + f_basename + '.' + format))
 
         print 'preprocessing'
         rel_change = bf.RelativeChange()
+        rel_change.timecourses[np.isnan(rel_change.timecourses)] = 0
+        rel_change.timecourses[np.isinf(rel_change.timecourses)] = 0
         pixel_filter = bf.Filter('median', medianfilter)
         gauss_filter = bf.Filter('gauss', lowpass, downscale=3)
         pp = gauss_filter(pixel_filter(rel_change(ts, baseline)))
-        pp.timecourses[np.isnan(pp.timecourses)] = 0
-        pp.timecourses[np.isinf(pp.timecourses)] = 0
         if normalize:
             pp.timecourses = pp.timecourses / np.max(pp.timecourses)
         signal_cut = bf.CutOut((6, 12))
