@@ -78,7 +78,6 @@ for prefix in prefixes:
                    leaf_font_size=10,
                    orientation='left')
     plt.savefig(os.path.join(inpath, prefix + '_dendro.' + format))
-    crash
 
     # plot the bases and time-series of json file already created (by hand!!!)
     if os.path.exists(os.path.join(inpath, prefix + '_time_plot.json')):
@@ -148,7 +147,7 @@ for prefix in prefixes:
                         ax.set_title(mo.name, fontsize=8)
                         ax.set_yticks([])
                         ax.set_xticks([])
-            fig.savefig(os.path.join(inpath, prefix + '_' + key + '_simultan' + format))
+            fig.savefig(os.path.join(inpath, prefix + '_' + key + '_simultan.' + format))
 
         # base plot alltogether
         fig = plt.figure()
@@ -177,7 +176,7 @@ for prefix in prefixes:
                             name = os.path.splitext(os.path.basename(res['names'][base_num]))[0]
                             ax.set_xlabel(name, fontsize=10)
                         ax.set_title('%.2f' % data_max, fontsize=8)
-        fig.savefig(os.path.join(inpath, prefix + '_bases' + format))
+        fig.savefig(os.path.join(inpath, prefix + '_bases.' + format))
 
 
 plt.close('all')
