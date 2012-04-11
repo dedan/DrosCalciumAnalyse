@@ -19,11 +19,13 @@ from NeuralImageProcessing import pipeline as pl
 reload(bf)
 reload(pl)
 
-inpath = '/Users/dedan/projects/fu/data/dros_calcium_new/'
+#inpath = '/Users/dedan/projects/fu/data/dros_calcium_new/'
+inpath = '/home/jan/Documents/dros/new_data/aligned/'
+maskpath = '/home/jan/Dropbox/lesion_masks/'
 prefix = 'mic'
 outpath = os.path.join(inpath, 'mic_split')
 
-mikro_cutter = bf.MicroCutter()
+#mikro_cutter = bf.MicroCutter()
 
 filelist = glob.glob(os.path.join(inpath, prefix + '*.json'))
 
@@ -39,43 +41,54 @@ for fname in filelist:
     normal_labels = [ts.label_sample[i] for i in np.where(normal_mask)[0]]
     lesion_labels = [ts.label_sample[i] for i in np.where(np.invert(normal_mask))[0]]
     trial_shaped_2d = ts.trial_shaped2D()
-
+    
+    # load spatial mask, such that only LateralHorn Regions are in Analysis
+    # if no mask, than skip datafile
+    filename_mask = '_'.join(fbase.split('_')[1:]) + '_mask.png'
+    try:
+        spatial_mask = (plt.imread(os.path.join(maskpath, filename_mask))[:, :, 0]).astype('bool')
+    except IOError:
+        print 'no mask for: ', filename_mask
+        continue
+    # set everything in the mask to zero
+    trial_shaped_2d[:, :, spatial_mask] = 0
+     
     if fbase[-1] in 'rl':
         print 'already right-left splitted'
-        normal = trial_shaped_2d[normal_mask,:,:,:]
+        normal = trial_shaped_2d[normal_mask, :, :, :]
         new_ts = pl.TimeSeries(series=normal,
                                shape=(ts.shape),
                                label_sample=normal_labels)
-        new_ts.save(os.path.join(outpath, fbase[-2:] + '_' + fbase[-1] + 'n'))
+        new_ts.save(os.path.join(outpath, fbase[:-2] + '_' + fbase[-1] + 'n'))
 
-        lesion = trial_shaped_2d[np.invert(normal_mask),:,:,:]
+        lesion = trial_shaped_2d[np.invert(normal_mask), :, :, :]
         new_ts = pl.TimeSeries(series=lesion,
                                shape=(ts.shape),
                                label_sample=lesion_labels)
-        new_ts.save(os.path.join(outpath, fbase[-2:] + '_' + fbase[-1] + 'm'))
+        new_ts.save(os.path.join(outpath, fbase[:-2] + '_' + fbase[-1] + 'm'))
 
     else:
-        left_normal = trial_shaped_2d[normal_mask,:,:,:ts.shape[1]/2]
+        left_normal = trial_shaped_2d[normal_mask, :, :, :ts.shape[1] / 2]
         new_ts = pl.TimeSeries(series=left_normal,
-                               shape=((ts.shape[0], ts.shape[1]/2)),
+                               shape=((ts.shape[0], ts.shape[1] / 2)),
                                label_sample=normal_labels)
         new_ts.save(os.path.join(outpath, fbase + '_ln'))
 
-        right_normal = trial_shaped_2d[normal_mask,:,:,ts.shape[1]/2:]
+        right_normal = trial_shaped_2d[normal_mask, :, :, ts.shape[1] / 2:]
         new_ts = pl.TimeSeries(series=right_normal,
-                               shape=((ts.shape[0], ts.shape[1]/2)),
+                               shape=((ts.shape[0], ts.shape[1] / 2)),
                                label_sample=normal_labels)
         new_ts.save(os.path.join(outpath, fbase + '_rn'))
 
 
-        left_lesion = trial_shaped_2d[np.invert(normal_mask),:,:,:ts.shape[1]/2]
+        left_lesion = trial_shaped_2d[np.invert(normal_mask), :, :, :ts.shape[1] / 2]
         new_ts = pl.TimeSeries(series=left_lesion,
-                               shape=((ts.shape[0], ts.shape[1]/2)),
+                               shape=((ts.shape[0], ts.shape[1] / 2)),
                                label_sample=lesion_labels)
         new_ts.save(os.path.join(outpath, fbase + '_lm'))
 
-        right_lesion = trial_shaped_2d[np.invert(normal_mask),:,:,ts.shape[1]/2:]
+        right_lesion = trial_shaped_2d[np.invert(normal_mask), :, :, ts.shape[1] / 2:]
         new_ts = pl.TimeSeries(series=right_lesion,
-                               shape=((ts.shape[0], ts.shape[1]/2)),
+                               shape=((ts.shape[0], ts.shape[1] / 2)),
                                label_sample=lesion_labels)
         new_ts.save(os.path.join(outpath, fbase + '_rm'))
