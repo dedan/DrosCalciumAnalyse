@@ -1,21 +1,20 @@
 '''
-investigate the influence of the threshold on how many common channels
-are available for a group of n animals
+investigate the influence of the sample similarity threshold on how many common
+channels are available for a group of n animals. The sample similarity is a
+value that shows how consistent the response is over repetitions.
 
 @author: stephan.gabler@gmail.com
 '''
 
 import os
 import glob
-import pickle
+import pickle, json
 import numpy as np
 import pylab as plt
 import utils
 from collections import defaultdict
 import sys
-sys.path.append('/home/jan/repos/NeuralImageProcessing/NeuralImageProcessing')
-
-import basic_functions as bf
+from NeuralImageProcessing import basic_functions as bf
 import matplotlib.gridspec as gridspec
 reload(bf)
 
@@ -66,12 +65,27 @@ for prefix in prefixes:
 
     print prefix
     filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
+    tmp_filelist = []
+    for filename in filelist:
+        info = json.load(open(filename))
+        print "checking file: ", filename
+        if 'bad_data' in info:
+            print 'skip this file: bad_data flag found'
+            continue
+        else:
+            tmp_filelist.append(filename)
+    filelist = tmp_filelist
+
     collect = defaultdict(list)
     res[prefix] = {}
 
     for file_ind, filename in enumerate(filelist):
 
         print filename
+        info = json.load(open(filename))
+        if 'bad_data' in info:
+            print 'skip this file: bad_data flag found'
+            continue
         # create timeseries
         meas_path = os.path.splitext(filename)[0]
         ts = bf.TimeSeries()

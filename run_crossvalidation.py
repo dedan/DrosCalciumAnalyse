@@ -14,13 +14,14 @@
 '''
 
 import os, glob, sys
-import pickle
+import pickle, json
 import itertools as it
 import numpy as np
 import pylab as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
 from NeuralImageProcessing import basic_functions as bf
 from NeuralImageProcessing import illustrate_decomposition as vis
+from NeuralImageProcessing.pipeline import TimeSeries
 import utils
 reload(bf)
 reload(vis)
@@ -29,13 +30,13 @@ n_best = 5
 frames_per_trial = 40
 variance = 5
 lowpass = 2
-similarity_threshold = 0.8
+similarity_threshold = 0.3
+selection_thres = 0.3
 normalize = True
 modesim_threshold = 0.5
 medianfilter = 5
 alpha = 0.9
-selection_thres = 0.8
-
+prefixes = ['OCO', '2PA', 'LIN', 'CVA']
 format = 'svg'
 
 add = ''
@@ -46,22 +47,19 @@ if normalize:
 # base_path = '/home/jan/Documents/dros/new_data/'
 # data_path = os.path.join(base_path, 'aligned')
 # loadfolder = os.path.join(base_path, 'aligned', 'common_channels')
-# savefolder = 'simil' + str(int(similarity_threshold * 100)) + 'n_best' + str(n_best) + add + '_' + format
+# savefolder = 'simil' + str(int(similarity_threshold * 100)) + 'n_best' +
+# str(n_best) + add + '_' + format
 # save_path = os.path.join(base_path, savefolder)
 
 ' +++ dedan specific +++'
 base_path = '/Users/dedan/projects/fu'
 data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
 loadfolder = os.path.join(base_path, 'results', 'common_channels')
-savefolder = 'nbest-' + str(n_best) + '_thresh-' + str(int(selection_thres * 100))
+savefolder = 'nbest-' + str(n_best) + '_thresh-' + str(int(similarity_threshold * 100))
 save_path = os.path.join(base_path, 'results', 'cross_val', savefolder)
 
 if not os.path.exists(save_path):
     os.mkdir(save_path)
-
-prefixes = ['OCO', '2PA', 'LIN', 'CVA']
-prefix = 'LIN'
-# prefixes = ['LIN']
 
 
 #####################################################
@@ -84,12 +82,7 @@ gauss_filter = bf.Filter('gauss', lowpass, downscale=3)
 #sorting
 sorted_trials = bf.SortBySamplename()
 # ICA
-#ica = bf.stICA(variance=variance, param={'alpha':0.001})
-#ica = bf.sICA(variance=variance)
-pca = bf.PCA(variance)
-#icaend = bf.sICA(latent_series=True)
 icaend = bf.stICA(variance, {'alpha':alpha})
-icain = bf.sICA(variance)
 
 # select stimuli such that their mean correlation is below similarity_threshold
 stimuli_mask = bf.SampleSimilarity(similarity_threshold)
@@ -104,24 +97,38 @@ select_modes = bf.SelectModes(modesim_threshold)
 standard_response = bf.SingleSampleResponse(method='mean')
 # and calculate distance between modes
 combine = bf.ObjectConcat()
-#combine_common = bf.ObjectConcat(unequalsample=2, unequalobj=True)
-#combine_common = bf.ObjectScrambledConcat(4, 'three')
 combine_common = bf.ObjectScrambledConcat(n_best)
 cor_dist = bf.Distance()
 
 for prefix in prefixes:
 
+    # remove all previously computed pckls
+    oldies = glob.glob(os.path.join(save_path, prefix + '*.pckl'))
+    for oldy in oldies:
+        os.remove(oldy)
+
     filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
-    colorlist = {}
+    tmp_filelist = []
+    for filename in filelist:
+        info = json.load(open(filename))
+        print "checking file: ", filename
+        if 'bad_data' in info:
+            print 'skip this file: bad_data flag found'
+            continue
+        else:
+            tmp_filelist.append(filename)
+    filelist = tmp_filelist
+
+    colorlist, allodors = {}, []
 
     # use only the n_best animals --> most stable odors in common
     res = pickle.load(open(os.path.join(data_path, loadfolder, 'thres_res.pckl')))
     best = utils.select_n_channels(res[prefix][selection_thres], n_best)
     filelist = [filelist[i] for i in best]
 
-    for i in range(len(filelist) + 1):
+    for i in range(-1, len(filelist)):
 
-        if i == len(filelist):
+        if i == -1:
             filelist_fold = filelist
             save_name = prefix + '_all'
         else:
@@ -132,15 +139,7 @@ for prefix in prefixes:
             save_name = save_name + "-" + os.path.splitext(os.path.basename(filelist[i]))[0]
         print save_name
 
-        if os.path.exists(os.path.join(save_path, save_name + '.pckl')):
-            print 'skip this fold, already computed..'
-            continue
-
-        #create lists to collect results
-        all_sel_modes, all_sel_modes_condensed, all_raw = [], [], []
-        baselines = []
-        all_stimulifilter = []
-
+        all_raw, baselines = [], []
         for file_ind, filename in enumerate(filelist_fold):
 
             # load timeseries, shape and labels
@@ -153,12 +152,12 @@ for prefix in prefixes:
             ts = bf.TimeSeries()
             ts.load(meas_path)
 
-            # change shape from list to tuple!!
+            # change shape from list to tuple to treat timecourse as one image
             ts.shape = tuple(ts.shape)
 
             ts = temporal_downsampling(ts)
             baseline = trial_mean(baseline_cut(ts))
-            baselines.append(baseline)
+            baselines.append(np.mean(baseline.shaped2D(), 0))
             preprocessed = gauss_filter(pixel_filter(rel_change(ts, baseline)))
             preprocessed.timecourses[np.isnan(preprocessed.timecourses)] = 0
             preprocessed.timecourses[np.isinf(preprocessed.timecourses)] = 0
@@ -169,29 +168,30 @@ for prefix in prefixes:
             mean_resp = sorted_trials(mean_resp_unsort)
             preprocessed = sorted_trials(preprocessed)
             stimuli_selection = stimuli_mask(mean_resp)
+            filtered = stimuli_filter(preprocessed, stimuli_selection)
 
-            all_raw.append(stimuli_filter(preprocessed, stimuli_selection))
-            distanceself, distancecross = stimulirep(mean_resp)
-
-            # save plot and data
-            tmp_save = os.path.join(save_path, os.path.basename(meas_path))
-
-
-        ####################################################################
-        # stimultanieous ICA
-        ####################################################################
-
-        allodors = list(set(ts.label_sample + reduce(lambda x, y: x + y, [t.label_sample for t in all_raw])))
-        allodors.sort()
-        quality_mx = np.zeros((len(all_raw), len(allodors)))
-        for t_ind, t in enumerate(all_raw):
-            for od in set(t.label_sample):
-                quality_mx[t_ind, allodors.index(od)] = 1
+            # remember all available odors from the largest group (size N)
+            if i == -1:
+                if not allodors:
+                    allodors = set(filtered.label_sample)
+                else:
+                    allodors = allodors.intersection(set(filtered.label_sample))
+                all_raw.append(filtered)
+            # filter all N-1 folds with allodors from the N fold
+            else:
+                all_mask = np.zeros(len(filtered.label_sample), dtype=np.bool)
+                for i, label in enumerate(filtered.label_sample):
+                    if label in allodors:
+                        all_mask[i] = 1
+                all_filtered = stimuli_filter(filtered, TimeSeries(series=all_mask))
+                all_raw.append(all_filtered)
 
 
+        # simultanieous ICA
         intersection = sorted_trials(combine_common(all_raw))
         mo2 = icaend(intersection)
         mo2.name = save_name
         mo2 = sorted_trials(standard_response(mo2))
-        pickle.dump(mo2, open(os.path.join(save_path, save_name + '.pckl'), 'w'))
+        res = {'base': mo2, 'baselines': baselines, 'names': filelist_fold}
+        pickle.dump(res, open(os.path.join(save_path, save_name + '.pckl'), 'w'))
 

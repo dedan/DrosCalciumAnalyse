@@ -1,7 +1,7 @@
 '''
 
 create the plots which show the matrix of channels available in common
-for n animals
+for n animals for a given threshold.
 
 @author: stephan.gabler@gmail.com
 '''
