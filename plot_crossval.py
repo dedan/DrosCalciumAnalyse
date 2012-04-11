@@ -26,10 +26,20 @@ from NeuralImageProcessing import basic_functions as bf
 from NeuralImageProcessing import illustrate_decomposition as ic
 import pylab as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
+from matplotlib.colors import LinearSegmentedColormap
+
+def create_colormap(cmap_name, from_rgb, over_rgb, to_rgb):
+    cdict = {'red': ((0., from_rgb[0], from_rgb[0]), (0.5, 1., 1.), (0.75, over_rgb[0], over_rgb[0]), (1., to_rgb[0], to_rgb[0])),
+             'green':((0., from_rgb[1], from_rgb[1]), (0.5, 1., 1.), (0.75, over_rgb[1], over_rgb[1]), (1., to_rgb[1], to_rgb[1])),
+             'blue':((0., from_rgb[2], from_rgb[2]), (0.5, 1., 1.), (0.75, over_rgb[2], over_rgb[2]), (1., to_rgb[2], to_rgb[2]))}
+    return LinearSegmentedColormap(cmap_name, cdict, 256)
+
 
 mycolormap = {'key1': plt.cm.hsv_r, 'key2': plt.cm.hsv_r, 'key3': plt.cm.hsv_r,
               'key4': plt.cm.hsv_r, 'key5': plt.cm.hsv_r, 'key6': plt.cm.hsv_r,
-              'iPN': plt.cm.hsv_r, 'vlPrc': plt.cm.hsv_r , 'acid':plt.cm.hsv_r,
+              'iPN': create_colormap('iPN', (0., 0., 1.), (1., 1., 0.), (1., 0., 0.)),
+              'vlPrc': create_colormap('vlPrc', (0., 0., 1.), (0., 1., 1.), (0., 1., 0.)),
+              'acid':  create_colormap('acid', (0., 0., 1.), (1., 0., 0.5), (1., 0., 1.)),
               'iPNph': plt.cm.hsv_r }
 
 #create dictionary with mode distances
@@ -71,9 +81,9 @@ def dict2pdist(dic):
 
 
 #inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-60/'
-inpath = '/home/jan/Documents/dros/new_data/fromStephan/nbest-5_thresh-80/'
+inpath = '/home/jan/Documents/dros/new_data/fromStephan/nbest-3_thresh-60/'
 prefixes = ['OCO', '2PA', 'LIN', 'CVA']
-prefixes = ['CVA']
+prefixes = ['LIN']
 stimulus_offset = 4
 
 cor_dist = bf.Distance()
