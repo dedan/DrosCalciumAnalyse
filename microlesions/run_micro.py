@@ -70,11 +70,12 @@ for session in sessions:
 
         print 'preprocessing'
         rel_change = bf.RelativeChange()
-        rel_change.timecourses[np.isnan(rel_change.timecourses)] = 0
-        rel_change.timecourses[np.isinf(rel_change.timecourses)] = 0
+        relative_change = rel_change(ts, baseline)
+        relative_change.timecourses[np.isnan(relative_change.timecourses)] = 0
+        relative_change.timecourses[np.isinf(relative_change.timecourses)] = 0      
         pixel_filter = bf.Filter('median', medianfilter)
         gauss_filter = bf.Filter('gauss', lowpass, downscale=3)
-        pp = gauss_filter(pixel_filter(rel_change(ts, baseline)))
+        pp = gauss_filter(pixel_filter(relative_change))
         if normalize:
             pp.timecourses = pp.timecourses / np.max(pp.timecourses)
         signal_cut = bf.CutOut((6, 12))
