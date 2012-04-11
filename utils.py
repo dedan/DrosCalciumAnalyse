@@ -2,6 +2,7 @@
 import itertools as it
 import numpy as np
 from NeuralImageProcessing import basic_functions as bf
+reload(bf)
 
 def force_aspect(ax, aspect=1):
     im = ax.get_images()
