@@ -40,7 +40,8 @@ mycolormap.update({'key1': plt.cm.hsv_r, 'key2': plt.cm.hsv_r, 'key3': plt.cm.hs
 inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-80/'
 # inpath = '/home/jan/Documents/dros/new_data/fromStephan/nbest-5_thresh-80/'
 prefixes = ['OCO', '2PA', 'LIN', 'CVA']
-prefixes = ['OCO']
+prefixes = ['LIN']
+format = 'png'
 stimulus_offset = 4
 
 for prefix in prefixes:
@@ -76,7 +77,8 @@ for prefix in prefixes:
                    labels=labels,
                    leaf_font_size=10,
                    orientation='left')
-    plt.savefig(os.path.join(inpath, prefix + '_dendro.svg'))
+    plt.savefig(os.path.join(inpath, prefix + '_dendro.' + format))
+    crash
 
     # plot the bases and time-series of json file already created (by hand!!!)
     if os.path.exists(os.path.join(inpath, prefix + '_time_plot.json')):
@@ -110,7 +112,7 @@ for prefix in prefixes:
                                     rotation='45',
                                     toppos=True,
                                     stimuli_offset=stimulus_offset)
-        plt.savefig(os.path.join(inpath, prefix + '_time_series.svg'))
+        plt.savefig(os.path.join(inpath, prefix + '_time_series.' + format))
 
         # base plot compare
         names = [os.path.splitext(os.path.basename(name))[0] for name in res['names']]
@@ -146,7 +148,7 @@ for prefix in prefixes:
                         ax.set_title(mo.name, fontsize=8)
                         ax.set_yticks([])
                         ax.set_xticks([])
-            fig.savefig(os.path.join(inpath, prefix + '_' + key + '_simultan.svg'))
+            fig.savefig(os.path.join(inpath, prefix + '_' + key + '_simultan' + format))
 
         # base plot alltogether
         fig = plt.figure()
@@ -175,7 +177,7 @@ for prefix in prefixes:
                             name = os.path.splitext(os.path.basename(res['names'][base_num]))[0]
                             ax.set_xlabel(name, fontsize=10)
                         ax.set_title('%.2f' % data_max, fontsize=8)
-        fig.savefig(os.path.join(inpath, prefix + '_bases.svg'))
+        fig.savefig(os.path.join(inpath, prefix + '_bases' + format))
 
 
 plt.close('all')
