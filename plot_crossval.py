@@ -25,12 +25,8 @@ import numpy as np
 import pylab as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
 from matplotlib.colors import LinearSegmentedColormap
-
-def create_colormap(cmap_name, from_rgb, over_rgb, to_rgb):
-    cdict = {'red': ((0., from_rgb[0], from_rgb[0]), (0.5, 1., 1.), (0.75, over_rgb[0], over_rgb[0]), (1., to_rgb[0], to_rgb[0])),
-             'green':((0., from_rgb[1], from_rgb[1]), (0.5, 1., 1.), (0.75, over_rgb[1], over_rgb[1]), (1., to_rgb[1], to_rgb[1])),
-             'blue':((0., from_rgb[2], from_rgb[2]), (0.5, 1., 1.), (0.75, over_rgb[2], over_rgb[2]), (1., to_rgb[2], to_rgb[2]))}
-    return LinearSegmentedColormap(cmap_name, cdict, 256)
+import utils
+reload(utils)
 
 from NeuralImageProcessing import basic_functions as bf
 from NeuralImageProcessing import illustrate_decomposition as ic
@@ -41,9 +37,9 @@ reload(utils)
 
 mycolormap = defaultdict(lambda: plt.cm.hsv_r)
 mycolormap.update({
-    'iPN': create_colormap('iPN', (0., 0., 1.), (1., 1., 0.), (1., 0., 0.)),
-    'vlPrc': create_colormap('vlPrc', (0., 0., 1.), (0., 1., 1.), (0., 1., 0.)),
-    'acid':  create_colormap('acid', (0., 0., 1.), (1., 0., 0.5), (1., 0., 1.))})
+    'iPN':   utils.create_colormap('iPN', (0., 0., 1.), (1., 1., 0.), (1., 0., 0.)),
+    'vlPrc': utils.create_colormap('vlPrc', (0., 0., 1.), (0., 1., 1.), (0., 1., 0.)),
+    'acid':  utils.create_colormap('acid', (0., 0., 1.), (1., 0., 0.5), (1., 0., 1.))})
 
 #inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-80/'
 inpath = '/home/jan/Dropbox/cross_val/nbest-5_thresh-80_maxnorm/'
