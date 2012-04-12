@@ -2,6 +2,7 @@
 import itertools as it
 import numpy as np
 from NeuralImageProcessing import basic_functions as bf
+from matplotlib.colors import LinearSegmentedColormap
 reload(bf)
 
 def force_aspect(ax, aspect=1):
@@ -67,3 +68,9 @@ def dict2pdist(dic):
             except KeyError:
                 new_pdist.append(dic[':'.join([key_parts[j], key_parts[i]])])
     return new_pdist, key_parts
+
+def create_colormap(cmap_name, from_rgb, over_rgb, to_rgb):
+    cdict = {'red': ((0., from_rgb[0], from_rgb[0]), (0.5, 1., 1.), (0.75, over_rgb[0], over_rgb[0]), (1., to_rgb[0], to_rgb[0])),
+             'green':((0., from_rgb[1], from_rgb[1]), (0.5, 1., 1.), (0.75, over_rgb[1], over_rgb[1]), (1., to_rgb[1], to_rgb[1])),
+             'blue':((0., from_rgb[2], from_rgb[2]), (0.5, 1., 1.), (0.75, over_rgb[2], over_rgb[2]), (1., to_rgb[2], to_rgb[2]))}
+    return LinearSegmentedColormap(cmap_name, cdict, 256)
