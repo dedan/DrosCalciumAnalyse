@@ -1,5 +1,7 @@
 import sys, os
 import json
+import pylab as plt
+import numpy as np
 
 from PyQt4 import QtCore
 from PyQt4 import QtGui
@@ -58,16 +60,22 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         print self.data.base.shape
         bases = self.data.base.trial_shaped2D().squeeze()
         self.SpatialBase.canvas.ax.clear()
-        self.SpatialBase.canvas.ax.imshow(bases[0,:,:])
-        self.SpatialBase.canvas.ax.set_yticks([])
-        self.SpatialBase.canvas.ax.set_xticks([])
-        self.SpatialBase.canvas.draw()
 
         for i in range(self.data.num_objects):
+
+            im = bases[i,:,:]
+            im_rgba = plt.cm.jet(im / 2 + 0.5)
+            im_rgba[:, :, 3] = 0.8
+            im_rgba[np.abs(im) < 0.1, 3] = 0
+            self.SpatialBase.canvas.ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
+            self.SpatialBase.canvas.ax.set_yticks([])
+            self.SpatialBase.canvas.ax.set_xticks([])
+
             ax = self.TemporalBase.canvas.fig.add_subplot(self.data.num_objects, 1, i)
             ax.plot(self.data.timecourses[:, i])
             ax.set_yticks([])
             ax.set_xticks([])
+        self.SpatialBase.canvas.draw()
         self.TemporalBase.canvas.draw()
 
 
