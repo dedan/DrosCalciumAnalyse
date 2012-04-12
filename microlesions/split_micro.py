@@ -69,26 +69,38 @@ for fname in filelist:
 
     else:
         left_normal = trial_shaped_2d[normal_mask, :, :, :ts.shape[1] / 2]
+        # remove not information containig columsn
+        info_in_column = np.sum(np.sum(np.sum(left_normal, 0), 0), 0) > 0
+        left_normal = left_normal[:, :, :, info_in_column]
         new_ts = pl.TimeSeries(series=left_normal,
-                               shape=((ts.shape[0], ts.shape[1] / 2)),
+                               shape=((ts.shape[0], left_normal.shape[3])),
                                label_sample=normal_labels)
         new_ts.save(os.path.join(outpath, fbase + '_ln'))
 
         right_normal = trial_shaped_2d[normal_mask, :, :, ts.shape[1] / 2:]
+        # remove not information containig columsn
+        info_in_column = np.sum(np.sum(np.sum(right_normal, 0), 0), 0) > 0
+        right_normal = right_normal[:, :, :, info_in_column]
         new_ts = pl.TimeSeries(series=right_normal,
-                               shape=((ts.shape[0], ts.shape[1] / 2)),
+                               shape=((ts.shape[0], right_normal.shape[3])),
                                label_sample=normal_labels)
         new_ts.save(os.path.join(outpath, fbase + '_rn'))
 
 
         left_lesion = trial_shaped_2d[np.invert(normal_mask), :, :, :ts.shape[1] / 2]
+        # remove not information containig columsn
+        info_in_column = np.sum(np.sum(np.sum(left_lesion, 0), 0), 0) > 0
+        left_lesion = left_lesion[:, :, :, info_in_column]
         new_ts = pl.TimeSeries(series=left_lesion,
-                               shape=((ts.shape[0], ts.shape[1] / 2)),
+                               shape=((ts.shape[0], left_lesion.shape[3])),
                                label_sample=lesion_labels)
         new_ts.save(os.path.join(outpath, fbase + '_lm'))
 
         right_lesion = trial_shaped_2d[np.invert(normal_mask), :, :, ts.shape[1] / 2:]
+        # remove not information containig columsn
+        info_in_column = np.sum(np.sum(np.sum(right_lesion, 0), 0), 0) > 0
+        right_lesion = right_lesion[:, :, :, info_in_column]
         new_ts = pl.TimeSeries(series=right_lesion,
-                               shape=((ts.shape[0], ts.shape[1] / 2)),
+                               shape=((ts.shape[0], right_lesion.shape[3])),
                                label_sample=lesion_labels)
         new_ts.save(os.path.join(outpath, fbase + '_rm'))

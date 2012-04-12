@@ -63,8 +63,8 @@ for session in sessions:
         baseline = trial_mean(baseline_cut(ts))
 #        plt.figure()
 #        plt.title(filename)
-#        mean_base = np.mean(baseline.shaped2D(), 0)
-#        mean_bases.append(mean_base)
+        mean_base = np.mean(baseline.shaped2D(), 0)
+        mean_bases.append(mean_base)
 #        plt.imshow(mean_base, cmap=plt.cm.gray)
 #        plt.savefig(os.path.join(save_path, 'baseline_' + f_basename + '.' + format))
 
