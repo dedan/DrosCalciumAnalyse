@@ -71,6 +71,8 @@ for prefix in prefixes:
         # create stimulus name
         if 'all' in os.path.splitext(os.path.basename(fname))[0]:
             mo.name = 'all'
+            baselines = res['baselines']
+            basenames = res['names']
         else:
             mo.name = os.path.splitext(os.path.basename(fname))[0].split("-")[-1]
         mode_dict[mo.name] = mo
@@ -167,7 +169,7 @@ for prefix in prefixes:
                     for base_num in range(len(single_bases)):
                         ax = fig.add_subplot(len(info) + 1, len(single_bases),
                                              base_num + 1)
-                        ax.imshow(res['baselines'][base_num],
+                        ax.imshow(baselines[base_num],
                                   cmap=plt.cm.gray)
                         ax.set_yticks([])
                         ax.set_xticks([])
@@ -181,7 +183,7 @@ for prefix in prefixes:
                         ax.set_yticks([])
                         ax.set_xticks([])
                         if i == len(info) - 1:
-                            name = os.path.splitext(os.path.basename(res['names'][base_num]))[0]
+                            name = os.path.splitext(os.path.basename(basenames[base_num]))[0]
                             ax.set_xlabel(name, fontsize=10)
                         ax.set_title('%.2f' % data_max, fontsize=8)
         fig.savefig(os.path.join(inpath, prefix + '_bases.' + format))
