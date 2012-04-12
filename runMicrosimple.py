@@ -16,7 +16,7 @@ import utils
 reload(bf)
 reload(vis)
 
-n_best = 6
+
 frames_per_trial = 40
 variance = 10
 lowpass = 2
@@ -33,11 +33,11 @@ if normalize:
     add = '_maxnorm'
 
 ' +++ jan specific +++'
-base_path = '/home/jan/Documents/dros/new_data/'
-data_path = os.path.join(base_path, 'aligned')
-loadfolder = os.path.join(base_path, 'aligned', 'common_channels')
-savefolder = 'simil' + str(int(similarity_threshold * 100)) + 'n_best' + str(n_best) + add + '_' + format
-save_path = os.path.join(base_path, savefolder)
+base_path = '/home/jan/Documents/dros/new_data/aligned'
+data_path = base_path
+loadfolder = os.path.join(base_path, 'common_channels')
+savefolder = 'simil' + str(int(similarity_threshold * 100)) + add
+save_path = os.path.join(base_path, 'results', savefolder)
 
 #' +++ dedan specific +++'
 #base_path = '/Users/dedan/projects/fu'
@@ -94,9 +94,6 @@ select_modes = bf.SelectModes(modesim_threshold)
 standard_response = bf.SingleSampleResponse(method='best')
 # and calculate distance between modes
 combine = bf.ObjectConcat()
-#combine_common = bf.ObjectConcat(unequalsample=2, unequalobj=True)
-#combine_common = bf.ObjectScrambledConcat(4, 'three')
-combine_common = bf.ObjectScrambledConcat(n_best)
 cor_dist = bf.Distance()
 
 for prefix in prefixes:
@@ -183,18 +180,23 @@ for prefix in prefixes:
         uresp_overview.fig.savefig(tmp_save + '_overview_unsort')
       
         # draw individual matrix factorization overview
-        toplot = raw_ica
+        toplot = bf.SingleSampleResponse('mean')(raw_ica)
         ica_overview = vis.VisualizeTimeseries()
         ica_overview.base_and_time(toplot.num_objects)
+        mask = np.array([i[0] != 'm' for i in toplot.label_sample])
+        before = bf.SelectTrials()(toplot, bf.TimeSeries(mask))
+        after = bf.SelectTrials()(toplot, bf.TimeSeries(np.logical_not(mask)))
         for ind, resp in enumerate(toplot.base.shaped2D()):
             ica_overview.imshow(ica_overview.axes['base'][ind],
                                 resp,
                                 title=toplot.label_sample[ind])
             ica_overview.plot(ica_overview.axes['time'][ind],
-                              toplot.timecourses[:, ind])
-            ica_overview.add_labelshade(ica_overview.axes['time'][ind], toplot)
+                              before.timecourses[:, ind], color='b')
+            ica_overview.plot(ica_overview.axes['time'][ind],
+                              after.timecourses[:, ind], color='g')
+            ica_overview.add_labelshade(ica_overview.axes['time'][ind], before)
             #ica_overview.add_shade('time', 'onetoall', stimuli_selection, 20)
-        ica_overview.add_samplelabel(ica_overview.axes['time'][-1], toplot, rotation='45', toppos=True)
+        ica_overview.add_samplelabel(ica_overview.axes['time'][-1], before, rotation='45', toppos=True)
         [ax.set_title(toplot.label_objects[i]) for i, ax in enumerate(ica_overview.axes['base'])]
         ica_overview.fig.savefig(tmp_save + '_modes.svg')
 

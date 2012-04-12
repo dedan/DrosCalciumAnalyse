@@ -25,7 +25,7 @@ if config['normalize']:
 
 savefolder = os.path.join(config['save_path'],
                  'simil' + str(int(config['similarity_threshold'] * 100)) 
-              + 'n_best' + str(config['n_best']) + add + '_' + config['format'])
+              + 'n_best' + str(config['n_best']) + add)
 
 if not os.path.exists(savefolder):
     os.mkdir(savefolder)
@@ -201,7 +201,7 @@ for prefix in config['prefixes']:
         ax.set_yticklabels([t.name for t in all_raw])
         ax.set_xticks(range(len(allodors)))
         ax.set_xticklabels(allodors, rotation='45')
-        fig.set_title(prefix + '_' + str(config['similarity_threshold']))
+        ax.set_title(prefix + '_' + str(config['similarity_threshold']))
         fig.savefig('_'.join(savename_ind.split('_')[:-1]) + 'mask.' + config['format'])
 
     
