@@ -24,10 +24,9 @@ lowpass = 2
 similarity_threshold = 0.3
 modesim_threshold = 0.5
 medianfilter = 5
-data_path = '/home/jan/Documents/dros/new_data/aligned'
-#data_path = '/Users/dedan/projects/fu/data/dros_calcium_new/'
-savefolder = 'common_channels'
-save_path = os.path.join(data_path, savefolder)
+base_path = '/Users/dedan/projects/fu/'
+data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
+save_path = os.path.join(base_path, 'results', 'common_channels')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 

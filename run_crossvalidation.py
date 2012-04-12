@@ -55,7 +55,7 @@ if normalize:
 base_path = '/Users/dedan/projects/fu'
 data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
 loadfolder = os.path.join(base_path, 'results', 'common_channels')
-savefolder = 'nbest-' + str(n_best) + '_thresh-' + str(int(similarity_threshold * 100))
+savefolder = 'nbest-' + str(n_best) + '_thresh-' + str(int(similarity_threshold * 100)) + add
 save_path = os.path.join(base_path, 'results', 'cross_val', savefolder)
 
 if not os.path.exists(save_path):

@@ -19,8 +19,9 @@ lowpass = 2
 similarity_threshold = 0.3
 modesim_threshold = 0.5
 medianfilter = 5
-data_path = '/Users/dedan/projects/fu/data/dros_calcium_new/'
-save_path = os.path.join(data_path, 'common_channels')
+base_path = '/Users/dedan/projects/fu/'
+data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
+save_path = os.path.join(base_path, 'results', 'common_channels')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 
@@ -94,6 +95,11 @@ for prefix in prefixes:
     ax.imshow(quality_mx, interpolation='nearest', cmap=plt.cm.bone)
     ax.set_xticks(range(len(allodors)))
     ax.set_xticklabels([])
+    ax.set_yticks(range(len(all_raw)))
+    ax.set_yticklabels([t.name for t in all_raw])
+    for tick in ax.yaxis.get_major_ticks():
+        tick.label.set_fontsize(8)
+
     utils.force_aspect(ax, aspect_ratio)
 
     # plot only i best animals (best --> most common channels)
