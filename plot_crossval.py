@@ -45,11 +45,11 @@ mycolormap.update({
     'vlPrc': create_colormap('vlPrc', (0., 0., 1.), (0., 1., 1.), (0., 1., 0.)),
     'acid':  create_colormap('acid', (0., 0., 1.), (1., 0., 0.5), (1., 0., 1.))})
 
-inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-80/'
-# inpath = '/home/jan/Documents/dros/new_data/fromStephan/nbest-5_thresh-80/'
+#inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-80/'
+inpath = '/home/jan/Dropbox/cross_val/nbest-5_thresh-80_maxnorm/'
 
 prefixes = ['OCO', '2PA', 'LIN', 'CVA']
-prefixes = ['LIN']
+#prefixes = ['LIN']
 format = 'svg'
 
 stimulus_offset = 4
@@ -66,9 +66,7 @@ for prefix in prefixes:
         #check if all files have same stimuli
         if i == 0:
             stimuli = mo.label_sample
-            print mo.label_sample
         else:
-            print mo.label_sample
             assert mo.label_sample == stimuli
         # create stimulus name
         if 'all' in os.path.splitext(os.path.basename(fname))[0]:

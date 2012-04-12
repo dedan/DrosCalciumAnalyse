@@ -52,7 +52,7 @@ if not os.path.exists(save_path):
 #prefix = 'LIN'
 
 prefixes = ['OCO', '2PA', 'LIN', 'CVA']
-
+#prefixes = ['mic']
 
 
 #####################################################
@@ -145,7 +145,10 @@ for prefix in prefixes:
         mean_resp = sorted_trials(mean_resp_unsort)
         pp = sorted_trials(pp)
         stimuli_selection = stimuli_mask(mean_resp)
-
+        
+        all_raw.append(stimuli_filter(pp, stimuli_selection))
+        distanceself, distancecross = stimulirep(mean_resp)
+        
         ####################################################################
         # do individual matrix factorization
         ####################################################################
@@ -160,9 +163,7 @@ for prefix in prefixes:
 #        selected_ica_and_trial = stimuli_filter(selected_ica, stimuli_selection)
 #        final_modes = sorted_trials(standard_response(selected_ica_and_trial))
 #        final_modes_condensed = trial_mean(signal_cut(final_modes))
-#        
-#        all_raw.append(stimuli_filter(preprocessed, stimuli_selection))
-#        distanceself, distancecross = stimulirep(mean_resp)
+       
         
         ####################################################################
         # plot and save results
@@ -171,42 +172,42 @@ for prefix in prefixes:
         # save plot and data
         tmp_save = os.path.join(save_path, os.path.basename(meas_path))
 
-        # #draw quality overview
-        # qual_view = vis.VisualizeTimeseries()
-        # qual_view.oneaxes()
-        # data = zip(*distancecross.items())
-        # vis.violin_plot(qual_view.axes['time'][0], [i.flatten() for i in data[1]] ,
-        #                  range(len(distancecross)), 'b')
-        # qual_view.axes['time'][0].set_xticks(range(len(distancecross)))
-        # qual_view.axes['time'][0].set_xticklabels(data[0])
-        # qual_view.axes['time'][0].set_title(ts.name)
-        # for pos, stim in enumerate(data[0]):
-        #     qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]),
-        #                                    distanceself[stim], 'o', mew=2, mec='k', mfc='None')
+        #draw quality overview
+        qual_view = vis.VisualizeTimeseries()
+        qual_view.oneaxes()
+        data = zip(*distancecross.items())
+        vis.violin_plot(qual_view.axes['time'][0], [i.flatten() for i in data[1]] ,
+                         range(len(distancecross)), 'b')
+        qual_view.axes['time'][0].set_xticks(range(len(distancecross)))
+        qual_view.axes['time'][0].set_xticklabels(data[0])
+        qual_view.axes['time'][0].set_title(ts.name)
+        for pos, stim in enumerate(data[0]):
+            qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]),
+                                            distanceself[stim], 'o', mew=2, mec='k', mfc='None')
 
-        # qual_view.fig.savefig(tmp_save + '_quality')
+        qual_view.fig.savefig(tmp_save + '_quality')
 
-#        # draw signal overview
-#        resp_overview = vis.VisualizeTimeseries()
-#        resp_overview.subplot(mean_resp.samplepoints)
-#        for ind, resp in enumerate(mean_resp.shaped2D()):
-#            resp_overview.imshow(resp_overview.axes['base'][ind],
-#                                  resp,
-#                                  title=mean_resp.label_sample[ind],
-#                                  colorbar=True)
-#        resp_overview.fig.savefig(tmp_save + '_overview')
-#
-#        # draw unsorted signal overview
-#        uresp_overview = vis.VisualizeTimeseries()
-#        uresp_overview.subplot(mean_resp_unsort.samplepoints)
-#        for ind, resp in enumerate(mean_resp_unsort.shaped2D()):
-#            uresp_overview.imshow(uresp_overview.axes['base'][ind],
-#                                   resp,
-#                                   title=mean_resp_unsort.label_sample[ind],
-#                                   colorbar=True)
-#        uresp_overview.fig.savefig(tmp_save + '_overview_unsort')
-#
-#        
+        # draw signal overview
+        resp_overview = vis.VisualizeTimeseries()
+        resp_overview.subplot(mean_resp.samplepoints)
+        for ind, resp in enumerate(mean_resp.shaped2D()):
+            resp_overview.imshow(resp_overview.axes['base'][ind],
+                                  resp,
+                                  title=mean_resp.label_sample[ind],
+                                  colorbar=True)
+        resp_overview.fig.savefig(tmp_save + '_overview')
+
+        # draw unsorted signal overview
+        uresp_overview = vis.VisualizeTimeseries()
+        uresp_overview.subplot(mean_resp_unsort.samplepoints)
+        for ind, resp in enumerate(mean_resp_unsort.shaped2D()):
+            uresp_overview.imshow(uresp_overview.axes['base'][ind],
+                                   resp,
+                                   title=mean_resp_unsort.label_sample[ind],
+                                   colorbar=True)
+        uresp_overview.fig.savefig(tmp_save + '_overview_unsort')
+
+        
 #        # draw individual matrix factorization overview
 #        toplot = raw_ica
 #        ica_overview = vis.VisualizeTimeseries()
@@ -230,7 +231,7 @@ for prefix in prefixes:
     # odorset quality overview
     ####################################################################
 
-    allodors = list(set(ts.label_sample + sum([t.label_sample for t in all_raw])))
+    allodors = list(set(ts.label_sample + sum([t.label_sample for t in all_raw], [])))
     allodors.sort()
     quality_mx = np.zeros((len(all_raw), len(allodors)))
     for t_ind, t in enumerate(all_raw):
@@ -251,56 +252,56 @@ for prefix in prefixes:
     ####################################################################
     # simultanieous ICA
     ####################################################################
-    intersection = sorted_trials(combine_common(all_raw))
-    mo = pca(intersection)
-    #mo2 = icaend(mo)
-    mo2 = icaend(intersection)
-
-    fig = plt.figure()
-    fig.suptitle(np.sum(mo.eigen))
-    num_bases = len(filelist)
-    names = [t.name for t in all_raw]
-    for modenum in range(variance):
-        single_bases = mo2.base.objects_sample(modenum)
-        for base_num in range(num_bases):
-            ax = fig.add_subplot(variance + 1, num_bases, base_num + 1)
-            ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
-            ax.set_axis_off()
-            ax.set_title(names[base_num])
-            ax = fig.add_subplot(variance + 1, num_bases,
-                                 ((num_bases * modenum) + num_bases) + base_num + 1)
-            ax.imshow(single_bases[base_num] * -1, cmap=plt.cm.hsv, vmin= -1, vmax=1)
-            ax.set_axis_off()
-
-    fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan.' + format)
-
-    fig = plt.figure()
-    fig.suptitle(np.sum(mo.eigen))
-    num_bases = len(filelist)
-    names = [t.name for t in all_raw]
-    for modenum in range(variance):
-        single_bases = mo2.base.objects_sample(modenum)
-        for base_num in range(num_bases):
-            ax = fig.add_subplot(variance + 1, num_bases, base_num + 1)
-            ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
-            ax.set_axis_off()
-            ax.set_title(names[base_num])
-            ax = fig.add_subplot(variance + 1, num_bases,
-                                 ((num_bases * modenum) + num_bases) + base_num + 1)
-            ax.imshow(single_bases[base_num], cmap=plt.cm.jet)
-            ax.set_axis_off()
-    fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_scaled.' + format)
-
-
-    fig = plt.figure()
-    stim_driven = modefilter(mo2).timecourses
-    for modenum in range(variance):
-        ax = fig.add_subplot(variance, 1, modenum + 1)
-        ax.plot(mo2.timecourses[:, modenum])
-        ax.set_xticklabels([], fontsize=12, rotation=45)
-        ax.set_ylabel("%1.2f" % stim_driven[0, modenum])
-        ax.grid(True)
-    ax.set_xticks(np.arange(3, mo2.samplepoints, mo2.timepoints))
-    ax.set_xticklabels(mo2.label_sample, fontsize=12, rotation=45)
-    fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_time.' + format)
-    plt.close('all')
+#    intersection = sorted_trials(combine_common(all_raw))
+#    mo = pca(intersection)
+#    #mo2 = icaend(mo)
+#    mo2 = icaend(intersection)
+#
+#    fig = plt.figure()
+#    fig.suptitle(np.sum(mo.eigen))
+#    num_bases = len(filelist)
+#    names = [t.name for t in all_raw]
+#    for modenum in range(variance):
+#        single_bases = mo2.base.objects_sample(modenum)
+#        for base_num in range(num_bases):
+#            ax = fig.add_subplot(variance + 1, num_bases, base_num + 1)
+#            ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
+#            ax.set_axis_off()
+#            ax.set_title(names[base_num])
+#            ax = fig.add_subplot(variance + 1, num_bases,
+#                                 ((num_bases * modenum) + num_bases) + base_num + 1)
+#            ax.imshow(single_bases[base_num] * -1, cmap=plt.cm.hsv, vmin= -1, vmax=1)
+#            ax.set_axis_off()
+#
+#    fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan.' + format)
+#
+#    fig = plt.figure()
+#    fig.suptitle(np.sum(mo.eigen))
+#    num_bases = len(filelist)
+#    names = [t.name for t in all_raw]
+#    for modenum in range(variance):
+#        single_bases = mo2.base.objects_sample(modenum)
+#        for base_num in range(num_bases):
+#            ax = fig.add_subplot(variance + 1, num_bases, base_num + 1)
+#            ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
+#            ax.set_axis_off()
+#            ax.set_title(names[base_num])
+#            ax = fig.add_subplot(variance + 1, num_bases,
+#                                 ((num_bases * modenum) + num_bases) + base_num + 1)
+#            ax.imshow(single_bases[base_num], cmap=plt.cm.jet)
+#            ax.set_axis_off()
+#    fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_scaled.' + format)
+#
+#
+#    fig = plt.figure()
+#    stim_driven = modefilter(mo2).timecourses
+#    for modenum in range(variance):
+#        ax = fig.add_subplot(variance, 1, modenum + 1)
+#        ax.plot(mo2.timecourses[:, modenum])
+#        ax.set_xticklabels([], fontsize=12, rotation=45)
+#        ax.set_ylabel("%1.2f" % stim_driven[0, modenum])
+#        ax.grid(True)
+#    ax.set_xticks(np.arange(3, mo2.samplepoints, mo2.timepoints))
+#    ax.set_xticklabels(mo2.label_sample, fontsize=12, rotation=45)
+#    fig.savefig('_'.join(tmp_save.split('_')[:-1]) + '_simultan_time.' + format)
+#    plt.close('all')
