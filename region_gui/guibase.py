@@ -72,7 +72,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         """replot and save to regions.json when a combobox changed"""
         l.info('selection made')
         box = self.sender()
-        self.regions[self.data.name][box.currentIndex()] = str(box.currentText())
+        self.regions[self.data.name] = [str(box.currentText()) for box in self.boxes]
         json.dump(self.regions, open(self.regions_file, 'w'))
         self.draw_plots()
 
@@ -95,21 +95,21 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             filelist = [f for f in filelist if not 'base' in f]
             self.filesListBox.clear()
             self.filesListBox.addItems(filelist)
+        self.load_file()
 
-    def open_file(self):
+    def load_file(self):
         """load the serialized TimeSeries object that contains the ICA results"""
-        fname = os.path.splitext(str(self.FilePath.text()))[0]
+        fname = os.path.join(self.folder, str(self.filesListBox.currentText()))
         l.info('loading: %s' % fname)
         self.data.load(fname)
-        name = "_".join(os.path.basename(fname).split("_")[0:2])
-        self.data.name = name
+        self.data.name = os.path.basename(fname)
 
         # TODO: update the number of active comboboxes and labels
 
         # init gui when labels already exist
-        if name in self.regions:
+        if self.data.name in self.regions:
             l.debug('name found in regions')
-            for i, label in enumerate(self.regions[name]):
+            for i, label in enumerate(self.regions[self.data.name]):
                 idx = self.boxes[i].findText(label)
                 if idx < 0:
                     l.warning('unknown label')
