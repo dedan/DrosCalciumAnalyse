@@ -1,8 +1,8 @@
 {
-	"label1": {"values": {"2PA_110817c": 1}, "color": "#4682B4"},
-	"label2": {"values": {"2PA_110817c": 2}, "color": "#008080"},
-	"label3": {"values": {"2PA_110817c": 4}, "color": "#FFA500"},
-	"label4": {"values": {"2PA_110817c": 5}, "color": "#6B8E23"},
-	"label5": {"values": {"2PA_110817c": 2}, "color": "#B22222"},
-	"label6": {"values": {}, "color": "#DEB887"}
+	"label1": {"values": {"2PA_110817c": 1}},
+	"label2": {"values": {"2PA_110817c": 2}},
+	"label3": {"values": {"2PA_110817c": 4}},
+	"label4": {"values": {"2PA_110817c": 5}},
+	"label5": {"values": {"2PA_110817c": 2}},
+	"label6": {"values": {}}
 }

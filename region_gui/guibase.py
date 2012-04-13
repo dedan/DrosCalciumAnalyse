@@ -16,6 +16,8 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
+config = {"colors": ["#4682B4", "#008080", "#FFA500", "#6B8E23", "#B22222", "#DEB887"]
+         }
 
 class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
@@ -23,6 +25,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         """initialize the gui, color the boxes, etc.."""
         super(MyGui, self).__init__(parent)
         self.data = pipeline.TimeSeries()
+        self.regions_file = regions_file
         self.regions = json.load(open(regions_file))
 
         # gui init stuff
@@ -39,7 +42,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
 
         for i, label in enumerate(sorted(self.regions.keys())):
-            color = self.regions[label]['color']
+            color = config["colors"][i]
             self.boxes[i].setStyleSheet("QComboBox { color: %s; }" % color)
             self.labels[i].setStyleSheet("QLabel { color: %s; }" % color)
             self.labels[i].setText(label)
@@ -96,12 +99,12 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             ax.set_xticks([])
             ax.set_title('overlay')
 
-            ax = self.TemporalBase.canvas.fig.add_subplot(self.data.num_objects, 1, i)
+            ax = tc.fig.add_subplot(n_objects, 1, i)
             ax.plot(self.data.timecourses[:, i])
             ax.set_yticks([])
             ax.set_xticks([])
-        self.SpatialBase.canvas.draw()
-        self.TemporalBase.canvas.draw()
+        sc.draw()
+        tc.draw()
 
 
 if __name__ == '__main__':
