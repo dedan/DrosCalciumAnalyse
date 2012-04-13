@@ -33,14 +33,14 @@ reload(ic)
 reload(utils)
 
 mycolormap = defaultdict(lambda: plt.cm.hsv_r)
-'''
+
 mycolormap.update({
-    'iPN': create_colormap('iPN', (0., 0., 1.), (1., 1., 0.), (1., 0., 0.)),
-    'vlPrc': create_colormap('vlPrc', (0., 0., 1.), (0., 1., 1.), (0., 1., 0.)),
-    'acid':  create_colormap('acid', (0., 0., 1.), (1., 0., 0.5), (1., 0., 1.))})
-'''
-#inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-80/'
-inpath = '/home/jan/Dropbox/cross_val/nbest-5_thresh-80_maxnorm/'
+    'iPN':   utils.create_colormap('iPN', (0., 0., 1.), (1., 1., 0.), (1., 0., 0.)),
+    'vlPrc': utils.create_colormap('vlPrc', (0., 0., 1.), (0., 1., 1.), (0., 1., 0.)),
+    'acid':  utils.create_colormap('acid', (0., 0., 1.), (1., 0., 0.5), (1., 0., 1.))})
+
+inpath = '/Users/dedan/projects/fu/results/cross_val/nbest-5_thresh-80/'
+# inpath = '/home/jan/Dropbox/cross_val/nbest-5_thresh-80_maxnorm/'
 
 prefixes = ['OCO', '2PA', 'LIN', 'CVA']
 #prefixes = ['LIN']
