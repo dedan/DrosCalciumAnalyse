@@ -1,5 +1,6 @@
 import sys, os
 import json
+import glob
 import pylab as plt
 import numpy as np
 
@@ -53,12 +54,13 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
                          self.selection_changed)
 
         # connect signals to slots
-        self.connect(self.SelectButton, QtCore.SIGNAL("clicked()"), self.select_file)
-        self.connect(self.LoadButton, QtCore.SIGNAL("clicked()"), self.open_file)
+        self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
 
         if debug:
             test_path = '/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json'
-            self.FilePath.setText(test_path)
+            # self.FilePath.setText(test_path)
+
+    # TODO: select data folder inactive before json file loaded
 
     def selection_changed(self):
         """replot and save to regions.json when a combobox changed"""
@@ -68,11 +70,15 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         json.dump(self.regions, open(self.regions_file, 'w'))
         self.draw_plots()
 
-    def select_file(self):
+    def select_folder(self):
         """open file select dialog and enter returned path to the line edit"""
-        fname = QtGui.QFileDialog.getOpenFileName()
-        if fname:
-            self.FilePath.setText(fname)
+        self.folder = str(QtGui.QFileDialog.getExistingDirectory())
+        if self.folder:
+            filelist = glob.glob(os.path.join(self.folder, '*.json'))
+            filelist = [os.path.splitext(os.path.basename(f))[0] for f in filelist]
+            filelist = [f for f in filelist if not 'base' in f]
+            self.filesListBox.clear()
+            self.filesListBox.addItems(filelist)
 
     def open_file(self):
         """load the serialized TimeSeries object that contains the ICA results"""
@@ -138,6 +144,5 @@ if __name__ == '__main__':
     else:
         regions_file = sys.argv[1]
     my_view = MyGui(regions_file)
-    my_view.open_file()
     my_view.show()
     sys.exit(app.exec_())

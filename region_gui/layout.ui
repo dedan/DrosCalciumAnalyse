@@ -20,19 +20,33 @@
       <item>
        <layout class="QHBoxLayout" name="horizontalLayout_5">
         <item>
-         <widget class="QLineEdit" name="FilePath"/>
-        </item>
-        <item>
-         <widget class="QPushButton" name="SelectButton">
-          <property name="text">
-           <string>Select File</string>
+         <widget class="QComboBox" name="filesListBox">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
           </property>
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="LoadButton">
+         <widget class="QPushButton" name="nextButton">
           <property name="text">
-           <string>Load Data</string>
+           <string>next</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="selectRegionsButton">
+          <property name="text">
+           <string>Select regions.json</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="selectFolderButton">
+          <property name="text">
+           <string>Select Data Folder</string>
           </property>
          </widget>
         </item>
