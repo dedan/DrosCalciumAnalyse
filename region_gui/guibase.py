@@ -42,6 +42,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.regions_file = regions_file
             self.selectFolderButton.setEnabled(True)
             self.filesListBox.setEnabled(True)
+            # TODO: activate next button only when folder selected
             self.nextButton.setEnabled(True)
             self.regions = json.load(open(regions_file))
 
@@ -61,6 +62,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         # connect signals to slots
         self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
         self.connect(self.selectRegionsButton, QtCore.SIGNAL("clicked()"), self.select_region_file)
+        self.connect(self.filesListBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.load_file)
 
         if debug:
             test_path = '/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json'
@@ -120,8 +122,8 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
     def draw_plots(self):
         sc = self.SpatialBase.canvas
         tc = self.TemporalBase.canvas
-        sc.ax.clear()
-        tc.ax.clear()
+        sc.fig.clear()
+        tc.fig.clear()
         bases = self.data.base.trial_shaped2D().squeeze()
         aspect_ratio = self.data.base.shape[0] / float(self.data.base.shape[1])
         n_objects = self.data.num_objects
@@ -140,7 +142,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             ax.contourf(bases[i,:,:], [0.3, 1], colors=[color], alpha=0.4)
             ax.set_yticks([])
             ax.set_xticks([])
-            ax.set_title('overlay')
+            ax.set_xlabel('overlay')
 
             ax = tc.fig.add_subplot(n_objects, 1, i + 1)
             ax.plot(self.data.timecourses[:, i], color=color)
