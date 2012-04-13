@@ -68,6 +68,7 @@ for prefix in config['prefixes']:
     all_stimulifilter = []
 
     for file_ind, filename in enumerate(filelist):    
+        print prefix, filename
         # load timeseries, shape and labels
         meas_path = os.path.splitext(filename)[0]
         # savelocation
@@ -92,6 +93,7 @@ for prefix in config['prefixes']:
         # cut baseline signal (odor starts at frame 4 (original frame8))      
         baseline = trial_mean(bf.CutOut((0, 3))(ts))
         baselines.append(baseline)
+        sorted_baseline = sorted_trials(baseline)
         # preprocess timeseries
         pp = gauss_filter(pixel_filter(rel_change(ts, baseline)))
         pp.timecourses[np.isnan(pp.timecourses)] = 0
@@ -117,8 +119,13 @@ for prefix in config['prefixes']:
         if config['individualMF']['do']:
             mf_func = create_mf(config['individualMF'])
             mf = mf_func(pp)
+            path = os.path.dirname(savename_ind)
+            fname = os.path.basename(savename_ind)
+            saveplace = os.path.join(path, config['individualMF']['method'])
+            if not os.path.exists(saveplace):
+                os.mkdir(saveplace)                                                     
             if 'save' in config['individualMF']['do']:
-                mf.save(savename_ind + 'nnma')
+                mf.save(os.path.join(saveplace, fname + '_' + config['individualMF']['method']))
             if 'plot' in config['individualMF']['do']:    
         
                 mf_overview = vis.VisualizeTimeseries()
@@ -133,7 +140,7 @@ for prefix in config['prefixes']:
                     #ica_overview.add_shade('time', 'onetoall', stimuli_selection, 20)
                 mf_overview.add_samplelabel(mf_overview.axes['time'][-1], mf, rotation='45', toppos=True)
                 [ax.set_title(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
-                mf_overview.fig.savefig(savename_ind + '_nnma.svg')
+                mf_overview.fig.savefig(os.path.join(saveplace, fname + '_' + config['individualMF']['method'] + '.' + config['format']))
        
         
         ####################################################################
@@ -143,12 +150,18 @@ for prefix in config['prefixes']:
             # draw signal overview
             resp_overview = vis.VisualizeTimeseries()
             resp_overview.subplot(mean_resp.samplepoints)
+            ds = downscale = config['spatial_down']
             for ind, resp in enumerate(mean_resp.shaped2D()):
+                max_data = np.max(np.abs(resp))
+                resp /= max_data
                 resp_overview.imshow(resp_overview.axes['base'][ind],
-                                      resp,
-                                      title=mean_resp.label_sample[ind],
-                                      colorbar=True)
-            resp_overview.fig.savefig(savename_ind + '_overview')
+                                     sorted_baseline.shaped2D()[ind, ::ds, ::ds],
+                                     colormap=plt.cm.bone_r)
+                resp_overview.overlay_image(resp_overview.axes['base'][ind],
+                                            resp, threshold=0.2,
+                                            title=mean_resp.label_sample[ind])
+                resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
+            resp_overview.fig.savefig(savename_ind + '_overview.' + config['format'])
     
             # draw unsorted signal overview
             uresp_overview = vis.VisualizeTimeseries()
@@ -157,8 +170,8 @@ for prefix in config['prefixes']:
                 uresp_overview.imshow(uresp_overview.axes['base'][ind],
                                        resp,
                                        title=mean_resp_unsort.label_sample[ind],
-                                       colorbar=True)
-            uresp_overview.fig.savefig(savename_ind + '_overview_unsort')
+                                       colorbar=False)
+            uresp_overview.fig.savefig(savename_ind + '_overview_unsort.' + config['format'])
 
         ####################################################################
         # calc reproducibility and plot
@@ -178,7 +191,7 @@ for prefix in config['prefixes']:
             for pos, stim in enumerate(data[0]):
                 qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]),
                                                 distanceself[stim], 'o', mew=2, mec='k', mfc='None')
-            qual_view.fig.savefig(savename_ind + '_quality')       
+            qual_view.fig.savefig(savename_ind + '_quality.' + config['format'])       
 
 
         plt.close('all')
