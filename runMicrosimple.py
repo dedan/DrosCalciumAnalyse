@@ -18,7 +18,7 @@ reload(vis)
 
 
 frames_per_trial = 40
-variance = 10
+variance = 16
 lowpass = 2
 similarity_threshold = 0.8
 normalize = False
@@ -180,7 +180,7 @@ for prefix in prefixes:
         uresp_overview.fig.savefig(tmp_save + '_overview_unsort')
       
         # draw individual matrix factorization overview
-        toplot = bf.SingleSampleResponse('mean')(raw_ica)
+        toplot = bf.SortBySamplename()(bf.SingleSampleResponse('mean')(raw_ica))
         ica_overview = vis.VisualizeTimeseries()
         ica_overview.base_and_time(toplot.num_objects)
         mask = np.array([i[0] != 'm' for i in toplot.label_sample])
