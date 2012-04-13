@@ -76,6 +76,8 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             im_rgba[np.abs(im) < 0.1, 3] = 0
             ax = self.SpatialBase.canvas.fig.add_subplot(self.data.num_objects+1, 1, i+1)
             ax.contour(im, [0.3], colors=['k'])
+            ax.contourf(im, [0.3, 1], colors=["#4682B4"], alpha=1.)
+
             ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
             ax.set_yticks([])
             ax.set_xticks([])
