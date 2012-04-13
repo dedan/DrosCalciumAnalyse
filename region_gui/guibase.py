@@ -57,7 +57,8 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
                                self.open_file)
 
         if debug:
-            self.FilePath.setText('/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json')
+            test_path = '/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json'
+            self.FilePath.setText(test_path)
 
     # TODO: add functions to update the regions.json
 
@@ -69,11 +70,29 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
     def open_file(self):
         """load the serialized TimeSeries object that contains the ICA results"""
-        l.info('loading: %s' % self.FilePath.text())
-        self.data.load(os.path.splitext(str(self.FilePath.text()))[0])
-        self.draw_plots()
+        fname = os.path.splitext(str(self.FilePath.text()))[0]
+        name = "_".join(os.path.basename(fname).split("_")[0:2])
+        l.info('loading: %s' % fname)
+        l.debug('name: %s' % name)
+        self.data.load(fname)
 
-    def draw_plots(self):
+        # TODO: update the number of active comboboxes and labels
+
+        # TODO: load json
+        plot_colors = ['white'] * self.data.num_objects
+        if name in self.regions:
+            l.debug('name found in regions')
+            for i, label in enumerate(self.regions[name]):
+                idx = self.boxes[i].findText(label)
+                if idx < 0:
+                    l.warning('unknown label')
+                self.boxes[i].setCurrentIndex(idx)
+                plot_colors[i] = config['labels'][label]
+        l.debug(plot_colors)
+        self.draw_plots(plot_colors)
+
+
+    def draw_plots(self, plot_colors):
         sc = self.SpatialBase.canvas
         tc = self.TemporalBase.canvas
         sc.ax.clear()
@@ -86,13 +105,13 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
             ax = sc.fig.add_subplot(n_objects + 1, 1, i + 1, aspect=aspect_ratio)
             ax.contour(bases[i,:,:], [0.3], colors=['k'])
-            ax.contourf(bases[i,:,:], [0.3, 1], colors=["#4682B4"], alpha=1.)
+            ax.contourf(bases[i,:,:], [0.3, 1], colors=[plot_colors[i]], alpha=1.)
             ax.set_yticks([])
             ax.set_xticks([])
 
             ax = sc.fig.add_subplot(n_objects + 1, 1, n_objects + 1, aspect=aspect_ratio)
             ax.contour(bases[i,:,:], [0.3], colors=['k'])
-            ax.contourf(bases[i,:,:], [0.3, 1], colors=["#4682B4"], alpha=0.4)
+            ax.contourf(bases[i,:,:], [0.3, 1], colors=[plot_colors[i]], alpha=0.4)
             ax.set_yticks([])
             ax.set_xticks([])
             ax.set_title('overlay')
