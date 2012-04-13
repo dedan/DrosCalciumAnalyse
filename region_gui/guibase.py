@@ -56,10 +56,15 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         # connect signals to slots
         self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
         self.connect(self.filesListBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.load_file)
+        self.connect(self.nextButton, QtCore.SIGNAL("clicked()"), self.next_button_click)
 
         if debug:
             test_path = '/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json'
             # self.FilePath.setText(test_path)
+
+    def next_button_click(self):
+        box = self.filesListBox
+        box.setCurrentIndex((box.currentIndex() + 1) % (len(box) - 1))
 
     def selection_changed(self):
         """replot and save to regions.json when a combobox changed"""
@@ -106,7 +111,6 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         self.data.name = os.path.basename(fname)
 
         # TODO: update the number of active comboboxes and labels
-
         # init gui when labels already exist
         if self.data.name in self.regions:
             l.debug('name found in regions')
