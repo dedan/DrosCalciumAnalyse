@@ -42,8 +42,6 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.regions_file = regions_file
             self.selectFolderButton.setEnabled(True)
             self.filesListBox.setEnabled(True)
-            # TODO: activate next button only when folder selected
-            self.nextButton.setEnabled(True)
             self.regions = json.load(open(regions_file))
 
         # initialize the boxes
@@ -84,8 +82,6 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.regions_file = fname
             self.selectFolderButton.setEnabled(True)
             self.filesListBox.setEnabled(True)
-            self.nextButton.setEnabled(True)
-
 
     def select_folder(self):
         """open file select dialog and enter returned path to the line edit"""
@@ -97,6 +93,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             filelist = [f for f in filelist if not 'base' in f]
             self.filesListBox.clear()
             self.filesListBox.addItems(filelist)
+            self.nextButton.setEnabled(True)
         self.load_file()
 
     def load_file(self):
