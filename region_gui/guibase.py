@@ -11,6 +11,10 @@ from layout import Ui_RegionGui # Module generated from reading ui file 'layout.
 from DrosCalciumAnalyse import utils
 
 debug = True
+import logging as l
+l.basicConfig(level=l.DEBUG,
+            format='%(asctime)s %(levelname)s: %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S');
 
 
 class MyGui(QtGui.QMainWindow, Ui_RegionGui):
@@ -62,7 +66,8 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.FilePath.setText(fname)
 
     def open_file(self):
-        print 'loading: ', self.FilePath.text()
+        """load the serialized TimeSeries object that contains the ICA results"""
+        l.info('loading: %s' % self.FilePath.text())
         self.data.load(os.path.splitext(str(self.FilePath.text()))[0])
         print self.data.base.shape
         bases = self.data.base.trial_shaped2D().squeeze()
