@@ -74,7 +74,8 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         json.dump(self.regions, open(self.regions_file, 'w'))
         self.draw_plots()
 
-    def select_region_file(self, regions_file):
+    def select_region_file(self, regions_file=None):
+
         if regions_file:
             self.regions_file = regions_file
             self.regions = json.load(open(regions_file))
@@ -84,7 +85,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             fname = str(fname[0])
             if fname and os.path.exists(fname) and fname[-4:] == 'json':
                 self.regions_file = fname
-                self.regions = json.load(open(regions_file))
+                self.regions = json.load(open(self.regions_file))
             else:
                 l.error('no regions.json selected --> quitting')
                 sys.exit(-1)
