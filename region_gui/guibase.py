@@ -39,7 +39,6 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
 
         for i, label in enumerate(sorted(self.regions.keys())):
-            self.boxes[i].addItems(['bla', 'blub'])
             color = self.regions[label]['color']
             self.boxes[i].setStyleSheet("QComboBox { color: %s; }" % color)
             self.labels[i].setStyleSheet("QLabel { color: %s; }" % color)
@@ -57,7 +56,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         if debug:
             self.FilePath.setText('/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json')
 
-
+    # TODO: add functions to update the regions.json
 
     def select_file(self):
         """open file select dialog and enter returned path to the line edit"""
@@ -69,27 +68,30 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         """load the serialized TimeSeries object that contains the ICA results"""
         l.info('loading: %s' % self.FilePath.text())
         self.data.load(os.path.splitext(str(self.FilePath.text()))[0])
-        print self.data.base.shape
+        for box in self.boxes:
+            box.addItems([str(i) for i in range(1, self.data.num_objects+1)])
+        self.draw_plots()
+
+    def draw_plots(self):
+        sc = self.SpatialBase.canvas
+        tc = self.TemporalBase.canvas
+        sc.ax.clear()
+        tc.ax.clear()
         bases = self.data.base.trial_shaped2D().squeeze()
-        self.SpatialBase.canvas.ax.clear()
+        aspect_ratio = self.data.base.shape[0] / float(self.data.base.shape[1])
+        n_objects = self.data.num_objects
 
-        for i in range(self.data.num_objects):
+        for i in range(n_objects):
 
-            im = bases[i,:,:]
-            im_rgba = self.maps[i](im / 2 + 0.5)
-            im_rgba[:, :, 3] = 0.8
-            im_rgba[np.abs(im) < 0.1, 3] = 0
-            ax = self.SpatialBase.canvas.fig.add_subplot(self.data.num_objects+1, 1, i+1)
-            ax.contour(im, [0.3], colors=['k'])
-            ax.contourf(im, [0.3, 1], colors=["#4682B4"], alpha=1.)
-
-            ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
+            ax = sc.fig.add_subplot(n_objects + 1, 1, i + 1, aspect=aspect_ratio)
+            ax.contour(bases[i,:,:], [0.3], colors=['k'])
+            ax.contourf(bases[i,:,:], [0.3, 1], colors=["#4682B4"], alpha=1.)
             ax.set_yticks([])
             ax.set_xticks([])
 
-            ax = self.SpatialBase.canvas.fig.add_subplot(self.data.num_objects+1, 1, self.data.num_objects+1)
-            ax.contour(im, [0.3], colors=['k'])
-            ax.imshow(im_rgba, aspect='equal', interpolation='nearest')
+            ax = sc.fig.add_subplot(n_objects + 1, 1, n_objects + 1, aspect=aspect_ratio)
+            ax.contour(bases[i,:,:], [0.3], colors=['k'])
+            ax.contourf(bases[i,:,:], [0.3, 1], colors=["#4682B4"], alpha=0.4)
             ax.set_yticks([])
             ax.set_xticks([])
             ax.set_title('overlay')
@@ -112,5 +114,6 @@ if __name__ == '__main__':
     else:
         regions_file = sys.argv[1]
     my_view = MyGui(regions_file)
+    my_view.open_file()
     my_view.show()
     sys.exit(app.exec_())
