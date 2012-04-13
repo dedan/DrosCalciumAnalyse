@@ -101,7 +101,6 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.filesListBox.addItems(filelist)
             self.nextButton.setEnabled(True)
             self.filesListBox.setEnabled(True)
-        self.load_file()
 
     def load_file(self):
         """load the serialized TimeSeries object that contains the ICA results"""
@@ -118,11 +117,17 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
                 idx = self.boxes[i].findText(label)
                 if idx < 0:
                     l.warning('unknown label')
+                old_state = self.boxes[i].blockSignals(True);
                 self.boxes[i].setCurrentIndex(idx)
+                self.boxes[i].blockSignals(old_state)
+        else:
+            for box in self.boxes:
+                box.setCurrentIndex(0)
         self.draw_plots()
 
 
     def draw_plots(self):
+        # TODO: only replot the changed subplots
         sc = self.SpatialBase.canvas
         tc = self.TemporalBase.canvas
         sc.fig.clear()
@@ -142,7 +147,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
             ax = sc.fig.add_subplot(n_objects + 1, 1, n_objects + 1, aspect=aspect_ratio)
             ax.contour(bases[i,:,:], [0.3], colors=['k'])
-            ax.contourf(bases[i,:,:], [0.3, 1], colors=[color], alpha=0.4)
+            ax.contourf(bases[i,:,:], [0.3, 1], colors=[color], alpha=0.6)
             ax.set_yticks([])
             ax.set_xticks([])
             ax.set_xlabel('overlay')
