@@ -21,6 +21,9 @@
        <layout class="QHBoxLayout" name="horizontalLayout_5">
         <item>
          <widget class="QComboBox" name="filesListBox">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
             <horstretch>0</horstretch>
@@ -31,6 +34,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="nextButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>next</string>
           </property>
@@ -45,6 +51,9 @@
         </item>
         <item>
          <widget class="QPushButton" name="selectFolderButton">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
           <property name="text">
            <string>Select Data Folder</string>
           </property>

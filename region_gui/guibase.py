@@ -30,8 +30,6 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         """initialize the gui, color the boxes, etc.."""
         super(MyGui, self).__init__(parent)
         self.data = pipeline.TimeSeries()
-        self.regions_file = regions_file
-        self.regions = json.load(open(regions_file))
 
         # gui init stuff
         self.setupUi(self)
@@ -39,6 +37,13 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
                       self.ComboBox_4, self.ComboBox_5, self.ComboBox_6]
         self.labels = [self.label_1, self.label_2, self.label_3,
                        self.label_4, self.label_5, self.label_6]
+
+        if os.path.exists(regions_file) and regions_file[-4:] == 'json':
+            self.regions_file = regions_file
+            self.selectFolderButton.setEnabled(True)
+            self.filesListBox.setEnabled(True)
+            self.nextButton.setEnabled(True)
+            self.regions = json.load(open(regions_file))
 
         # initialize the boxes
         size = self.ComboBox_1.style().pixelMetric(QtGui.QStyle.PM_SmallIconSize)
@@ -55,6 +60,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
         # connect signals to slots
         self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
+        self.connect(self.selectRegionsButton, QtCore.SIGNAL("clicked()"), self.select_region_file)
 
         if debug:
             test_path = '/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json'
@@ -70,10 +76,20 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         json.dump(self.regions, open(self.regions_file, 'w'))
         self.draw_plots()
 
+    def select_region_file(self):
+        fname = str(QtGui.QFileDialog.getOpenFileName())
+        if fname and fname[-4:] == 'json':
+            self.regions_file = fname
+            self.selectFolderButton.setEnabled(True)
+            self.filesListBox.setEnabled(True)
+            self.nextButton.setEnabled(True)
+
+
     def select_folder(self):
         """open file select dialog and enter returned path to the line edit"""
-        self.folder = str(QtGui.QFileDialog.getExistingDirectory())
-        if self.folder:
+        fname = str(QtGui.QFileDialog.getExistingDirectory())
+        if fname:
+            self.folder = fname
             filelist = glob.glob(os.path.join(self.folder, '*.json'))
             filelist = [os.path.splitext(os.path.basename(f))[0] for f in filelist]
             filelist = [f for f in filelist if not 'base' in f]
