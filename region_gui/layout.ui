@@ -43,16 +43,9 @@
          </widget>
         </item>
         <item>
-         <widget class="QPushButton" name="selectRegionsButton">
-          <property name="text">
-           <string>Select regions.json</string>
-          </property>
-         </widget>
-        </item>
-        <item>
          <widget class="QPushButton" name="selectFolderButton">
           <property name="enabled">
-           <bool>false</bool>
+           <bool>true</bool>
           </property>
           <property name="text">
            <string>Select Data Folder</string>

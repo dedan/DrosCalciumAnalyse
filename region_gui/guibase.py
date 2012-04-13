@@ -38,11 +38,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         self.labels = [self.label_1, self.label_2, self.label_3,
                        self.label_4, self.label_5, self.label_6]
 
-        if os.path.exists(regions_file) and regions_file[-4:] == 'json':
-            self.regions_file = regions_file
-            self.selectFolderButton.setEnabled(True)
-            self.filesListBox.setEnabled(True)
-            self.regions = json.load(open(regions_file))
+        self.select_region_file(regions_file)
 
         # initialize the boxes
         size = self.ComboBox_1.style().pixelMetric(QtGui.QStyle.PM_SmallIconSize)
@@ -59,14 +55,11 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
         # connect signals to slots
         self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
-        self.connect(self.selectRegionsButton, QtCore.SIGNAL("clicked()"), self.select_region_file)
         self.connect(self.filesListBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.load_file)
 
         if debug:
             test_path = '/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json'
             # self.FilePath.setText(test_path)
-
-    # TODO: select data folder inactive before json file loaded
 
     def selection_changed(self):
         """replot and save to regions.json when a combobox changed"""
@@ -76,12 +69,20 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         json.dump(self.regions, open(self.regions_file, 'w'))
         self.draw_plots()
 
-    def select_region_file(self):
-        fname = str(QtGui.QFileDialog.getOpenFileName())
-        if fname and fname[-4:] == 'json':
-            self.regions_file = fname
-            self.selectFolderButton.setEnabled(True)
-            self.filesListBox.setEnabled(True)
+    def select_region_file(self, regions_file):
+        if regions_file:
+            self.regions_file = regions_file
+            self.regions = json.load(open(regions_file))
+        else:
+            fname = QtGui.QFileDialog.getOpenFileNameAndFilter(caption='select regions.json',
+                                                               filter='*.json')
+            fname = str(fname[0])
+            if fname and os.path.exists(fname) and fname[-4:] == 'json':
+                self.regions_file = fname
+                self.regions = json.load(open(regions_file))
+            else:
+                l.error('no regions.json selected --> quitting')
+                sys.exit(-1)
 
     def select_folder(self):
         """open file select dialog and enter returned path to the line edit"""
@@ -94,6 +95,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.filesListBox.clear()
             self.filesListBox.addItems(filelist)
             self.nextButton.setEnabled(True)
+            self.filesListBox.setEnabled(True)
         self.load_file()
 
     def load_file(self):
@@ -150,14 +152,9 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
 
 if __name__ == '__main__':
-    # TODO: check whether regions.json is passed as an argument to the script
-    # if not, display a dialog that lets you chose the location of the regions.json
-    # and pass the result of the dialog to the gui.
     app = QtGui.QApplication(sys.argv)
-    if debug:
-        regions_file = '/Users/dedan/projects/fu/dros_calcium/region_gui/test_regions.json'
-    else:
-        regions_file = sys.argv[1]
+    regions_file = sys.argv[1] if len(sys.argv) > 1 else ""
     my_view = MyGui(regions_file)
     my_view.show()
+    app.setActiveWindow(my_view)
     sys.exit(app.exec_())
