@@ -47,20 +47,26 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
                 box.addItem(label, QtGui.QColor(i))
                 pixmap.fill(QtGui.QColor(config["labels"][label]));
                 box.setItemData(i, pixmap, QtCore.Qt.DecorationRole)
+            # connect callback
+            self.connect(box,
+                         QtCore.SIGNAL("currentIndexChanged(int)"),
+                         self.selection_changed)
 
         # connect signals to slots
-        QtCore.QObject.connect(self.SelectButton,
-                               QtCore.SIGNAL("clicked()"),
-                               self.select_file)
-        QtCore.QObject.connect(self.LoadButton,
-                               QtCore.SIGNAL("clicked()"),
-                               self.open_file)
+        self.connect(self.SelectButton, QtCore.SIGNAL("clicked()"), self.select_file)
+        self.connect(self.LoadButton, QtCore.SIGNAL("clicked()"), self.open_file)
 
         if debug:
             test_path = '/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json'
             self.FilePath.setText(test_path)
 
-    # TODO: add functions to update the regions.json
+    def selection_changed(self):
+        """replot and save to regions.json when a combobox changed"""
+        l.info('selection made')
+        box = self.sender()
+        self.regions[self.data.name][box.currentIndex()] = str(box.currentText())
+        json.dump(self.regions, open(self.regions_file, 'w'))
+        self.draw_plots()
 
     def select_file(self):
         """open file select dialog and enter returned path to the line edit"""
@@ -71,15 +77,14 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
     def open_file(self):
         """load the serialized TimeSeries object that contains the ICA results"""
         fname = os.path.splitext(str(self.FilePath.text()))[0]
-        name = "_".join(os.path.basename(fname).split("_")[0:2])
         l.info('loading: %s' % fname)
-        l.debug('name: %s' % name)
         self.data.load(fname)
+        name = "_".join(os.path.basename(fname).split("_")[0:2])
+        self.data.name = name
 
         # TODO: update the number of active comboboxes and labels
 
-        # TODO: load json
-        plot_colors = ['white'] * self.data.num_objects
+        # init gui when labels already exist
         if name in self.regions:
             l.debug('name found in regions')
             for i, label in enumerate(self.regions[name]):
@@ -87,12 +92,10 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
                 if idx < 0:
                     l.warning('unknown label')
                 self.boxes[i].setCurrentIndex(idx)
-                plot_colors[i] = config['labels'][label]
-        l.debug(plot_colors)
-        self.draw_plots(plot_colors)
+        self.draw_plots()
 
 
-    def draw_plots(self, plot_colors):
+    def draw_plots(self):
         sc = self.SpatialBase.canvas
         tc = self.TemporalBase.canvas
         sc.ax.clear()
@@ -102,22 +105,23 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         n_objects = self.data.num_objects
 
         for i in range(n_objects):
+            color = config['labels'][str(self.boxes[i].currentText())]
 
             ax = sc.fig.add_subplot(n_objects + 1, 1, i + 1, aspect=aspect_ratio)
             ax.contour(bases[i,:,:], [0.3], colors=['k'])
-            ax.contourf(bases[i,:,:], [0.3, 1], colors=[plot_colors[i]], alpha=1.)
+            ax.contourf(bases[i,:,:], [0.3, 1], colors=[color], alpha=1.)
             ax.set_yticks([])
             ax.set_xticks([])
 
             ax = sc.fig.add_subplot(n_objects + 1, 1, n_objects + 1, aspect=aspect_ratio)
             ax.contour(bases[i,:,:], [0.3], colors=['k'])
-            ax.contourf(bases[i,:,:], [0.3, 1], colors=[plot_colors[i]], alpha=0.4)
+            ax.contourf(bases[i,:,:], [0.3, 1], colors=[color], alpha=0.4)
             ax.set_yticks([])
             ax.set_xticks([])
             ax.set_title('overlay')
 
-            ax = tc.fig.add_subplot(n_objects, 1, i)
-            ax.plot(self.data.timecourses[:, i])
+            ax = tc.fig.add_subplot(n_objects, 1, i + 1)
+            ax.plot(self.data.timecourses[:, i], color=color)
             ax.set_yticks([])
             ax.set_xticks([])
         sc.draw()
