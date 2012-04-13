@@ -16,8 +16,12 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-config = {"colors": ["#4682B4", "#008080", "#FFA500", "#6B8E23", "#B22222", "#DEB887"]
-         }
+config = {"labels": {"label1": "#4682B4",
+                     "label2": "#008080",
+                     "label3": "#FFA500",
+                     "label4": "#6B8E23",
+                     "label5": "#B22222",
+                     "label6": "#DEB887"}}
 
 class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
@@ -34,19 +38,15 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
                       self.ComboBox_4, self.ComboBox_5, self.ComboBox_6]
         self.labels = [self.label_1, self.label_2, self.label_3,
                        self.label_4, self.label_5, self.label_6]
-        self.maps = [utils.create_colormap('iPN', (0., 0., 1.), (1., 1., 0.), (1., 0., 0.)),
-                     utils.create_colormap('vlPrc', (0., 0., 1.), (0., 1., 1.), (0., 1., 0.)),
-                    utils.create_colormap('iPN', (0., 0., 1.), (1., 1., 0.), (1., 0., 0.)),
-                    utils.create_colormap('vlPrc', (0., 0., 1.), (0., 1., 1.), (0., 1., 0.)),
-                     utils.create_colormap('acid', (0., 0., 1.), (1., 0., 0.5), (1., 0., 1.))]
 
-
-        for i, label in enumerate(sorted(self.regions.keys())):
-            color = config["colors"][i]
-            self.boxes[i].setStyleSheet("QComboBox { color: %s; }" % color)
-            self.labels[i].setStyleSheet("QLabel { color: %s; }" % color)
-            self.labels[i].setText(label)
-
+        # initialize the boxes
+        size = self.ComboBox_1.style().pixelMetric(QtGui.QStyle.PM_SmallIconSize)
+        pixmap = QtGui.QPixmap(size-3,size-3)
+        for box in self.boxes:
+            for i, label in enumerate(sorted(config["labels"].keys())):
+                box.addItem(label, QtGui.QColor(i))
+                pixmap.fill(QtGui.QColor(config["labels"][label]));
+                box.setItemData(i, pixmap, QtCore.Qt.DecorationRole)
 
         # connect signals to slots
         QtCore.QObject.connect(self.SelectButton,
@@ -71,8 +71,6 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         """load the serialized TimeSeries object that contains the ICA results"""
         l.info('loading: %s' % self.FilePath.text())
         self.data.load(os.path.splitext(str(self.FilePath.text()))[0])
-        for box in self.boxes:
-            box.addItems([str(i) for i in range(1, self.data.num_objects+1)])
         self.draw_plots()
 
     def draw_plots(self):
