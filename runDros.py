@@ -21,7 +21,7 @@ config = ConfigObj('config.ini', unrepr=True)
 
 add = ''
 if config['normalize']:
-    add = '_maxnorm'
+    add += '_maxnorm'
 
 savefolder = os.path.join(config['save_path'],
                  'simil' + str(int(config['similarity_threshold'] * 100)) 
@@ -94,6 +94,13 @@ for prefix in config['prefixes']:
         baseline = trial_mean(bf.CutOut((0, 3))(ts))
         baselines.append(baseline)
         sorted_baseline = sorted_trials(baseline)
+        #downscale sorted baseline
+        ds = config['spatial_down']
+        ds_baseline = sorted_baseline.shaped2D()[:, ::ds, ::ds]
+        sorted_baseline.shape = tuple(ds_baseline.shape[1:])
+        sorted_baseline.set_timecourses(ds_baseline)
+        
+        
         # preprocess timeseries
         pp = gauss_filter(pixel_filter(rel_change(ts, baseline)))
         pp.timecourses[np.isnan(pp.timecourses)] = 0
@@ -126,6 +133,7 @@ for prefix in config['prefixes']:
                 os.mkdir(saveplace)                                                     
             if 'save' in config['individualMF']['do']:
                 mf.save(os.path.join(saveplace, fname + '_' + config['individualMF']['method']))
+                sorted_baseline.save(os.path.join(saveplace, fname + '_baseline'))
             if 'plot' in config['individualMF']['do']:    
         
                 mf_overview = vis.VisualizeTimeseries()
@@ -150,12 +158,11 @@ for prefix in config['prefixes']:
             # draw signal overview
             resp_overview = vis.VisualizeTimeseries()
             resp_overview.subplot(mean_resp.samplepoints)
-            ds = downscale = config['spatial_down']
             for ind, resp in enumerate(mean_resp.shaped2D()):
                 max_data = np.max(np.abs(resp))
                 resp /= max_data
                 resp_overview.imshow(resp_overview.axes['base'][ind],
-                                     sorted_baseline.shaped2D()[ind, ::ds, ::ds],
+                                     sorted_baseline.shaped2D()[ind],
                                      colormap=plt.cm.bone_r)
                 resp_overview.overlay_image(resp_overview.axes['base'][ind],
                                             resp, threshold=0.2,

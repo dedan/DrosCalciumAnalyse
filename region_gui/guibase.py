@@ -7,6 +7,8 @@ import numpy as np
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from NeuralImageProcessing import pipeline
+from illustrate_decomposition import VisualizeTimeseries as Vis
+from matplotlib.colors import rgb2hex
 
 from layout import Ui_RegionGui # Module generated from reading ui file 'layout.ui',
 from DrosCalciumAnalyse import utils
@@ -17,20 +19,23 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-config = {"labels": {"label1": "#4682B4",
-                     "label2": "#008080",
-                     "label3": "#FFA500",
-                     "label4": "#6B8E23",
-                     "label5": "#B22222",
-                     "label6": "#DEB887"}}
+config = {"labels": {"label1": utils.redmap,
+                     "label2": utils.brownmap,
+                     "label3": utils.yellowmap,
+                     "label4": utils.bluemap,
+                     "label5": utils.greenmap,
+                     "label6": utils.cyanmap,
+                     "label7": utils.violetmap                    
+                     }}
 
 class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
-    def __init__(self, regions_file, parent=None):
+    def __init__(self, regions_file, num_modes, parent=None):
         """initialize the gui, color the boxes, etc.."""
         super(MyGui, self).__init__(parent)
         self.data = pipeline.TimeSeries()
-
+        self.baseline = pipeline.TimeSeries()
+        
         # gui init stuff
         self.setupUi(self)
         self.boxes = [self.ComboBox_1, self.ComboBox_2, self.ComboBox_3,
@@ -42,11 +47,11 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
         # initialize the boxes
         size = self.ComboBox_1.style().pixelMetric(QtGui.QStyle.PM_SmallIconSize)
-        pixmap = QtGui.QPixmap(size-3,size-3)
+        pixmap = QtGui.QPixmap(size - 3, size - 3)
         for box in self.boxes:
             for i, label in enumerate(sorted(config["labels"].keys())):
                 box.addItem(label, QtGui.QColor(i))
-                pixmap.fill(QtGui.QColor(config["labels"][label]));
+                pixmap.fill(QtGui.QColor(rgb2hex(config["labels"][label](1.))))
                 box.setItemData(i, pixmap, QtCore.Qt.DecorationRole)
             # connect callback
             self.connect(box,
@@ -57,7 +62,15 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
         self.connect(self.filesListBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.load_file)
         self.connect(self.nextButton, QtCore.SIGNAL("clicked()"), self.next_button_click)
-
+        
+        # create plot arena
+        self.baseaxes = [self.SpatialBase.canvas.fig.add_subplot(num_modes, 1, i + 1)
+                          for i in range(num_modes)]
+        self.timeaxes = [self.TemporalBase.canvas.fig.add_subplot(num_modes, 1, i + 1)
+                          for i in range(num_modes)]
+        # instantiate plot functions
+        self.vis = Vis()
+        
         if debug:
             test_path = '/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json'
             # self.FilePath.setText(test_path)
@@ -72,7 +85,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         box = self.sender()
         self.regions[self.data.name] = [str(box.currentText()) for box in self.boxes]
         json.dump(self.regions, open(self.regions_file, 'w'))
-        self.draw_plots()
+        self.draw_spatial_plots()
 
     def select_region_file(self, regions_file=None):
 
@@ -104,12 +117,15 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.filesListBox.setEnabled(True)
 
     def load_file(self):
-        """load the serialized TimeSeries object that contains the ICA results"""
+        """load the serialized TimeSeries object that contains the MF results"""
         fname = os.path.join(self.folder, str(self.filesListBox.currentText()))
         l.info('loading: %s' % fname)
         self.data.load(fname)
+        self.data.shape = tuple(self.data.shape)
+        self.data.base.shape = tuple(self.data.base.shape)
         self.data.name = os.path.basename(fname)
-
+        self.baseline.load('_'.join(fname.split('_')[:-1]) + '_baseline')
+        self.baseline.shape = tuple(self.baseline.shape)
         # TODO: update the number of active comboboxes and labels
         # init gui when labels already exist
         if self.data.name in self.regions:
@@ -124,47 +140,40 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         else:
             for box in self.boxes:
                 box.setCurrentIndex(0)
-        self.draw_plots()
+        self.draw_spatial_plots()
+        self.draw_temporal_plots()
 
-
-    def draw_plots(self):
+    def draw_spatial_plots(self):
         # TODO: only replot the changed subplots
-        sc = self.SpatialBase.canvas
-        tc = self.TemporalBase.canvas
-        sc.fig.clear()
-        tc.fig.clear()
-        bases = self.data.base.trial_shaped2D().squeeze()
-        aspect_ratio = self.data.base.shape[0] / float(self.data.base.shape[1])
-        n_objects = self.data.num_objects
+        bases = self.data.base.shaped2D()
+        #aspect_ratio = self.data.base.shape[0] / float(self.data.base.shape[1])
+        for i in range(self.data.num_objects):
+            colormap = config['labels'][str(self.boxes[i].currentText())]
+            ax = self.baseaxes[i]
+            ax.hold(False)
+            self.vis.imshow(ax, np.mean(self.baseline.shaped2D(), 0),
+                                     colormap=plt.cm.bone_r)
+            ax.hold(True)
+            self.vis.overlay_image(ax, bases[i], threshold=0.2, colormap=colormap)
+        self.SpatialBase.canvas.draw()
 
-        for i in range(n_objects):
-            color = config['labels'][str(self.boxes[i].currentText())]
+    def draw_temporal_plots(self):
+        
+        for i in range(self.data.num_objects):
+            ax = self.timeaxes[i]
+            ax.hold(False)
+            self.vis.plot(ax, self.data.timecourses[:, i])
+            self.vis.add_labelshade(ax, self.data)
+        self.vis.add_samplelabel(ax, self.data, rotation='45', toppos=True)
+        self.TemporalBase.canvas.draw()
 
-            ax = sc.fig.add_subplot(n_objects + 1, 1, i + 1, aspect=aspect_ratio)
-            ax.contour(bases[i,:,:], [0.3], colors=['k'])
-            ax.contourf(bases[i,:,:], [0.3, 1], colors=[color], alpha=1.)
-            ax.set_yticks([])
-            ax.set_xticks([])
-
-            ax = sc.fig.add_subplot(n_objects + 1, 1, n_objects + 1, aspect=aspect_ratio)
-            ax.contour(bases[i,:,:], [0.3], colors=['k'])
-            ax.contourf(bases[i,:,:], [0.3, 1], colors=[color], alpha=0.6)
-            ax.set_yticks([])
-            ax.set_xticks([])
-            ax.set_xlabel('overlay')
-
-            ax = tc.fig.add_subplot(n_objects, 1, i + 1)
-            ax.plot(self.data.timecourses[:, i], color=color)
-            ax.set_yticks([])
-            ax.set_xticks([])
-        sc.draw()
-        tc.draw()
 
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     regions_file = sys.argv[1] if len(sys.argv) > 1 else ""
-    my_view = MyGui(regions_file)
+    num_modes = sys.argv[2] if len(sys.argv) > 2 else 5
+    my_view = MyGui(regions_file, num_modes)
     my_view.show()
     app.setActiveWindow(my_view)
     sys.exit(app.exec_())

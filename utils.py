@@ -7,8 +7,8 @@ reload(bf)
 
 def force_aspect(ax, aspect=1):
     im = ax.get_images()
-    extent =  im[0].get_extent()
-    ax.set_aspect(abs((extent[1]-extent[0])/(extent[3]-extent[2]))/aspect*0.3)
+    extent = im[0].get_extent()
+    ax.set_aspect(abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect * 0.3)
 
 
 def select_n_channels(data, n):
@@ -70,7 +70,21 @@ def dict2pdist(dic):
     return new_pdist, key_parts
 
 def create_colormap(cmap_name, from_rgb, over_rgb, to_rgb):
-    cdict = {'red': ((0., from_rgb[0], from_rgb[0]), (0.5, 1., 1.), (0.75, over_rgb[0], over_rgb[0]), (1., to_rgb[0], to_rgb[0])),
-             'green':((0., from_rgb[1], from_rgb[1]), (0.5, 1., 1.), (0.75, over_rgb[1], over_rgb[1]), (1., to_rgb[1], to_rgb[1])),
-             'blue':((0., from_rgb[2], from_rgb[2]), (0.5, 1., 1.), (0.75, over_rgb[2], over_rgb[2]), (1., to_rgb[2], to_rgb[2]))}
+    cdict = {'red': ((0., from_rgb[0] / 256., from_rgb[0] / 256.), (0.5, 1., 1.),
+                     (0.75, over_rgb[0] / 256., over_rgb[0] / 256.),
+                     (1., to_rgb[0] / 256., to_rgb[0] / 256.)),
+             'green':((0., from_rgb[1] / 256., from_rgb[1] / 256.), (0.5, 1., 1.),
+                      (0.75, over_rgb[1] / 256., over_rgb[1] / 256.),
+                       (1., to_rgb[1] / 256., to_rgb[1] / 256.)),
+             'blue':((0., from_rgb[2] / 256., from_rgb[2] / 256.), (0.5, 1., 1.),
+                     (0.75, over_rgb[2] / 256., over_rgb[2] / 256.),
+                     (1., to_rgb[2] / 256., to_rgb[2] / 256.))}
     return LinearSegmentedColormap(cmap_name, cdict, 256)
+
+redmap = create_colormap('redmap', (205, 0, 205), (255, 165, 0), (139, 0, 0))
+bluemap = create_colormap('bluemap', (205, 0, 205), (100, 149, 237), (16, 78, 139))
+greenmap = create_colormap('greenmap', (205, 0, 205), (154, 205, 50), (105, 139, 34))
+cyanmap = create_colormap('cyanmap', (205, 0, 205), (78, 238, 148), (0, 205, 102))
+yellowmap = create_colormap('yellomap', (205, 0, 205), (238, 201, 0), (238, 201, 0))
+violetmap = create_colormap('violetmap', (205, 0, 205), (148, 0, 211), (104, 34, 139))
+brownmap = create_colormap('brownmap', (205, 0, 205), (205, 133, 63), (139, 90, 43))
