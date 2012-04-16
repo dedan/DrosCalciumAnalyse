@@ -7,7 +7,7 @@ import numpy as np
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from NeuralImageProcessing import pipeline
-from illustrate_decomposition import VisualizeTimeseries as Vis
+from NeuralImageProcessing.illustrate_decomposition import VisualizeTimeseries as Vis
 from matplotlib.colors import rgb2hex
 
 from layout import Ui_RegionGui # Module generated from reading ui file 'layout.ui',
@@ -19,13 +19,13 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-config = {"labels": {"label1": utils.redmap,
-                     "label2": utils.brownmap,
-                     "label3": utils.yellowmap,
-                     "label4": utils.bluemap,
-                     "label5": utils.greenmap,
-                     "label6": utils.cyanmap,
-                     "label7": utils.violetmap                    
+config = {"labels": {"vlPRCt": utils.redmap,
+                     "vlPRCb": utils.brownmap,
+                     "iPN": utils.yellowmap,
+                     "iPNsecond": utils.bluemap,
+                     "iPNtract": utils.greenmap,
+                     "betweenTract": utils.cyanmap,
+                     "blackhole": utils.violetmap                    
                      }}
 
 class MyGui(QtGui.QMainWindow, Ui_RegionGui):
@@ -164,7 +164,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             ax.hold(False)
             self.vis.plot(ax, self.data.timecourses[:, i])
             self.vis.add_labelshade(ax, self.data)
-        self.vis.add_samplelabel(ax, self.data, rotation='45', toppos=True)
+        self.vis.add_samplelabel(self.timeaxes[0], self.data, rotation='45', toppos=True)
         self.TemporalBase.canvas.draw()
 
 

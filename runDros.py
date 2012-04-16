@@ -32,7 +32,7 @@ if not os.path.exists(savefolder):
 
 def create_mf(mf_dic):
     # creates a matrixfactorization according to mf_dic specification
-    mf_methods = {'nnma':bf.NNMA, 'sica': bf.sICA, 'stica': bf.stICA}
+    mf_methods = {'nnma':bf.NNMA, 'nnman':bf.NNMA, 'sica': bf.sICA, 'stica': bf.stICA}
     mf = mf_methods[mf_dic['method']](**mf_dic['param'])
     return mf
 
@@ -157,7 +157,7 @@ for prefix in config['prefixes']:
         if config['plot_signals']:
             # draw signal overview
             resp_overview = vis.VisualizeTimeseries()
-            resp_overview.subplot(mean_resp.samplepoints)
+            resp_overview.subplot(mean_resp.samplepoints, dim2=4)
             for ind, resp in enumerate(mean_resp.shaped2D()):
                 max_data = np.max(np.abs(resp))
                 resp /= max_data
@@ -165,14 +165,14 @@ for prefix in config['prefixes']:
                                      sorted_baseline.shaped2D()[ind],
                                      colormap=plt.cm.bone_r)
                 resp_overview.overlay_image(resp_overview.axes['base'][ind],
-                                            resp, threshold=0.2,
+                                            resp, threshold=0.1,
                                             title=mean_resp.label_sample[ind])
                 resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
             resp_overview.fig.savefig(savename_ind + '_overview.' + config['format'])
     
             # draw unsorted signal overview
             uresp_overview = vis.VisualizeTimeseries()
-            uresp_overview.subplot(mean_resp_unsort.samplepoints)
+            uresp_overview.subplot(mean_resp_unsort.samplepoints, dim2=4)
             for ind, resp in enumerate(mean_resp_unsort.shaped2D()):
                 uresp_overview.imshow(uresp_overview.axes['base'][ind],
                                        resp,
