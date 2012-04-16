@@ -157,22 +157,28 @@ for prefix in config['prefixes']:
         if config['plot_signals']:
             # draw signal overview
             resp_overview = vis.VisualizeTimeseries()
-            resp_overview.subplot(mean_resp.samplepoints, dim2=4)
+            if prefix == 'mic':
+                resp_overview.subplot(mean_resp.samplepoints, dim2=4)
+            else:
+                resp_overview.subplot(mean_resp.samplepoints)
             for ind, resp in enumerate(mean_resp.shaped2D()):
                 max_data = np.max(np.abs(resp))
                 resp /= max_data
                 resp_overview.imshow(resp_overview.axes['base'][ind],
                                      sorted_baseline.shaped2D()[ind],
-                                     colormap=plt.cm.bone_r)
+                                     colormap=plt.cm.bone)
                 resp_overview.overlay_image(resp_overview.axes['base'][ind],
-                                            resp, threshold=0.1,
+                                            resp, threshold=0.3,
                                             title=mean_resp.label_sample[ind])
                 resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
             resp_overview.fig.savefig(savename_ind + '_overview.' + config['format'])
     
             # draw unsorted signal overview
             uresp_overview = vis.VisualizeTimeseries()
-            uresp_overview.subplot(mean_resp_unsort.samplepoints, dim2=4)
+            if prefix == 'mic':
+                uresp_overview.subplot(mean_resp_unsort.samplepoints, dim2=4)
+            else:
+                uresp_overview.subplot(mean_resp_unsort.samplepoints)
             for ind, resp in enumerate(mean_resp_unsort.shaped2D()):
                 uresp_overview.imshow(uresp_overview.axes['base'][ind],
                                        resp,
