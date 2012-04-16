@@ -25,7 +25,8 @@ config = {"labels": {"vlPRCt": utils.redmap,
                      "iPNsecond": utils.bluemap,
                      "iPNtract": utils.greenmap,
                      "betweenTract": utils.cyanmap,
-                     "blackhole": utils.violetmap                    
+                     "blackhole": utils.violetmap,
+                     "!nolabel": plt.cm.hsv_r                   
                      }}
 
 class MyGui(QtGui.QMainWindow, Ui_RegionGui):
