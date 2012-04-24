@@ -22,6 +22,9 @@ load_path = '/Users/dedan/projects/fu/results/simil80n_bestFalse/nnma/'
 save_path = os.path.join(load_path, 'boxplots')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
+if not os.path.exists(os.path.join(load_path, 'odors')):
+    os.mkdir(os.path.join(load_path, 'odors'))
+
 data = {}
 
 # load the labels created by GUI
@@ -104,6 +107,7 @@ for region_label in all_region_labels:
 
 
 if integrate:
+
     # overview of the medians plot
     fig = plt.figure()
     for i, region_label in enumerate(medians.keys()):
@@ -117,20 +121,37 @@ if integrate:
     plt.savefig(os.path.join(save_path, 'medians.' + format))
     np.savetxt(os.path.join(save_path, 'medians.csv'), medians.values(), delimiter=',')
 
-fig = plt.figure()
-for i, comparison in enumerate(comparisons):
-    ax = fig.add_subplot(len(comparisons), 1, i + 1)
-    l = len(medians[comparison[0]])
-    ax.bar(range(l), medians[comparison[0]], color='r')
-    ax.bar(range(l), medians[comparison[1]]*-1, color='b')
-    ax.set_yticks([])
-    ax.set_xticks([])
-    ax.set_ylabel(', '.join(comparison), rotation='0')
-ax.set_xticks(range(l))
-ax.set_xticklabels(list(all_stimuli), rotation='90')
-plt.savefig(os.path.join(save_path, 'comparisons.' + format))
+    # medians comparison plot
+    fig = plt.figure()
+    for i, comparison in enumerate(comparisons):
+        ax = fig.add_subplot(len(comparisons), 1, i + 1)
+        l = len(medians[comparison[0]])
+        ax.bar(range(l), medians[comparison[0]], color='r')
+        ax.bar(range(l), medians[comparison[1]]*-1, color='b')
+        ax.set_yticks([])
+        ax.set_xticks([])
+        ax.set_ylabel(', '.join(comparison), rotation='0')
+    ax.set_xticks(range(l))
+    ax.set_xticklabels(list(all_stimuli), rotation='90')
+    plt.savefig(os.path.join(save_path, 'comparisons.' + format))
 
+    # odor-region comparison plots
+    all_odors = sorted(set([s.split('_')[0] for s in all_stimuli]))
+    all_concentrations = sorted(set([s.split('_')[1] for s in all_stimuli]))
+    for odor in all_odors:
 
-
-
+        fig = plt.figure()
+        rel_concentrations = ['_'.join([odor, c]) for c in all_concentrations
+                                if '_'.join([odor, c]) in all_stimuli]
+        for i, conc in enumerate(rel_concentrations):
+            ax = fig.add_subplot(len(rel_concentrations), 1, i + 1)
+            idx = all_stimuli.index(conc)
+            data = [medians[key][idx] for key in sorted(medians.keys())]
+            ax.bar(range(len(medians)), data)
+            ax.set_yticks([])
+            ax.set_xticks([])
+            ax.set_ylabel(conc, rotation='0')
+        ax.set_xticks(range(len(all_region_labels)))
+        ax.set_xticklabels(sorted(medians.keys()), rotation='90')
+        plt.savefig(os.path.join(load_path, 'odors', odor + '.' + format))
 
