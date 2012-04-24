@@ -40,11 +40,12 @@ for fname in filelist:
 
 # get all stimuli and region labels
 all_stimuli = sorted(set(sum([ts.label_sample for ts in data.values()], [])))
-all_region_labels = set(sum([labels for labels in labeled_animals.values()], []))
+all_region_labels = list(set(sum([labels for labels in labeled_animals.values()], [])))
 l.debug('all_stimuli: %s' % all_stimuli)
 l.debug('all_region_labels: %s' % all_region_labels)
 
 # produce a figure for each region_label
+medians = []
 for region_label in all_region_labels:
 
     fig = plt.figure()
@@ -81,11 +82,21 @@ for region_label in all_region_labels:
     ax = fig.add_subplot(111)
     # mask it for nans (! True in the mask means exclusion)
     integrated = np.ma.array(integrated, mask=np.isnan(integrated))
+    medians.append(np.ma.extras.median(integrated, axis=0))
     # make it a list because boxplot has a problem with masked arrays
     integrated = [[y for y in row if y] for row in integrated.T]
     ax.boxplot(integrated)
     ax.set_xticklabels(list(all_stimuli), rotation='90')
     plt.savefig(os.path.join(save_path, region_label + '.' + format))
 
-
+fig = plt.figure()
+for i, median in enumerate(medians):
+    ax = fig.add_subplot(len(medians), 1, i + 1)
+    ax.bar(range(len(median)), median)
+    ax.set_yticks([])
+    ax.set_xticks([])
+    ax.set_ylabel(all_region_labels[i], rotation='0')
+ax.set_xticks(range(len(median)))
+ax.set_xticklabels(list(all_stimuli), rotation='90')
+plt.savefig(os.path.join(save_path, 'medians.' + format))
 
