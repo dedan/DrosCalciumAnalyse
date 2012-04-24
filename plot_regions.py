@@ -11,7 +11,13 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-format = 'svg'
+comparisons = [(u'vlPRCb', u'vlPRCt'),
+               (u'iPN', u'iPNsecond'),
+               (u'iPNtract', u'betweenTract'),
+               (u'betweenTract', u'vlPRCb'),
+               (u'iPN', u'blackhole')]
+format = 'png'
+integrate = True
 load_path = '/Users/dedan/projects/fu/results/simil80n_bestFalse/nnma/'
 save_path = os.path.join(load_path, 'boxplots')
 if not os.path.exists(save_path):
@@ -36,7 +42,10 @@ for fname in filelist:
     ts = TimeSeries()
     ts.load(os.path.splitext(fname)[0])
     name = os.path.splitext(os.path.basename(fname))[0]
-    data[name] = integrator(average_over_stimulus_repetitions(ts))
+    if integrate:
+        data[name] = integrator(average_over_stimulus_repetitions(ts))
+    else:
+        data[name] = average_over_stimulus_repetitions(ts)
 
 # get all stimuli and region labels
 all_stimuli = sorted(set(sum([ts.label_sample for ts in data.values()], [])))
@@ -45,12 +54,12 @@ l.debug('all_stimuli: %s' % all_stimuli)
 l.debug('all_region_labels: %s' % all_region_labels)
 
 # produce a figure for each region_label
-medians = []
+medians = {}
 for region_label in all_region_labels:
 
     fig = plt.figure()
     fig.suptitle(region_label)
-    integrated = []
+    t_modes = []
 
     # iterate over region labels for each animal
     for animal, regions in labeled_animals.items():
@@ -76,27 +85,52 @@ for region_label in all_region_labels:
                     pdat[i*trial_length:i*trial_length+trial_length] = trial_shaped[index, :, mode]
 
             # add to results list
-            integrated.append(pdat)
-    integrated = np.array(integrated)
+            t_modes.append(pdat)
+    t_modes = np.array(t_modes)
 
+    add = '_integrated' if integrate else ''
     ax = fig.add_subplot(111)
     # mask it for nans (! True in the mask means exclusion)
-    integrated = np.ma.array(integrated, mask=np.isnan(integrated))
-    medians.append(np.ma.extras.median(integrated, axis=0))
+    t_modes_ma = np.ma.array(t_modes, mask=np.isnan(t_modes))
+    medians[region_label] = np.ma.extras.median(t_modes_ma, axis=0)
     # make it a list because boxplot has a problem with masked arrays
-    integrated = [[y for y in row if y] for row in integrated.T]
-    ax.boxplot(integrated)
+    t_modes_ma = [[y for y in row if y] for row in t_modes_ma.T]
+    ax.boxplot(t_modes_ma)
     ax.set_xticklabels(list(all_stimuli), rotation='90')
-    plt.savefig(os.path.join(save_path, region_label + '.' + format))
+    plt.savefig(os.path.join(save_path, region_label + add + '.' + format))
+
+    # write the data to csv files
+    np.savetxt(os.path.join(save_path, region_label + add + '.csv'), t_modes, delimiter=',')
+
+
+if integrate:
+    # overview of the medians plot
+    fig = plt.figure()
+    for i, region_label in enumerate(medians.keys()):
+        ax = fig.add_subplot(len(medians), 1, i + 1)
+        ax.bar(range(len(medians[region_label])), medians[region_label])
+        ax.set_yticks([])
+        ax.set_xticks([])
+        ax.set_ylabel(region_label, rotation='0')
+    ax.set_xticks(range(len(medians[region_label])))
+    ax.set_xticklabels(list(all_stimuli), rotation='90')
+    plt.savefig(os.path.join(save_path, 'medians.' + format))
+    np.savetxt(os.path.join(save_path, 'medians.csv'), medians.values(), delimiter=',')
 
 fig = plt.figure()
-for i, median in enumerate(medians):
-    ax = fig.add_subplot(len(medians), 1, i + 1)
-    ax.bar(range(len(median)), median)
+for i, comparison in enumerate(comparisons):
+    ax = fig.add_subplot(len(comparisons), 1, i + 1)
+    l = len(medians[comparison[0]])
+    ax.bar(range(l), medians[comparison[0]], color='r')
+    ax.bar(range(l), medians[comparison[1]]*-1, color='b')
     ax.set_yticks([])
     ax.set_xticks([])
-    ax.set_ylabel(all_region_labels[i], rotation='0')
-ax.set_xticks(range(len(median)))
+    ax.set_ylabel(', '.join(comparison), rotation='0')
+ax.set_xticks(range(l))
 ax.set_xticklabels(list(all_stimuli), rotation='90')
-plt.savefig(os.path.join(save_path, 'medians.' + format))
+plt.savefig(os.path.join(save_path, 'comparisons.' + format))
+
+
+
+
 
