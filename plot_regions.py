@@ -11,7 +11,11 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
+format = 'svg'
 load_path = '/Users/dedan/projects/fu/results/simil80n_bestFalse/nnma/'
+save_path = os.path.join(load_path, 'boxplots')
+if not os.path.exists(save_path):
+    os.mkdir(save_path)
 data = {}
 
 # load the labels created by GUI
@@ -81,7 +85,7 @@ for region_label in all_region_labels:
     integrated = [[y for y in row if y] for row in integrated.T]
     ax.boxplot(integrated)
     ax.set_xticklabels(list(all_stimuli), rotation='90')
-plt.show()
+    plt.savefig(os.path.join(save_path, region_label + '.' + format))
 
 
 
