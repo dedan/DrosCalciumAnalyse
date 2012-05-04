@@ -19,7 +19,7 @@ reload(vis)
 
 config = ConfigObj('config.ini', unrepr=True)
 
-add = ''
+add = config['filename_add']
 if config['normalize']:
     add += '_maxnorm'
 
@@ -105,13 +105,18 @@ for prefix in config['prefixes']:
         pp = gauss_filter(pixel_filter(rel_change(ts, baseline)))
         pp.timecourses[np.isnan(pp.timecourses)] = 0
         pp.timecourses[np.isinf(pp.timecourses)] = 0
+        if 'mask' in config['filename_add']:
+            maskpath = os.path.dirname(meas_path)
+            maskfile = '_'.join(os.path.basename(meas_path).split('_')[1:]) + '_mask.png'
+            spatial_mask = (plt.imread(os.path.join(maskpath, maskfile))[:, :, 0]).astype('bool')
+            pp.timecourses[:, spatial_mask.flatten()] = 0
+        
         if config['normalize']:
             pp.timecourses = pp.timecourses / np.max(pp.timecourses)
         pp = sorted_trials(pp)
         # calcualte mean response
         mean_resp_unsort = trial_mean(bf.CutOut((6, 12))(pp))
         mean_resp = sorted_trials(mean_resp_unsort)
-        # create stimuli mask for repetitive stimuli
         # select stimuli such that their mean correlation is below similarity_threshold
         stimuli_mask = bf.SampleSimilarity(config['similarity_threshold'])
         stimuli_selection = stimuli_mask(mean_resp)
