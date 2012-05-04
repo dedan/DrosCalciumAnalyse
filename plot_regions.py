@@ -8,6 +8,7 @@ import NeuralImageProcessing.basic_functions as bf
 import logging as l
 import numpy as np
 import pylab as plt
+from mpl_toolkits.mplot3d import Axes3D
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
@@ -17,6 +18,7 @@ comparisons = [(u'vlPRCb', u'vlPRCt'),
                (u'iPNtract', u'betweenTract'),
                (u'betweenTract', u'vlPRCb'),
                (u'iPN', u'blackhole')]
+main_regions = [u'iPN', u'iPNtract', u'vlPRCt']
 format = 'png'
 integrate = True
 load_path = '/Users/dedan/projects/fu/results/simil80n_bestFalse/nnma/'
@@ -155,4 +157,22 @@ if integrate:
         ax.set_xticks(range(len(all_region_labels)))
         ax.set_xticklabels(sorted(medians.keys()), rotation='90')
         plt.savefig(os.path.join(load_path, 'odors', odor + '.' + format))
+
+    # median heatmaps
+    hm_data = np.array([medians[region] for region in main_regions])
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.imshow(hm_data, interpolation='nearest')
+    ax.set_xticks([])
+    ax.set_yticks(range(len(main_regions)))
+    ax.set_yticklabels(main_regions)
+    plt.savefig(os.path.join(load_path, 'heatmap.' + format))
+
+    ### 3D plot
+    # 3D plot of the responses on the space of the 3 most prominent clusters.
+    # each dimension in the plot is the magnitude of a odor response in a certain cluster.
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    ax.scatter(hm_data[0,:], hm_data[1,:], hm_data[2,:])
+
 
