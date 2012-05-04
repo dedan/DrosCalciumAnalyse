@@ -147,9 +147,9 @@ if integrate:
         for i, conc in enumerate(rel_concentrations):
             ax = fig.add_subplot(len(rel_concentrations), 1, i + 1)
             idx = all_stimuli.index(conc)
-            data = [medians[key][idx] for key in sorted(medians.keys())]
-            ax.bar(range(len(medians)), data)
-            ax.set_yticks([])
+            plot_data = [medians[key][idx] for key in sorted(medians.keys())]
+            ax.bar(range(len(medians)), plot_data)
+            ax.set_yticks(range(int(np.max(np.array(medians.values()).flatten()))))
             ax.set_xticks([])
             ax.set_ylabel(conc, rotation='0')
         ax.set_xticks(range(len(all_region_labels)))
