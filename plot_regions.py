@@ -2,6 +2,7 @@
 import os
 import glob
 import json
+import itertools as it
 from NeuralImageProcessing.pipeline import TimeSeries
 import NeuralImageProcessing.basic_functions as bf
 import logging as l
@@ -51,8 +52,8 @@ for fname in filelist:
         data[name] = average_over_stimulus_repetitions(ts)
 
 # get all stimuli and region labels
-all_stimuli = sorted(set(sum([ts.label_sample for ts in data.values()], [])))
-all_region_labels = list(set(sum([labels for labels in labeled_animals.values()], [])))
+all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
+all_region_labels = list(set(it.chain.from_iterable([labels for labels in labeled_animals.values()])))
 l.debug('all_stimuli: %s' % all_stimuli)
 l.debug('all_region_labels: %s' % all_region_labels)
 
