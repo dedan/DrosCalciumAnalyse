@@ -168,11 +168,22 @@ if integrate:
     ax.set_yticklabels(main_regions)
     plt.savefig(os.path.join(load_path, 'heatmap.' + format))
 
-    ### 3D plot
-    # 3D plot of the responses on the space of the 3 most prominent clusters.
-    # each dimension in the plot is the magnitude of a odor response in a certain cluster.
+
+
+    # 3d plot
+    symbols = {'-1': 'o', '-2': 'o', '-3': 's', '-5': 'd', '0': '*'}
     fig = plt.figure()
     ax = fig.gca(projection='3d')
-    ax.scatter(hm_data[0,:], hm_data[1,:], hm_data[2,:])
-
-
+    inleg = []
+    for i in range(len(all_stimuli)):
+        odor, concen = all_stimuli[i].split('_')
+        c = plt.cm.hsv(float(all_odors.index(odor)) / len(all_odors))
+        ax.scatter(hm_data[0,i], hm_data[1,i], hm_data[2,i], c=c, marker=symbols[concen], label=odor)
+        if odor not in inleg:
+            ax.plot([], [], 'o', c=c, label=odor)
+            inleg.append(odor)
+    ax.set_xlabel(main_regions[0])
+    ax.set_ylabel(main_regions[1])
+    ax.set_zlabel(main_regions[2])
+    legend(loc=(0.0,0.6), ncol=2, prop={"size":9})
+    plt.savefig(os.path.join(load_path, '3dscatter.' + format))
