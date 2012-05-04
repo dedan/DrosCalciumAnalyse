@@ -169,6 +169,40 @@ if integrate:
     plt.savefig(os.path.join(load_path, 'heatmap.' + format))
 
 
+    # filter out the strange CO2 labels
+    co2strange =  [u'CO2_1', u'CO2_5']
+    co2rename = {u'CO2_10': u'CO2_-1', u'CO2_-1': u'CO2_-3'}
+    idx = np.array([True if not all_stimuli[i] in co2strange else False for i in range(len(all_stimuli))])
+    hm_data = hm_data[:,idx]
+    all_stimuli = [s for i, s in enumerate(all_stimuli) if idx[i]]
+    for i in range(len(all_stimuli)):
+        if all_stimuli[i] in co2rename:
+            all_stimuli[i] = co2rename[all_stimuli[i]]
+    conc = ['-1', '-3', '-5']
+    fig = plt.figure()
+    dats = []
+
+    # splitted and sorted heatmaps
+    new_order = [u'MSH', u'LIN', u'BEA', u'OCO', u'ISO', u'ACP', u'BUT',
+                 u'2PA', u'PAC', u'CO2', u'AAC', u'ACA', u'ABA', u'BUD',
+                 u'PAA', u'GEO', u'CUA', u'MOL']
+    for i in range(len(conc)):
+        plotti = np.zeros((3, len(new_order)))
+        for y, odor in enumerate(new_order):
+            for x, co in enumerate(conc):
+                stim = '%s_%s' % (odor, co)
+                if stim in all_stimuli:
+                    plotti[x, y] = hm_data[i, all_stimuli.index(stim)]
+        dats.append(plotti)
+    for i in range(len(conc)):
+        ax = fig.add_subplot(len(conc), 1, i + 1)
+        ax.imshow(dats[i], interpolation='nearest')
+        ax.set_yticks(range(len(conc)))
+        ax.set_yticklabels(conc)
+        ax.set_xticks([])
+    ax.set_xticks(range(len(all_odors)))
+    ax.set_xticklabels(new_order, rotation='90')
+    plt.savefig(os.path.join(load_path, 'split_heatmap.' + format))
 
     # 3d plot
     symbols = {'-1': 'o', '-2': 'o', '-3': 's', '-5': 'd', '0': '*'}
@@ -185,5 +219,5 @@ if integrate:
     ax.set_xlabel(main_regions[0])
     ax.set_ylabel(main_regions[1])
     ax.set_zlabel(main_regions[2])
-    legend(loc=(0.0,0.6), ncol=2, prop={"size":9})
+    plt.legend(loc=(0.0,0.6), ncol=2, prop={"size":9})
     plt.savefig(os.path.join(load_path, '3dscatter.' + format))
