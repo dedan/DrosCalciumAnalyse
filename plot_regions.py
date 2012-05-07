@@ -2,8 +2,10 @@
 import os
 import glob
 import json
+import math
 import itertools as it
 from NeuralImageProcessing.pipeline import TimeSeries
+from NeuralImageProcessing import illustrate_decomposition as vis
 import NeuralImageProcessing.basic_functions as bf
 import logging as l
 import numpy as np
@@ -63,9 +65,8 @@ l.debug('all_region_labels: %s' % all_region_labels)
 medians = {}
 for region_label in all_region_labels:
 
-    fig = plt.figure()
-    fig.suptitle(region_label)
     t_modes = []
+    s_modes = []
 
     # iterate over region labels for each animal
     for animal, regions in labeled_animals.items():
@@ -92,9 +93,14 @@ for region_label in all_region_labels:
 
             # add to results list
             t_modes.append(pdat)
+            s_modes.append((ts.name, ts.base.trial_shaped2D()[mode,:,:,:].squeeze()))
     t_modes = np.array(t_modes)
 
     add = '_integrated' if integrate else ''
+
+    # temporal boxplots
+    fig = plt.figure()
+    fig.suptitle(region_label)
     ax = fig.add_subplot(111)
     # mask it for nans (! True in the mask means exclusion)
     t_modes_ma = np.ma.array(t_modes, mask=np.isnan(t_modes))
@@ -104,6 +110,27 @@ for region_label in all_region_labels:
     ax.boxplot(t_modes_ma)
     ax.set_xticklabels(list(all_stimuli), rotation='90')
     plt.savefig(os.path.join(save_path, region_label + add + '.' + format))
+
+    # spatial base plots
+    fig = vis.VisualizeTimeseries()
+    fig.subplot(len(s_modes))
+    for i, (name, s_mode) in enumerate(s_modes):
+        n = '_'.join(name.split('_')[:-1])
+        filelist = glob.glob(os.path.join(load_path, '*' + n + '_baseline.json'))
+        print name, filelist
+        base_series = TimeSeries()
+        base_series.load(os.path.splitext(filelist[0])[0])
+        base_series.shape = tuple(base_series.shape)
+
+        fig.imshow(fig.axes['base'][i],
+                   np.mean(base_series.shaped2D(), axis=0),
+                   cmap=plt.cm.bone_r)
+        fig.overlay_image(fig.axes['base'][i],
+                          s_mode, threshold=0.1,
+                          title=n)
+        # fig.axes['base'][ind].set_ylabel('%.2f' % max_data)
+
+    fig.fig.savefig(os.path.join(save_path, region_label + add + '_spatial.' + format))
 
     # write the data to csv files
     np.savetxt(os.path.join(save_path, region_label + add + '.csv'), t_modes, delimiter=',')
@@ -185,17 +212,21 @@ if integrate:
     # splitted and sorted heatmaps
     new_order = [u'MSH', u'LIN', u'BEA', u'OCO', u'ISO', u'ACP', u'BUT',
                  u'2PA', u'PAC', u'CO2', u'AAC', u'ACA', u'ABA', u'BUD',
-                 u'PAA', u'GEO', u'CUA', u'MOL']
+                 u'PAA', u'GEO', u'CVA', u'MOL']
     for i in range(len(conc)):
         plotti = np.zeros((3, len(new_order)))
         for y, odor in enumerate(new_order):
             for x, co in enumerate(conc):
-                stim = '%s_%s' % (odor, co)
+                if odor == 'MOL':
+                    stim = 'MOL_0'
+                else:
+                    stim = '%s_%s' % (odor, co)
                 if stim in all_stimuli:
                     plotti[x, y] = hm_data[i, all_stimuli.index(stim)]
         dats.append(plotti)
     for i in range(len(conc)):
         ax = fig.add_subplot(len(conc), 1, i + 1)
+        ax.set_title("region: %s - max: %f" % (main_regions[i], np.max(dats[i])))
         ax.imshow(dats[i], interpolation='nearest')
         ax.set_yticks(range(len(conc)))
         ax.set_yticklabels(conc)
