@@ -191,7 +191,8 @@ if integrate:
         for i, conc in enumerate(rel_concentrations):
             ax = fig.add_subplot(len(rel_concentrations), 1, i + 1)
             idx = all_stimuli.index(conc)
-            plot_data = [medians[key][idx] for key in sorted(medians.keys())]
+            plot_data = [medians[key].data[idx] for key in sorted(medians.keys())]
+            plot_data[plot_data == 0.0] = 0.01
             ax.bar(range(len(medians)), plot_data)
             ax.set_yticks(range(int(np.max(np.array(medians.values()).flatten()))))
             ax.set_xticks([])
