@@ -11,6 +11,8 @@ import logging as l
 import numpy as np
 import pylab as plt
 from mpl_toolkits.mplot3d import Axes3D
+from collections import defaultdict
+import utils
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
@@ -21,6 +23,15 @@ comparisons = [(u'vlPRCb', u'vlPRCt'),
                (u'betweenTract', u'vlPRCb'),
                (u'iPN', u'blackhole')]
 main_regions = [u'iPN', u'iPNtract', u'vlPRCt']
+
+luts_path = os.path.join(os.path.dirname(__file__), 'colormap_luts')
+filelist = glob.glob(os.path.join(luts_path, '*.lut'))
+first_map = utils.colormap_from_lut(filelist.pop())
+colormaps = defaultdict(lambda: first_map)
+assert len(main_regions) == len(filelist)
+for i, fname in enumerate(filelist):
+    colormaps[main_regions[i]] = utils.colormap_from_lut(fname)
+
 format = 'png'
 integrate = True
 load_path = '/Users/dedan/projects/fu/results/simil80n_bestFalse/nnma/'
@@ -127,8 +138,8 @@ for region_label in all_region_labels:
                    cmap=plt.cm.bone_r)
         fig.overlay_image(fig.axes['base'][i],
                           s_mode, threshold=0.1,
-                          title=n)
-        # fig.axes['base'][ind].set_ylabel('%.2f' % max_data)
+                          title=n,
+                          colormap=colormaps[region_label])
 
     fig.fig.savefig(os.path.join(save_path, region_label + add + '_spatial.' + format))
 
@@ -252,3 +263,4 @@ if integrate:
     ax.set_zlabel(main_regions[2])
     plt.legend(loc=(0.0,0.6), ncol=2, prop={"size":9})
     plt.savefig(os.path.join(load_path, '3dscatter.' + format))
+
