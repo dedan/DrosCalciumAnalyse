@@ -23,6 +23,7 @@ comparisons = [(u'vlPRCb', u'vlPRCt'),
                (u'betweenTract', u'vlPRCb'),
                (u'iPN', u'blackhole')]
 main_regions = [u'iPN', u'iPNtract', u'vlPRCt']
+to_turn = ['120112b_neu', '111012a', '111017a_neu', '111018a', '110902a']
 
 luts_path = os.path.join(os.path.dirname(__file__), 'colormap_luts')
 filelist = glob.glob(os.path.join(luts_path, '*.lut'))
@@ -132,9 +133,13 @@ for region_label in all_region_labels:
         base_series = TimeSeries()
         base_series.load(os.path.splitext(filelist[0])[0])
         base_series.shape = tuple(base_series.shape)
+        base = base_series.shaped2D()
+        if n in to_turn:
+            base = base[:, ::-1, :]
+            s_mode = s_mode[::-1, :]
 
         fig.imshow(fig.axes['base'][i],
-                   np.mean(base_series.shaped2D(), axis=0),
+                   np.mean(base, axis=0),
                    cmap=plt.cm.bone_r)
         fig.overlay_image(fig.axes['base'][i],
                           s_mode, threshold=0.1,
@@ -145,7 +150,6 @@ for region_label in all_region_labels:
 
     # write the data to csv files
     np.savetxt(os.path.join(save_path, region_label + add + '.csv'), t_modes, delimiter=',')
-
 
 if integrate:
 
