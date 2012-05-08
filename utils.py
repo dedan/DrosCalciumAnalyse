@@ -2,14 +2,23 @@
 import itertools as it
 import numpy as np
 from NeuralImageProcessing import basic_functions as bf
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, ListedColormap
+import array
 reload(bf)
+
+def colormap_from_lut(filename):
+    """create a colormap from a .lut file like we get them from antonia"""
+    with open(filename, 'rb') as f:
+        bytes = f.read()
+        data = array.array('B')
+        data.fromstring(bytes)
+        data = np.reshape(data, (3, -1)) / 255.
+    return ListedColormap(zip(data[0,:], data[1,:], data[2,:]))
 
 def force_aspect(ax, aspect=1):
     im = ax.get_images()
     extent = im[0].get_extent()
     ax.set_aspect(abs((extent[1] - extent[0]) / (extent[3] - extent[2])) / aspect * 0.3)
-
 
 def select_n_channels(data, n):
     """ select n rows which have the most possible odors (columns) in common
