@@ -278,7 +278,7 @@ if integrate:
                 plotti[x, y] = valenz[stim]
     ax = fig.add_subplot(111)
     ax.set_title("valenz - max: %f" % np.max(plotti))
-    ax.imshow(plotti, interpolation='nearest')
+    ax.imshow(plotti, interpolation='nearest', cmap=plt.cm.RdYlGn)
     ax.set_yticks(range(len(conc)))
     ax.set_yticklabels(conc)
     ax.set_xticks(range(len(all_odors)))
@@ -314,3 +314,39 @@ if integrate:
     plt.legend(loc=(0.0,0.6), ncol=2, prop={"size":9})
     plt.savefig(os.path.join(load_path, '3dscatter.' + format))
 
+    # 3d valenz plot
+    # normalize valenz for colormap
+    all_vals = np.array(valenz.values())
+    for val in valenz:
+        valenz[val] = (valenz[val] - np.min(all_vals)) / (np.max(all_vals) - np.min(all_vals))
+
+    tmp_dat = {}
+    for i in range(len(all_stimuli)):
+        odor, concen = all_stimuli[i].split('_')
+        if not odor in tmp_dat:
+            tmp_dat[odor] = {}
+        tmp_dat[odor][concen] = {}
+
+        if all_stimuli[i] in valenz:
+            c = plt.cm.jet(valenz[all_stimuli[i]])
+        else:
+            c = (0, 0, 0)
+        tmp_dat[odor][concen]['color'] = c
+        tmp_dat[odor][concen]['data'] = hm_data[:,i]
+    symbols = {'-1': 'o', '-2': 'o', '-3': 'o', '-5': 'o', '0': 's'}
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    for odor in tmp_dat:
+        for concen in tmp_dat[odor]:
+            ax.scatter(*tmp_dat[odor][concen]['data'],
+                       c=tmp_dat[odor][concen]['color'],
+                       marker=symbols[concen], label=odor)
+            ax.plot([], [], 'o', c=tmp_dat[odor][concen]['color'], label=odor)
+        s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
+        bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
+        ax.plot(*[x for x in bla.T], c='0.5')
+    ax.set_xlabel(main_regions[0])
+    ax.set_ylabel(main_regions[1])
+    ax.set_zlabel(main_regions[2])
+    plt.legend(loc=(0.0,0.6), ncol=2, prop={"size":9})
+    plt.savefig(os.path.join(load_path, '3dscatter_valenz.' + format))
