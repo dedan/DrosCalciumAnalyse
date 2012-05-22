@@ -13,6 +13,7 @@ import pylab as plt
 from mpl_toolkits.mplot3d import Axes3D
 from collections import defaultdict
 import utils
+from scipy.stats.mstats_basic import scoreatpercentile
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
@@ -117,9 +118,17 @@ for region_label in all_region_labels:
     # mask it for nans (! True in the mask means exclusion)
     t_modes_ma = np.ma.array(t_modes, mask=np.isnan(t_modes))
     medians[region_label] = np.ma.extras.median(t_modes_ma, axis=0)
-    # make it a list because boxplot has a problem with masked arrays
-    t_modes_ma = [[y for y in row if y] for row in t_modes_ma.T]
-    ax.boxplot(t_modes_ma)
+    if integrate:
+        # make it a list because boxplot has a problem with masked arrays
+        t_modes_ma = [[y for y in row if y] for row in t_modes_ma.T]
+        ax.boxplot(t_modes_ma)
+    else:
+        l = len(medians[region_label])
+        p25 = scoreatpercentile(t_modes_ma, 25)
+        p75 = scoreatpercentile(t_modes_ma, 75)
+        ax.fill_between(range(l), p25, p75, linewidth=0, color='0.75')
+        ax.plot(medians[region_label], linewidth=0.5, color='0')
+        ax.set_xticks(range(0, l, 40))
     ax.set_xticklabels(list(all_stimuli), rotation='90')
     plt.savefig(os.path.join(save_path, region_label + add + '.' + format))
 
