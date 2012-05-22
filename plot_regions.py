@@ -55,7 +55,7 @@ filelist = [f for f in filelist if not 'regions' in os.path.basename(f)]
 
 # initialize processing (pipeline) components
 average_over_stimulus_repetitions = bf.SingleSampleResponse()
-integrator = bf.StimulusIntegrator()
+integrator = bf.StimulusIntegrator(threshold=-1000)
 
 # read data to dictionary
 l.info('read files from: %s' % load_path)
