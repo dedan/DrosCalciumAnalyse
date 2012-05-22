@@ -261,17 +261,27 @@ if integrate:
     plt.savefig(os.path.join(load_path, 'split_heatmap.' + format))
 
     # 3d plot
-    symbols = {'-1': 'o', '-2': 'o', '-3': 's', '-5': 'd', '0': '*'}
-    fig = plt.figure()
-    ax = fig.gca(projection='3d')
-    inleg = []
+    tmp_dat = {}
     for i in range(len(all_stimuli)):
         odor, concen = all_stimuli[i].split('_')
+        if not odor in tmp_dat:
+            tmp_dat[odor] = {}
+        tmp_dat[odor][concen] = {}
         c = plt.cm.hsv(float(all_odors.index(odor)) / len(all_odors))
-        ax.scatter(hm_data[0,i], hm_data[1,i], hm_data[2,i], c=c, marker=symbols[concen], label=odor)
-        if odor not in inleg:
-            ax.plot([], [], 'o', c=c, label=odor)
-            inleg.append(odor)
+        tmp_dat[odor][concen]['color'] = c
+        tmp_dat[odor][concen]['data'] = hm_data[:,i]
+    symbols = {'-1': 'o', '-2': 'o', '-3': '', '-5': '', '0': ''}
+    fig = plt.figure()
+    ax = fig.gca(projection='3d')
+    for odor in tmp_dat:
+        for concen in tmp_dat[odor]:
+            ax.scatter(*tmp_dat[odor][concen]['data'],
+                       c=tmp_dat[odor][concen]['color'],
+                       marker=symbols[concen], label=odor)
+        ax.plot([], [], 'o', c=tmp_dat[odor][concen]['color'], label=odor)
+        s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
+        bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
+        ax.plot(*[x for x in bla.T], c=tmp_dat[odor][str(concen)]['color'])
     ax.set_xlabel(main_regions[0])
     ax.set_ylabel(main_regions[1])
     ax.set_zlabel(main_regions[2])
