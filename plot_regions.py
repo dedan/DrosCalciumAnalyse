@@ -128,7 +128,7 @@ for region_label in all_region_labels:
         p75 = scoreatpercentile(t_modes_ma, 75)
         ax.fill_between(range(l), p25, p75, linewidth=0, color='0.75')
         ax.plot(medians[region_label], linewidth=0.5, color='0')
-        ax.set_xticks(range(0, l, 40))
+        ax.set_xticks(range(0, l, ts.timepoints))
     ax.set_xticklabels(list(all_stimuli), rotation='90')
     plt.savefig(os.path.join(save_path, region_label + add + '.' + format))
 
