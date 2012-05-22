@@ -36,7 +36,8 @@ for i, fname in enumerate(filelist):
 
 format = 'png'
 integrate = True
-load_path = '/Users/dedan/projects/fu/results/simil80n_bestFalse/nnma/'
+results_path = '/Users/dedan/projects/fu/results/'
+load_path = os.path.join(results_path, 'simil80n_bestFalse', 'nnma')
 save_path = os.path.join(load_path, 'boxplots')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
@@ -47,6 +48,9 @@ data = {}
 
 # load the labels created by GUI
 labeled_animals = json.load(open(os.path.join(load_path, 'regions.json')))
+
+# load valenz information (which odor they like)
+valenz = json.load(open(os.path.join(results_path, 'valenz.json')))
 
 # load and filter filelist
 filelist = glob.glob(os.path.join(load_path, '*.json'))
@@ -259,6 +263,28 @@ if integrate:
     ax.set_xticks(range(len(all_odors)))
     ax.set_xticklabels(new_order, rotation='90')
     plt.savefig(os.path.join(load_path, 'split_heatmap.' + format))
+
+    # splitted heatmap for valenz information
+    fig = plt.figure()
+    plotti = np.zeros((3, len(new_order)))
+    for y, odor in enumerate(new_order):
+        for x, co in enumerate(conc):
+            if odor == 'MOL':
+                stim = 'MOL_0'
+            else:
+                stim = '%s_%s' % (odor, co)
+            if stim in valenz:
+                print 'add val'
+                plotti[x, y] = valenz[stim]
+    ax = fig.add_subplot(111)
+    ax.set_title("valenz - max: %f" % np.max(plotti))
+    ax.imshow(plotti, interpolation='nearest')
+    ax.set_yticks(range(len(conc)))
+    ax.set_yticklabels(conc)
+    ax.set_xticks(range(len(all_odors)))
+    ax.set_xticklabels(new_order, rotation='90')
+    plt.savefig(os.path.join(load_path, 'split_heatmap_valenz.' + format))
+
 
     # 3d plot
     tmp_dat = {}
