@@ -264,9 +264,14 @@ if integrate:
     ax.set_xticklabels(new_order, rotation='90')
     plt.savefig(os.path.join(load_path, 'split_heatmap.' + format))
 
+    # normalize valenz for colormap
+    all_vals = np.array(valenz.values())
+    for val in valenz:
+        valenz[val] = (valenz[val] - np.min(all_vals)) / (np.max(all_vals) - np.min(all_vals))
+
     # splitted heatmap for valenz information
     fig = plt.figure()
-    plotti = np.zeros((3, len(new_order)))
+    plotti = np.ones((3, len(new_order))) * 0.5
     for y, odor in enumerate(new_order):
         for x, co in enumerate(conc):
             if odor == 'MOL':
@@ -277,7 +282,7 @@ if integrate:
                 print 'add val'
                 plotti[x, y] = valenz[stim]
     ax = fig.add_subplot(111)
-    ax.set_title("valenz - max: %f" % np.max(plotti))
+    ax.set_title("valenz - max: %f" % np.max(all_vals))
     ax.imshow(plotti, interpolation='nearest', cmap=plt.cm.RdYlGn)
     ax.set_yticks(range(len(conc)))
     ax.set_yticklabels(conc)
@@ -315,11 +320,6 @@ if integrate:
     plt.savefig(os.path.join(load_path, '3dscatter.' + format))
 
     # 3d valenz plot
-    # normalize valenz for colormap
-    all_vals = np.array(valenz.values())
-    for val in valenz:
-        valenz[val] = (valenz[val] - np.min(all_vals)) / (np.max(all_vals) - np.min(all_vals))
-
     tmp_dat = {}
     for i in range(len(all_stimuli)):
         odor, concen = all_stimuli[i].split('_')
