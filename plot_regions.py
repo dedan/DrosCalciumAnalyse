@@ -149,9 +149,9 @@ for region_label in all_region_labels:
 
         fig.imshow(fig.axes['base'][i],
                    np.mean(base, axis=0),
-                   cmap=plt.cm.bone_r)
+                   cmap=plt.cm.bone)
         fig.overlay_image(fig.axes['base'][i],
-                          s_mode, threshold=0.1,
+                          s_mode, threshold=0.2,
                           title=n,
                           colormap=colormaps[region_label])
 
