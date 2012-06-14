@@ -115,8 +115,8 @@ for region_label in all_region_labels:
             t_modes.append(pdat)
             s_modes.append((ts.name, ts.base.trial_shaped2D()[mode, :, :, :].squeeze()))
     t_modes = np.array(t_modes)
-    
-    
+
+
     add = '_integrated' if integrate else ''
 
     # temporal boxplots
@@ -161,7 +161,7 @@ for region_label in all_region_labels:
                    cmap=plt.cm.bone)
         fig.overlay_image(fig.axes['base'][i],
                           s_mode, threshold=0.2,
-                          title=n,
+                          title={"label": n},
                           colormap=colormaps[region_label])
 
     fig.fig.savefig(os.path.join(save_path, region_label + add + '_spatial.' + format))
