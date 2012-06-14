@@ -18,10 +18,10 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-comparisons = [(u'vlPRCb', u'vlPRCt'),
+comparisons = [#(u'vlPRCb', u'vlPRCt'),
                (u'iPN', u'iPNsecond'),
                (u'iPNtract', u'betweenTract'),
-               (u'betweenTract', u'vlPRCb'),
+               #(u'betweenTract', u'vlPRCb'),
                (u'iPN', u'blackhole')]
 main_regions = [u'iPN', u'iPNtract', u'vlPRCt']
 to_turn = ['120112b_neu', '111012a', '111017a_neu', '111018a', '110902a']
@@ -29,14 +29,16 @@ to_turn = ['120112b_neu', '111012a', '111017a_neu', '111018a', '110902a']
 luts_path = os.path.join(os.path.dirname(__file__), 'colormap_luts')
 filelist = glob.glob(os.path.join(luts_path, '*.lut'))
 first_map = utils.colormap_from_lut(filelist.pop())
+first_map = plt.cm.hsv_r
 colormaps = defaultdict(lambda: first_map)
 assert len(main_regions) == len(filelist)
 for i, fname in enumerate(filelist):
-    colormaps[main_regions[i]] = utils.colormap_from_lut(fname)
+    #colormaps[main_regions[i]] = utils.colormap_from_lut(fname)
+    colormaps[main_regions[i]] = plt.cm.hsv_r
 
 format = 'png'
 integrate = True
-results_path = '/Users/dedan/projects/fu/results/'
+results_path = '/home/jan/Documents/dros/new_data/aligned/results/'
 load_path = os.path.join(results_path, 'simil80n_bestFalse', 'nnma')
 save_path = os.path.join(load_path, 'boxplots')
 if not os.path.exists(save_path):
@@ -45,6 +47,7 @@ if not os.path.exists(os.path.join(load_path, 'odors')):
     os.mkdir(os.path.join(load_path, 'odors'))
 
 data = {}
+fulldatadic = {}
 
 # load the labels created by GUI
 labeled_animals = json.load(open(os.path.join(load_path, 'regions.json')))
@@ -59,7 +62,7 @@ filelist = [f for f in filelist if not 'regions' in os.path.basename(f)]
 
 # initialize processing (pipeline) components
 average_over_stimulus_repetitions = bf.SingleSampleResponse()
-integrator = bf.StimulusIntegrator(threshold=-1000)
+integrator = bf.StimulusIntegrator(threshold= -1000)
 
 # read data to dictionary
 l.info('read files from: %s' % load_path)
@@ -106,13 +109,14 @@ for region_label in all_region_labels:
             for i, stimulus in enumerate(all_stimuli):
                 if stimulus in ts.label_sample:
                     index = ts.label_sample.index(stimulus)
-                    pdat[i*trial_length:i*trial_length+trial_length] = trial_shaped[index, :, mode]
+                    pdat[i * trial_length:i * trial_length + trial_length] = trial_shaped[index, :, mode]
 
             # add to results list
             t_modes.append(pdat)
-            s_modes.append((ts.name, ts.base.trial_shaped2D()[mode,:,:,:].squeeze()))
+            s_modes.append((ts.name, ts.base.trial_shaped2D()[mode, :, :, :].squeeze()))
     t_modes = np.array(t_modes)
-
+    
+    
     add = '_integrated' if integrate else ''
 
     # temporal boxplots
@@ -121,6 +125,7 @@ for region_label in all_region_labels:
     ax = fig.add_subplot(111)
     # mask it for nans (! True in the mask means exclusion)
     t_modes_ma = np.ma.array(t_modes, mask=np.isnan(t_modes))
+    fulldatadic[region_label] = t_modes_ma
     medians[region_label] = np.ma.extras.median(t_modes_ma, axis=0)
     if integrate:
         # make it a list because boxplot has a problem with masked arrays
@@ -185,7 +190,7 @@ if integrate:
         ax = fig.add_subplot(len(comparisons), 1, i + 1)
         l = len(medians[comparison[0]])
         ax.bar(range(l), medians[comparison[0]], color='r')
-        ax.bar(range(l), medians[comparison[1]]*-1, color='b')
+        ax.bar(range(l), medians[comparison[1]] * -1, color='b')
         ax.set_yticks([])
         ax.set_xticks([])
         ax.set_ylabel(', '.join(comparison), rotation='0')
@@ -226,10 +231,10 @@ if integrate:
 
 
     # filter out the strange CO2 labels
-    co2strange =  [u'CO2_1', u'CO2_5']
+    co2strange = [u'CO2_1', u'CO2_5']
     co2rename = {u'CO2_10': u'CO2_-1', u'CO2_-1': u'CO2_-3'}
     idx = np.array([True if not all_stimuli[i] in co2strange else False for i in range(len(all_stimuli))])
-    hm_data = hm_data[:,idx]
+    hm_data = hm_data[:, idx]
     all_stimuli = [s for i, s in enumerate(all_stimuli) if idx[i]]
     for i in range(len(all_stimuli)):
         if all_stimuli[i] in co2rename:
@@ -300,14 +305,14 @@ if integrate:
         tmp_dat[odor][concen] = {}
         c = plt.cm.hsv(float(all_odors.index(odor)) / len(all_odors))
         tmp_dat[odor][concen]['color'] = c
-        tmp_dat[odor][concen]['data'] = hm_data[:,i]
-    symbols = {'-1': 'o', '-2': 'o', '-3': '', '-5': '', '0': ''}
+        tmp_dat[odor][concen]['data'] = hm_data[:, i]
+    symbols = {'-1': 's', '-2': 's', '-3': 'o', '-5': 'o', '0': 'x'}
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(111, projection='3d')
     for odor in tmp_dat:
         for concen in tmp_dat[odor]:
-            ax.scatter(*tmp_dat[odor][concen]['data'],
-                       c=tmp_dat[odor][concen]['color'],
+            ax.scatter(*[[i] for i in tmp_dat[odor][concen]['data']],
+                       edgecolors=tmp_dat[odor][concen]['color'], facecolors='none',
                        marker=symbols[concen], label=odor)
         ax.plot([], [], 'o', c=tmp_dat[odor][concen]['color'], label=odor)
         s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
@@ -316,30 +321,31 @@ if integrate:
     ax.set_xlabel(main_regions[0])
     ax.set_ylabel(main_regions[1])
     ax.set_zlabel(main_regions[2])
-    plt.legend(loc=(0.0,0.6), ncol=2, prop={"size":9})
+    plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
     plt.savefig(os.path.join(load_path, '3dscatter.' + format))
 
     # 3d valenz plot
     tmp_dat = {}
     for i in range(len(all_stimuli)):
-        odor, concen = all_stimuli[i].split('_')
-        if not odor in tmp_dat:
-            tmp_dat[odor] = {}
-        tmp_dat[odor][concen] = {}
-
+        #plot only data with valtex infoe
         if all_stimuli[i] in valenz:
-            c = plt.cm.jet(valenz[all_stimuli[i]])
-        else:
-            c = (0, 0, 0)
-        tmp_dat[odor][concen]['color'] = c
-        tmp_dat[odor][concen]['data'] = hm_data[:,i]
-    symbols = {'-1': 'o', '-2': 'o', '-3': 'o', '-5': 'o', '0': 's'}
+            odor, concen = all_stimuli[i].split('_')
+            if not odor in tmp_dat:
+                tmp_dat[odor] = {}
+            tmp_dat[odor][concen] = {}
+
+        
+            c = plt.cm.RdYlGn(valenz[all_stimuli[i]])
+
+            tmp_dat[odor][concen]['color'] = c
+            tmp_dat[odor][concen]['data'] = hm_data[:, i]
+    symbols = {'-1': 'o', '-2': 'o', '-3': 'o', '-5': 'o', '0': 'x'}
     fig = plt.figure()
-    ax = fig.gca(projection='3d')
+    ax = fig.add_subplot(111, projection='3d')
     for odor in tmp_dat:
         for concen in tmp_dat[odor]:
-            ax.scatter(*tmp_dat[odor][concen]['data'],
-                       c=tmp_dat[odor][concen]['color'],
+            ax.scatter(*[[i] for i in tmp_dat[odor][concen]['data']],
+                       edgecolors=tmp_dat[odor][concen]['color'], facecolors=tmp_dat[odor][concen]['color'],
                        marker=symbols[concen], label=odor)
             ax.plot([], [], 'o', c=tmp_dat[odor][concen]['color'], label=odor)
         s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
@@ -348,5 +354,5 @@ if integrate:
     ax.set_xlabel(main_regions[0])
     ax.set_ylabel(main_regions[1])
     ax.set_zlabel(main_regions[2])
-    plt.legend(loc=(0.0,0.6), ncol=2, prop={"size":9})
+    #plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
     plt.savefig(os.path.join(load_path, '3dscatter_valenz.' + format))

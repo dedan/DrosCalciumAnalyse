@@ -18,13 +18,14 @@ reload(vis)
 
 
 frames_per_trial = 40
-variance = 16
+variance = 10
 lowpass = 2
 similarity_threshold = 0.8
 normalize = False
 modesim_threshold = 0.5
 medianfilter = 5
 alpha = 0.9
+redo = False
 
 format = 'svg'
 
@@ -36,8 +37,8 @@ if normalize:
 base_path = '/home/jan/Documents/dros/new_data/aligned'
 data_path = base_path
 loadfolder = os.path.join(base_path, 'common_channels')
-savefolder = 'simil' + str(int(similarity_threshold * 100)) + add
-save_path = os.path.join(base_path, 'results', savefolder)
+savefolder = 'simil' + str(int(similarity_threshold * 100)) + 'n_bestFalse' + add
+save_path = os.path.join(base_path, 'results', savefolder, 'nnma', 'mic')
 
 #' +++ dedan specific +++'
 #base_path = '/Users/dedan/projects/fu'
@@ -70,7 +71,7 @@ trial_mean = bf.TrialMean()
 rel_change = bf.RelativeChange()
 # MedianFilter
 pixel_filter = bf.Filter('median', medianfilter)
-gauss_filter = bf.Filter('gauss', lowpass, downscale=3)
+gauss_filter = bf.Filter('gauss', lowpass, downscale=4)
 #sorting
 sorted_trials = bf.SortBySamplename()
 # ICA
@@ -78,8 +79,8 @@ sorted_trials = bf.SortBySamplename()
 #ica = bf.sICA(variance=variance)
 pca = bf.PCA(variance)
 #icaend = bf.sICA(latent_series=True)
-icaend = bf.stICA(variance, {'alpha':alpha})
-icain = bf.stICA(variance, {'alpha':alpha})
+#icaend = bf.stICA(variance, {'alpha':alpha})
+#icain = bf.stICA(variance, {'alpha':alpha})
 
 # select stimuli such that their mean correlation is below similarity_threshold
 stimuli_mask = bf.SampleSimilarity(similarity_threshold)
@@ -107,7 +108,13 @@ for prefix in prefixes:
     all_stimulifilter = []
 
     for file_ind, filename in enumerate(filelist):
-
+        # check if file is already done
+        thefilename = os.path.join(save_path, os.path.basename(filename).split('.json')[0] + '_modes.svg')
+        if not(redo) and os.path.exists(thefilename):
+            print filename, ' already done'
+            continue
+        else:
+            print 'doing: ', filename
         # load timeseries, shape and labels
         meas_path = os.path.splitext(filename)[0]
 
@@ -140,7 +147,7 @@ for prefix in prefixes:
         # do individual matrix factorization
         ####################################################################
         
-        icain = bf.NNMA(variance, 30, **{'sparse_par': 0, 'smoothness':0.2, 'sparse_par2':0.005})
+        icain = bf.NNMA(variance, 30, **{'sparse_par': 0, 'smoothness':0.2, 'sparse_par2':2.})
         raw_ica = icain(pp)
         
 #        # select only stimylidriven modes
@@ -156,29 +163,7 @@ for prefix in prefixes:
         # plot and save results
         ####################################################################
 
-        # save plot and data
-        tmp_save = os.path.join(save_path, os.path.basename(meas_path))
-
-        # draw signal overview
-        resp_overview = vis.VisualizeTimeseries()
-        resp_overview.subplot(mean_resp.samplepoints)
-        for ind, resp in enumerate(mean_resp.shaped2D()):
-            resp_overview.imshow(resp_overview.axes['base'][ind],
-                                  resp,
-                                  title=mean_resp.label_sample[ind],
-                                  colorbar=True)
-        resp_overview.fig.savefig(tmp_save + '_overview')
-
-        # draw unsorted signal overview
-        uresp_overview = vis.VisualizeTimeseries()
-        uresp_overview.subplot(mean_resp_unsort.samplepoints)
-        for ind, resp in enumerate(mean_resp_unsort.shaped2D()):
-            uresp_overview.imshow(uresp_overview.axes['base'][ind],
-                                   resp,
-                                   title=mean_resp_unsort.label_sample[ind],
-                                   colorbar=True)
-        uresp_overview.fig.savefig(tmp_save + '_overview_unsort')
-      
+     
         # draw individual matrix factorization overview
         toplot = bf.SortBySamplename()(bf.SingleSampleResponse('mean')(raw_ica))
         ica_overview = vis.VisualizeTimeseries()
@@ -186,10 +171,24 @@ for prefix in prefixes:
         mask = np.array([i[0] != 'm' for i in toplot.label_sample])
         before = bf.SelectTrials()(toplot, bf.TimeSeries(mask))
         after = bf.SelectTrials()(toplot, bf.TimeSeries(np.logical_not(mask)))
+        # adjust odorsets
+        stim_before = before.label_sample
+        stim_after = [i[1:] for i in after.label_sample]
+        miss_in_after = set(stim_before).difference(stim_after)
+        if miss_in_after: #remove in before
+            mask = np.array([s not in miss_in_after for s in stim_before])
+            before = bf.SelectTrials()(before, bf.TimeSeries(mask))
+        miss_in_before = set(stim_after).difference(stim_before)
+        if miss_in_before: #remove in after
+            mask = np.array([s not in miss_in_before for s in stim_after])
+            after = bf.SelectTrials()(after, bf.TimeSeries(mask))            
+            
+        assert before.label_sample == [i[1:] for i in after.label_sample]
+            
         for ind, resp in enumerate(toplot.base.shaped2D()):
             ica_overview.imshow(ica_overview.axes['base'][ind],
                                 resp,
-                                title=toplot.label_sample[ind])
+                                title={'label':toplot.label_sample[ind]})
             ica_overview.plot(ica_overview.axes['time'][ind],
                               before.timecourses[:, ind], color='b')
             ica_overview.plot(ica_overview.axes['time'][ind],
@@ -198,8 +197,14 @@ for prefix in prefixes:
             #ica_overview.add_shade('time', 'onetoall', stimuli_selection, 20)
         ica_overview.add_samplelabel(ica_overview.axes['time'][-1], before, rotation='45', toppos=True)
         [ax.set_title(toplot.label_objects[i]) for i, ax in enumerate(ica_overview.axes['base'])]
-        ica_overview.fig.savefig(tmp_save + '_modes.svg')
-
+        ica_overview.fig.savefig(os.path.join(save_path, os.path.basename(filename).split('.json')[0] + '_modes.svg'))
+        
+        
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        for im in toplot.base.shaped2D():
+            ax.contourf(im, [0.3, 1], alpha=0.5)
+        fig.savefig(os.path.join(save_path, os.path.basename(filename).split('.json')[0] + '_contour.svg'))
 
         plt.close('all')
 

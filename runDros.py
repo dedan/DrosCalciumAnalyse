@@ -14,6 +14,8 @@ from scipy.cluster.hierarchy import dendrogram, linkage
 from NeuralImageProcessing import basic_functions as bf
 from NeuralImageProcessing import illustrate_decomposition as vis
 import utils
+import matplotlib as mpl
+from collections import defaultdict
 reload(bf)
 reload(vis)
 
@@ -39,6 +41,7 @@ def create_mf(mf_dic):
 #####################################################
 #        initialize the processing functions
 #####################################################
+total_resp = []
 
 # calculate trial mean
 trial_mean = bf.TrialMean()
@@ -87,18 +90,22 @@ for prefix in config['prefixes']:
         ####################################################################
         # preprocess
         ####################################################################
-        
-        # temporal downsampling by factor 2 (originally 40 frames)
-        ts = bf.TrialMean(20)(ts)
+
         # cut baseline signal (odor starts at frame 4 (original frame8))      
-        baseline = trial_mean(bf.CutOut((0, 3))(ts))
+        baseline = trial_mean(bf.CutOut((0, 6))(ts))
         baselines.append(baseline)
-        sorted_baseline = sorted_trials(baseline)
+        
+        sorted_baseline = sorted_trials(bf.CutOut((0, 1))(ts))
         #downscale sorted baseline
         ds = config['spatial_down']
         ds_baseline = sorted_baseline.shaped2D()[:, ::ds, ::ds]
         sorted_baseline.shape = tuple(ds_baseline.shape[1:])
         sorted_baseline.set_timecourses(ds_baseline)
+        
+        # temporal downsampling by factor 2 (originally 40 frames)
+        ts = bf.TrialMean(20)(ts)
+
+
         
         
         # preprocess timeseries
@@ -113,11 +120,12 @@ for prefix in config['prefixes']:
         
         if config['normalize']:
             pp.timecourses = pp.timecourses / np.max(pp.timecourses)
-        pp = sorted_trials(pp)
+        
         # calcualte mean response
         mean_resp_unsort = trial_mean(bf.CutOut((6, 12))(pp))
         mean_resp = sorted_trials(mean_resp_unsort)
         # select stimuli such that their mean correlation is below similarity_threshold
+        pp = sorted_trials(pp)
         stimuli_mask = bf.SampleSimilarity(config['similarity_threshold'])
         stimuli_selection = stimuli_mask(mean_resp)
         stimuli_filter = bf.SelectTrials()
@@ -171,10 +179,10 @@ for prefix in config['prefixes']:
                 resp /= max_data
                 resp_overview.imshow(resp_overview.axes['base'][ind],
                                      sorted_baseline.shaped2D()[ind],
-                                     colormap=plt.cm.bone)
+                                     cmap=plt.cm.bone)
                 resp_overview.overlay_image(resp_overview.axes['base'][ind],
                                             resp, threshold=0.3,
-                                            title=mean_resp.label_sample[ind])
+                                            title={'label':mean_resp.label_sample[ind], 'size':10})
                 resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
             resp_overview.fig.savefig(savename_ind + '_overview.' + config['format'])
     
@@ -184,11 +192,17 @@ for prefix in config['prefixes']:
                 uresp_overview.subplot(mean_resp_unsort.samplepoints, dim2=4)
             else:
                 uresp_overview.subplot(mean_resp_unsort.samplepoints)
+            mean_resp_unsort.strength = []
             for ind, resp in enumerate(mean_resp_unsort.shaped2D()):
+                max_data = np.max(np.abs(resp))
+                normedresp = resp / max_data
                 uresp_overview.imshow(uresp_overview.axes['base'][ind],
-                                       resp,
-                                       title=mean_resp_unsort.label_sample[ind],
-                                       colorbar=False)
+                                       normedresp,
+                                       title={'label':mean_resp_unsort.label_sample[ind], 'size':10},
+                                       colorbar=False, vmin= -1, vmax=1)
+                uresp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
+                mean_resp_unsort.strength.append(max_data)
+            total_resp.append(mean_resp_unsort)
             uresp_overview.fig.savefig(savename_ind + '_overview_unsort.' + config['format'])
 
         ####################################################################
@@ -283,3 +297,36 @@ for prefix in config['prefixes']:
             ax.set_xticklabels(single_response.label_sample, fontsize=12, rotation=45)
             fig.savefig('_'.join(savename_ind.split('_')[:-1]) + '_simultan_time.' + config['format'])
             plt.close('all')
+        
+####################################################################
+# odor overview
+####################################################################       
+    
+if config['plot_signals']:
+    vmin = -0.1
+    vmax = 0.1
+    datadic = defaultdict(list)
+    for meas in total_resp:
+        for stim_ind, stim in enumerate(meas.shaped2D()):
+            datadic[meas.label_sample[stim_ind]].append((meas.name, stim, meas.strength[stim_ind]))
+    for odor in datadic.keys():
+        odor_overview = vis.VisualizeTimeseries()
+        data = datadic[odor]
+        odor_overview.subplot(len(data))
+        for ind, stim in enumerate(data):
+            toplot = stim[1].copy()
+            toplot[toplot > vmax] = vmax
+            #max(np.abs(np.min(toplot)), 0.01)
+            odor_overview.imshow(odor_overview.axes['base'][ind], toplot ,
+            title={'label':stim[0], 'size':10},
+            colorbar=False, vmin=vmin, vmax=vmax, cmap=plt.cm.Blues_r)
+            print np.sum(stim[1] > 0)
+            #odor_overview.axes['base'][ind].set_ylabel('%.2f' % minval)
+        plt.suptitle(odor)
+        axc = odor_overview.fig.add_axes([0.05, 0.04, 0.9, 0.045])
+        cb1 = mpl.colorbar.ColorbarBase(axc, cmap=mpl.cm.Blues_r,
+                                           norm=mpl.colors.Normalize(vmin=vmin, vmax=vmax),
+                                           orientation='horizontal')
+        odor_overview.fig.savefig(os.path.join(os.path.dirname(savename_ind),
+                                 odor + '_allmeas_neg.' + config['format']))
+        plt.close('all')
