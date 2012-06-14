@@ -14,6 +14,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from collections import defaultdict
 import utils
 from scipy.stats.mstats_basic import scoreatpercentile
+from sklearn import linear_model
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
@@ -54,6 +55,7 @@ labeled_animals = json.load(open(os.path.join(load_path, 'regions.json')))
 
 # load valenz information (which odor they like)
 valenz = json.load(open(os.path.join(results_path, 'valenz.json')))
+valenz_orig = json.load(open(os.path.join(results_path, 'valenz.json')))
 
 # load and filter filelist
 filelist = glob.glob(os.path.join(load_path, '*.json'))
@@ -272,7 +274,7 @@ if integrate:
     # normalize valenz for colormap
     all_vals = np.array(valenz.values())
     for val in valenz:
-        valenz[val] = (valenz[val] - np.min(all_vals)) / (np.max(all_vals) - np.min(all_vals))
+        valenz[val] = (valenz[val] / (2 * np.abs(np.max(all_vals))) + 0.5)
 
     # splitted heatmap for valenz information
     fig = plt.figure()
@@ -305,8 +307,16 @@ if integrate:
         tmp_dat[odor][concen] = {}
         c = plt.cm.hsv(float(all_odors.index(odor)) / len(all_odors))
         tmp_dat[odor][concen]['color'] = c
+
+        # add color to code valenz (if valenz available)
+        if all_stimuli[i] in valenz:
+            c = plt.cm.RdYlGn(valenz[all_stimuli[i]])
+            tmp_dat[odor][concen]['valenz_color'] = c
+            tmp_dat[odor][concen]['valenz'] = valenz[all_stimuli[i]]
+            tmp_dat[odor][concen]['valenz_orig'] = valenz_orig[all_stimuli[i]]
         tmp_dat[odor][concen]['data'] = hm_data[:, i]
     symbols = {'-1': 's', '-2': 's', '-3': 'o', '-5': 'o', '0': 'x'}
+
 
     # 3d plot of the data also shown as heatmap
     fig = plt.figure()
@@ -359,34 +369,77 @@ if integrate:
     plt.savefig(os.path.join(load_path, 'matrix.' + format))
 
     # 3d valenz plot
-    tmp_dat = {}
-    for i in range(len(all_stimuli)):
-        #plot only data with valtex infoe
-        if all_stimuli[i] in valenz:
-            odor, concen = all_stimuli[i].split('_')
-            if not odor in tmp_dat:
-                tmp_dat[odor] = {}
-            tmp_dat[odor][concen] = {}
-
-
-            c = plt.cm.RdYlGn(valenz[all_stimuli[i]])
-
-            tmp_dat[odor][concen]['color'] = c
-            tmp_dat[odor][concen]['data'] = hm_data[:, i]
     symbols = {'-1': 'o', '-2': 'o', '-3': 'o', '-5': 'o', '0': 'x'}
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     for odor in tmp_dat:
         for concen in tmp_dat[odor]:
-            ax.scatter(*[[i] for i in tmp_dat[odor][concen]['data']],
-                       edgecolors=tmp_dat[odor][concen]['color'], facecolors=tmp_dat[odor][concen]['color'],
-                       marker=symbols[concen], label=odor)
-            ax.plot([], [], 'o', c=tmp_dat[odor][concen]['color'], label=odor)
-        s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
-        bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
-        ax.plot(*[x for x in bla.T], c='0.5')
+            if 'valenz_color' in tmp_dat[odor][concen]:
+                ax.scatter(*[[i] for i in tmp_dat[odor][concen]['data']],
+                           edgecolors=tmp_dat[odor][concen]['valenz_color'],
+                           facecolors=tmp_dat[odor][concen]['valenz_color'],
+                           marker=symbols[concen], label=odor)
+                ax.plot([], [], 'o', c=tmp_dat[odor][concen]['valenz_color'], label=odor)
+                s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
+                bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
+                ax.plot(*[x for x in bla.T], c='0.5')
     ax.set_xlabel(main_regions[0])
     ax.set_ylabel(main_regions[1])
     ax.set_zlabel(main_regions[2])
     #plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
     plt.savefig(os.path.join(load_path, '3dscatter_valenz.' + format))
+
+    regressor = linear_model.LinearRegression(fit_intercept=False)
+    x, y = [], []
+    for odor in tmp_dat:
+        for concen in tmp_dat[odor]:
+            if 'valenz_orig' in tmp_dat[odor][concen]:
+                t = tmp_dat[odor][concen]
+                x.append([t['data'][2], t['data'][0]])
+                y.append(t['valenz_orig'])
+    fit = regressor.fit(x,y)
+    alpha = fit.coef_[1]
+
+    agg = defaultdict(list)
+    for odor in tmp_dat:
+        for concen in tmp_dat[odor]:
+            if 'valenz_orig' in tmp_dat[odor][concen]:
+                t = tmp_dat[odor][concen]
+                agg['val'].append(t['valenz_orig'])
+                for i in range(3):
+                    agg[main_regions[i]].append(t['data'][i])
+                agg['ratio'].append(tmp_dat[odor][concen]['data'][2] /
+                                    tmp_dat[odor][concen]['data'][0])
+                agg['diff'].append(tmp_dat[odor][concen]['data'][2] -
+                                   alpha * tmp_dat[odor][concen]['data'][0])
+    idx = np.argmax(agg['ratio'])
+    agg['ratio'].pop(idx)
+
+
+    # valenz vs. activation plot
+    fig = plt.figure()
+    N = 3
+    for i in range(N):
+        ax = fig.add_subplot(N, 1, i)
+        ax.scatter(agg[main_regions[i]], agg['val'])
+        ax.set_title('%s %.2f' % (main_regions[i], np.corrcoef(agg[main_regions[i]], agg['val'])[0,1]))
+        ax.set_xlabel('activation')
+        ax.set_ylabel('valenz')
+    plt.savefig(os.path.join(load_path, 'activation_vs_valenz.' + format))
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(agg['diff'], agg['val'])
+    ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(agg['diff'], agg['val'])[0,1])
+    ax.set_xlabel('activation difference')
+    ax.set_ylabel('valenz')
+    plt.savefig(os.path.join(load_path, 'activation(difference)_vs_valenz.' + format))
+
+    agg['val'].pop(idx)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(agg['ratio'], agg['val'])
+    ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(agg['ratio'], agg['val'])[0,1])
+    ax.set_xlabel('activation ratio')
+    ax.set_ylabel('valenz')
+    plt.savefig(os.path.join(load_path, 'activation(ratio)_vs_valenz.' + format))
