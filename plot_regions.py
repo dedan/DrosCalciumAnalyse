@@ -296,7 +296,7 @@ if integrate:
     plt.savefig(os.path.join(load_path, 'split_heatmap_valenz.' + format))
 
 
-    # 3d plot
+    # prepare data for 3 d plots
     tmp_dat = {}
     for i in range(len(all_stimuli)):
         odor, concen = all_stimuli[i].split('_')
@@ -307,6 +307,8 @@ if integrate:
         tmp_dat[odor][concen]['color'] = c
         tmp_dat[odor][concen]['data'] = hm_data[:, i]
     symbols = {'-1': 's', '-2': 's', '-3': 'o', '-5': 'o', '0': 'x'}
+
+    # 3d plot of the data also shown as heatmap
     fig = plt.figure()
     ax = fig.add_subplot(111, projection='3d')
     for odor in tmp_dat:
@@ -324,6 +326,38 @@ if integrate:
     plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
     plt.savefig(os.path.join(load_path, '3dscatter.' + format))
 
+    # concentration matrix plot
+    fig = plt.figure()
+    N = 3
+    for i in range(3):
+        for j in range(3):
+            if i > j:
+                ax = fig.add_subplot(N, N, i*N+j+1)
+                for odor in tmp_dat:
+                    for concen in tmp_dat[odor]:
+                        if int(concen) >= -2:
+                            ax.scatter(tmp_dat[odor][concen]['data'][i], tmp_dat[odor][concen]['data'][j],
+                                       edgecolors=tmp_dat[odor][concen]['color'], facecolors='none',
+                                       marker=symbols[concen], label=odor)
+                    s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
+                    bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
+                    ax.plot(bla[:,i], bla[:,j], c=tmp_dat[odor][str(concen)]['color'])
+                ax.set_xlabel(main_regions[i])
+                ax.set_ylabel(main_regions[j])
+                ax.set_xticks([])
+                ax.set_yticks([])
+            elif i == j:
+                ax = fig.add_subplot(N, N, i*N+j+1)
+                bla = np.array([tmp_dat[o][c]['data'][i]
+                                for o in tmp_dat
+                                for c in tmp_dat[o]])
+                ax.hist(bla, color='k')
+                ax.set_title(main_regions[i])
+                ax.set_xticks([])
+                ax.set_yticks([])
+
+    plt.savefig(os.path.join(load_path, 'matrix.' + format))
+
     # 3d valenz plot
     tmp_dat = {}
     for i in range(len(all_stimuli)):
@@ -334,7 +368,7 @@ if integrate:
                 tmp_dat[odor] = {}
             tmp_dat[odor][concen] = {}
 
-        
+
             c = plt.cm.RdYlGn(valenz[all_stimuli[i]])
 
             tmp_dat[odor][concen]['color'] = c
