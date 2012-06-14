@@ -277,7 +277,9 @@ if integrate:
         valenz[val] = (valenz[val] / (2 * np.abs(np.max(all_vals))) + 0.5)
 
     # splitted heatmap for valenz information
-    fig = plt.figure()
+    fig = vis.VisualizeTimeseries()
+    fig.subplot(1)
+    ax = fig.axes['base'][0]
     plotti = np.ones((3, len(new_order))) * 0.5
     for y, odor in enumerate(new_order):
         for x, co in enumerate(conc):
@@ -286,14 +288,14 @@ if integrate:
             else:
                 stim = '%s_%s' % (odor, co)
             if stim in valenz:
-                print 'add val'
                 plotti[x, y] = valenz[stim]
-    ax = fig.add_subplot(111)
-    ax.set_title("valenz - max: %f" % np.max(all_vals))
-    ax.imshow(plotti, interpolation='nearest', cmap=plt.cm.RdYlGn)
+    fig.imshow(ax, plotti, cmap=plt.cm.RdYlGn)
+    fig.overlay_image(ax, plotti == 0.5, threshold=0.1,
+                      title={"label": "valenz - max: %f" % np.max(all_vals)},
+                      colormap=plt.cm.gray)
     ax.set_yticks(range(len(conc)))
     ax.set_yticklabels(conc)
-    ax.set_xticks(range(len(all_odors)))
+    ax.set_xticks(range(len(new_order)))
     ax.set_xticklabels(new_order, rotation='90')
     plt.savefig(os.path.join(load_path, 'split_heatmap_valenz.' + format))
 
