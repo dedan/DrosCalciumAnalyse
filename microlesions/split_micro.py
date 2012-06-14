@@ -7,7 +7,7 @@
     What the script does is:
 
     * perform a vertical cut of the original image
-    * seperate stimuli responses from before and after the lesion
+    * perform a vertical cut of the corresponding mask
     * save all the results in a separate folder
 """
 
@@ -19,88 +19,72 @@ from NeuralImageProcessing import pipeline as pl
 reload(bf)
 reload(pl)
 
-#inpath = '/Users/dedan/projects/fu/data/dros_calcium_new/'
-inpath = '/home/jan/Documents/dros/new_data/aligned/'
-maskpath = '/home/jan/Dropbox/lesion_masks/'
+inpath = '/Users/dedan/projects/fu/data/dros_calcium_new/'
+maskpath = '/Users/dedan/Dropbox/lesion_masks'
+# inpath = '/home/jan/Documents/dros/new_data/aligned/'
+# maskpath = '/home/jan/Dropbox/lesion_masks/'
 prefix = 'mic'
-outpath = os.path.join(inpath, 'mic_split')
+outpath = os.path.join(inpath, 'mic_test')
 
-#mikro_cutter = bf.MicroCutter()
+
+# convert already splitted masks to numpy array
+for fname in glob.glob(os.path.join(maskpath, '*.png')):
+    if os.path.basename(fname).split('_')[1] in 'rl':
+        print 'saved', fname
+        spatial_mask = (plt.imread(fname)[:, :, 0]).astype('bool')
+        spatial_mask = np.logical_not(spatial_mask).astype('int')
+        np.save(fname[:-4], spatial_mask)
 
 filelist = glob.glob(os.path.join(inpath, prefix + '*.json'))
-
 for fname in filelist:
 
     print 'splitting', fname
     fbase = os.path.splitext(os.path.basename(fname))[0]
 
+    # load time series and convert to trial shape
     ts = pl.TimeSeries()
     ts.load(os.path.splitext(fname)[0])
     ts.shape = tuple(ts.shape)
-    normal_mask = np.array([l[0] != 'm' for l in ts.label_sample])
-    normal_labels = [ts.label_sample[i] for i in np.where(normal_mask)[0]]
-    lesion_labels = [ts.label_sample[i] for i in np.where(np.invert(normal_mask))[0]]
     trial_shaped_2d = ts.trial_shaped2D()
-    
-    # load spatial mask, such that only LateralHorn Regions are in Analysis
-    # if no mask, than skip datafile
+
+    # load spatial mask
     filename_mask = '_'.join(fbase.split('_')[1:]) + '_mask.png'
     try:
         spatial_mask = (plt.imread(os.path.join(maskpath, filename_mask))[:, :, 0]).astype('bool')
     except IOError:
         print 'no mask for: ', filename_mask
         continue
-    # set everything in the mask to zero
-    trial_shaped_2d[:, :, spatial_mask] = 0
-     
+
+    # invert mask
+    spatial_mask = np.logical_not(spatial_mask).astype('int')
+
     if fbase[-1] in 'rl':
         print 'already right-left splitted'
-        normal = trial_shaped_2d[normal_mask, :, :, :]
-        new_ts = pl.TimeSeries(series=normal,
-                               shape=(ts.shape),
-                               label_sample=normal_labels)
-        new_ts.save(os.path.join(outpath, fbase[:-2] + '_' + fbase[-1] + 'n'))
-
-        lesion = trial_shaped_2d[np.invert(normal_mask), :, :, :]
-        new_ts = pl.TimeSeries(series=lesion,
-                               shape=(ts.shape),
-                               label_sample=lesion_labels)
-        new_ts.save(os.path.join(outpath, fbase[:-2] + '_' + fbase[-1] + 'm'))
-
     else:
-        left_normal = trial_shaped_2d[normal_mask, :, :, :ts.shape[1] / 2]
-        # remove not information containig columsn
-        info_in_column = np.sum(np.sum(np.sum(left_normal, 0), 0), 0) > 0
-        left_normal = left_normal[:, :, :, info_in_column]
-        new_ts = pl.TimeSeries(series=left_normal,
-                               shape=((ts.shape[0], left_normal.shape[3])),
-                               label_sample=normal_labels)
-        new_ts.save(os.path.join(outpath, fbase + '_ln'))
 
-        right_normal = trial_shaped_2d[normal_mask, :, :, ts.shape[1] / 2:]
-        # remove not information containig columsn
-        info_in_column = np.sum(np.sum(np.sum(right_normal, 0), 0), 0) > 0
-        right_normal = right_normal[:, :, :, info_in_column]
-        new_ts = pl.TimeSeries(series=right_normal,
-                               shape=((ts.shape[0], right_normal.shape[3])),
-                               label_sample=normal_labels)
-        new_ts.save(os.path.join(outpath, fbase + '_rn'))
+        # left data and mask
+        left = trial_shaped_2d[:, :, :, :ts.shape[1] / 2]
+        left_mask = spatial_mask[:, :ts.shape[1] / 2]
+        # remove not information containig columns
+        info_in_column = np.sum(left_mask, 0) > 0
+        left = left[:, :, :, info_in_column]
+        left_mask = left_mask[:, info_in_column]
+        new_ts = pl.TimeSeries(series=left,
+                               shape=((ts.shape[0], left.shape[3])),
+                               label_sample=ts.label_sample)
+        new_ts.save(os.path.join(outpath, fbase + '_l'))
+        np.save(os.path.join(maskpath, filename_mask.split('_')[0] + '_l_mask'), left_mask)
 
 
-        left_lesion = trial_shaped_2d[np.invert(normal_mask), :, :, :ts.shape[1] / 2]
-        # remove not information containig columsn
-        info_in_column = np.sum(np.sum(np.sum(left_lesion, 0), 0), 0) > 0
-        left_lesion = left_lesion[:, :, :, info_in_column]
-        new_ts = pl.TimeSeries(series=left_lesion,
-                               shape=((ts.shape[0], left_lesion.shape[3])),
-                               label_sample=lesion_labels)
-        new_ts.save(os.path.join(outpath, fbase + '_lm'))
+        right = trial_shaped_2d[:, :, :, ts.shape[1] / 2:]
+        right_mask = spatial_mask[:, ts.shape[1] / 2:]
+        # remove not information containig columns
+        info_in_column = np.sum(spatial_mask[:, ts.shape[1] / 2:], 0) > 0
+        right = right[:, :, :, info_in_column]
+        right_mask = right_mask[:, info_in_column]
 
-        right_lesion = trial_shaped_2d[np.invert(normal_mask), :, :, ts.shape[1] / 2:]
-        # remove not information containig columsn
-        info_in_column = np.sum(np.sum(np.sum(right_lesion, 0), 0), 0) > 0
-        right_lesion = right_lesion[:, :, :, info_in_column]
-        new_ts = pl.TimeSeries(series=right_lesion,
-                               shape=((ts.shape[0], right_lesion.shape[3])),
-                               label_sample=lesion_labels)
-        new_ts.save(os.path.join(outpath, fbase + '_rm'))
+        new_ts = pl.TimeSeries(series=right,
+                               shape=((ts.shape[0], right.shape[3])),
+                               label_sample=ts.label_sample)
+        new_ts.save(os.path.join(outpath, fbase + '_r'))
+        np.save(os.path.join(maskpath, filename_mask.split('_')[0] + '_r_mask'), right_mask)
