@@ -1,4 +1,10 @@
 
+We realized that the alignment of the images that we get from the experimentalists is not perfect. They use some GUI that all biologists use, I forgot the name. This folder here contains experiments of how the alignment of images could be improved.
+
+The first (and currently only attempt) is to use the algorithm from [here](http://xanthippi.ceid.upatras.gr/people/evangelidis/ecc/).
+
+I did not manage to get the C version of the algorithm running and currently used its matlab implementation in the script `test.m`
+
 which projection?
 
 	* homography is too complex, leads to strange drift
