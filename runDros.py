@@ -19,14 +19,15 @@ from collections import defaultdict
 reload(bf)
 reload(vis)
 
-config = ConfigObj('config.ini', unrepr=True)
+config_path = 'config/config.ini'
+config = ConfigObj(config_path, unrepr=True)
 
 add = config['filename_add']
 if config['normalize']:
     add += '_maxnorm'
 
 savefolder = os.path.join(config['save_path'],
-                 'simil' + str(int(config['similarity_threshold'] * 100)) 
+                 'simil' + str(int(config['similarity_threshold'] * 100))
               + 'n_best' + str(config['n_best']) + add)
 
 if not os.path.exists(savefolder):
@@ -57,9 +58,9 @@ for prefix in config['prefixes']:
 
     filelist = glob.glob(os.path.join(config['data_path'], prefix) + '*.json')
     colorlist = {}
-  
+
     # use only the n_best animals --> most stable odors in common
-    if config['n_best']: 
+    if config['n_best']:
         res = pickle.load(open(os.path.join(config['data_path'], config['load_path'], 'thres_res.pckl')))
         best = utils.select_n_channels(res[prefix][config['choose_threshold']], config['n_best'])
         filelist = [filelist[i] for i in best]
@@ -70,7 +71,7 @@ for prefix in config['prefixes']:
     baselines = []
     all_stimulifilter = []
 
-    for file_ind, filename in enumerate(filelist):    
+    for file_ind, filename in enumerate(filelist):
         print prefix, filename
         # load timeseries, shape and labels
         meas_path = os.path.splitext(filename)[0]
@@ -80,34 +81,34 @@ for prefix in config['prefixes']:
         #assign each file a color:
         f_ind = file_ind / (len(filelist) - 1.)
         colorlist[os.path.basename(meas_path)] = plt.cm.jet(f_ind)
-        
+
         # create timeseries
         ts = bf.TimeSeries()
         ts.load(meas_path)
         # change shape from list to tuple!!
         ts.shape = tuple(ts.shape)
-        
+
         ####################################################################
         # preprocess
         ####################################################################
 
-        # cut baseline signal (odor starts at frame 4 (original frame8))      
+        # cut baseline signal (odor starts at frame 4 (original frame8))
         baseline = trial_mean(bf.CutOut((0, 6))(ts))
         baselines.append(baseline)
-        
+
         sorted_baseline = sorted_trials(bf.CutOut((0, 1))(ts))
         #downscale sorted baseline
         ds = config['spatial_down']
         ds_baseline = sorted_baseline.shaped2D()[:, ::ds, ::ds]
         sorted_baseline.shape = tuple(ds_baseline.shape[1:])
         sorted_baseline.set_timecourses(ds_baseline)
-        
+
         # temporal downsampling by factor 2 (originally 40 frames)
         ts = bf.TrialMean(20)(ts)
 
 
-        
-        
+
+
         # preprocess timeseries
         pp = gauss_filter(pixel_filter(rel_change(ts, baseline)))
         pp.timecourses[np.isnan(pp.timecourses)] = 0
@@ -117,10 +118,10 @@ for prefix in config['prefixes']:
             maskfile = '_'.join(os.path.basename(meas_path).split('_')[1:]) + '_mask.png'
             spatial_mask = (plt.imread(os.path.join(maskpath, maskfile))[:, :, 0]).astype('bool')
             pp.timecourses[:, spatial_mask.flatten()] = 0
-        
+
         if config['normalize']:
             pp.timecourses = pp.timecourses / np.max(pp.timecourses)
-        
+
         # calcualte mean response
         mean_resp_unsort = trial_mean(bf.CutOut((6, 12))(pp))
         mean_resp = sorted_trials(mean_resp_unsort)
@@ -132,7 +133,7 @@ for prefix in config['prefixes']:
         pp = stimuli_filter(pp, stimuli_selection)
         # collect results
         all_raw.append(pp)
-               
+
         ####################################################################
         # do individual matrix factorization
         ####################################################################
@@ -143,12 +144,12 @@ for prefix in config['prefixes']:
             fname = os.path.basename(savename_ind)
             saveplace = os.path.join(path, config['individualMF']['method'])
             if not os.path.exists(saveplace):
-                os.mkdir(saveplace)                                                     
+                os.mkdir(saveplace)
             if 'save' in config['individualMF']['do']:
                 mf.save(os.path.join(saveplace, fname + '_' + config['individualMF']['method']))
                 sorted_baseline.save(os.path.join(saveplace, fname + '_baseline'))
-            if 'plot' in config['individualMF']['do']:    
-        
+            if 'plot' in config['individualMF']['do']:
+
                 mf_overview = vis.VisualizeTimeseries()
                 mf_overview.base_and_time(mf.num_objects)
                 for ind, resp in enumerate(mf.base.shaped2D()):
@@ -162,8 +163,8 @@ for prefix in config['prefixes']:
                 mf_overview.add_samplelabel(mf_overview.axes['time'][-1], mf, rotation='45', toppos=True)
                 [ax.set_title(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
                 mf_overview.fig.savefig(os.path.join(saveplace, fname + '_' + config['individualMF']['method'] + '.' + config['format']))
-       
-        
+
+
         ####################################################################
         # plot signals
         ####################################################################
@@ -185,7 +186,7 @@ for prefix in config['prefixes']:
                                             title={'label':mean_resp.label_sample[ind], 'size':10})
                 resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
             resp_overview.fig.savefig(savename_ind + '_overview.' + config['format'])
-    
+
             # draw unsorted signal overview
             uresp_overview = vis.VisualizeTimeseries()
             if prefix == 'mic':
@@ -207,10 +208,10 @@ for prefix in config['prefixes']:
 
         ####################################################################
         # calc reproducibility and plot
-        #################################################################### 
-        if config['stimuli_rep']:      
+        ####################################################################
+        if config['stimuli_rep']:
             stimulirep = bf.SampleSimilarityPure()
-            distanceself, distancecross = stimulirep(mean_resp)      
+            distanceself, distancecross = stimulirep(mean_resp)
             #draw quality overview
             qual_view = vis.VisualizeTimeseries()
             qual_view.oneaxes()
@@ -223,7 +224,7 @@ for prefix in config['prefixes']:
             for pos, stim in enumerate(data[0]):
                 qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]),
                                                 distanceself[stim], 'o', mew=2, mec='k', mfc='None')
-            qual_view.fig.savefig(savename_ind + '_quality.' + config['format'])       
+            qual_view.fig.savefig(savename_ind + '_quality.' + config['format'])
 
 
         plt.close('all')
@@ -238,7 +239,7 @@ for prefix in config['prefixes']:
         for t_ind, t in enumerate(all_raw):
             for od in set(t.label_sample):
                 quality_mx[t_ind, allodors.index(od)] = 1
-    
+
         fig = plt.figure()
         ax = fig.add_subplot(111)
         ax.imshow(quality_mx, interpolation='nearest', cmap=plt.cm.bone)
@@ -249,7 +250,7 @@ for prefix in config['prefixes']:
         ax.set_title(prefix + '_' + str(config['similarity_threshold']))
         fig.savefig('_'.join(savename_ind.split('_')[:-1]) + 'mask.' + config['format'])
 
-    
+
     ####################################################################
     # simultanieous ICA
     ####################################################################
@@ -261,9 +262,9 @@ for prefix in config['prefixes']:
         intersection = sorted_trials(combine_common(all_raw))
         variance = config['commonMF']['param']['variance']
         mo = bf.PCA(variance)(intersection)
-        mf = create_mf(config['commonMF'])     
+        mf = create_mf(config['commonMF'])
         mo2 = mf(intersection)
-        single_response = bf.SingleSampleResponse(config['condense'])(mo2)    
+        single_response = bf.SingleSampleResponse(config['condense'])(mo2)
         if 'plot' in config['commonMF']['do']:
             # plot bases
             fig = plt.figure()
@@ -282,9 +283,9 @@ for prefix in config['prefixes']:
                                          ((num_bases * modenum) + num_bases) + base_num + 1)
                     ax.imshow(single_bases[base_num] * -1, cmap=plt.cm.hsv, vmin= -data_max, vmax=data_max)
                     ax.set_title('%.2f' % data_max, fontsize=8)
-                    ax.set_axis_off()    
+                    ax.set_axis_off()
             fig.savefig('_'.join(savename_ind.split('_')[:-1]) + '_bases.' + config['format'])
-            # plot timecourses      
+            # plot timecourses
             fig = plt.figure()
             stim_driven = modefilter(mo2).timecourses
             for modenum in range(variance):
@@ -297,11 +298,11 @@ for prefix in config['prefixes']:
             ax.set_xticklabels(single_response.label_sample, fontsize=12, rotation=45)
             fig.savefig('_'.join(savename_ind.split('_')[:-1]) + '_simultan_time.' + config['format'])
             plt.close('all')
-        
+
 ####################################################################
 # odor overview
-####################################################################       
-    
+####################################################################
+
 if config['plot_signals']:
     vmin = -0.1
     vmax = 0.1
