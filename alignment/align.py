@@ -13,7 +13,7 @@ import scipy.sparse
 
 def cumsum_quadrant(x, i_forwards, j_forwards):
     '''Return the cumulative sum going in the i, then j direction
-    
+
     x - the matrix to be summed
     i_forwards - sum from 0 to end in the i direction if true
     j_forwards - sum from 0 to end in the j direction if true
@@ -30,12 +30,12 @@ def cumsum_quadrant(x, i_forwards, j_forwards):
 
 def align_cross_correlation(pixels1, pixels2):
     '''Align the second image with the first using max cross-correlation
-    
+
     returns the x,y offsets to add to image1's indexes to align it with
     image2
-    
+
     Many of the ideas here are based on the paper, "Fast Normalized
-    Cross-Correlation" by J.P. Lewis 
+    Cross-Correlation" by J.P. Lewis
     (http://www.idiom.com/~zilla/Papers/nvisionInterface/nip.html)
     which is frequently cited when addressing this problem.
     '''
@@ -60,10 +60,10 @@ def align_cross_correlation(pixels1, pixels2):
     # losing precision and precomputes t(x-u,y-v) - t_mean
     #
 
-    
+
     pixels1 = pixels1 - np.mean(pixels1)
     pixels2 = pixels2 - np.mean(pixels2)
-    
+
 
     #
     # Lewis uses an image, f and a template t. He derives a normalized
@@ -86,7 +86,7 @@ def align_cross_correlation(pixels1, pixels2):
     # We do this in quadrants:
     # q0 q1
     # q2 q3
-    # For the first, 
+    # For the first,
     # q0 is the sum over pixels1[i:,j:] - sum i,j backwards
     # q1 is the sum over pixels1[i:,:j] - sum i backwards, j forwards
     # q2 is the sum over pixels1[:i,j:] - sum i forwards, j backwards
@@ -103,7 +103,7 @@ def align_cross_correlation(pixels1, pixels2):
     # Divide the sum over the # of elements summed-over
     #
     p1_mean = p1_sum / unit
-    
+
     p2_sum = np.zeros(fshape)
     p2_sum[:s[0], :s[1]] = cumsum_quadrant(pixels2, False, False)
     p2_sum[:s[0], s[1]:] = cumsum_quadrant(pixels2, False, True)
@@ -111,7 +111,7 @@ def align_cross_correlation(pixels1, pixels2):
     p2_sum[s[0]:, s[1]:] = cumsum_quadrant(pixels2, True, True)
     p2_sum = np.fliplr(np.flipud(p2_sum))
     p2_mean = p2_sum / unit
-    
+
 
     #
     # Once we have the means for u,v, we can caluclate the
@@ -121,9 +121,9 @@ def align_cross_correlation(pixels1, pixels2):
     #
     p1sd = np.sum(pixels1 ** 2) - p1_mean ** 2 * np.product(s)
     p2sd = np.sum(pixels2 ** 2) - p2_mean ** 2 * np.product(s)
-    
 
-    
+
+
     #
     # There's always chance of roundoff error for a zero value
     # resulting in a negative sd, so limit the sds here
@@ -136,8 +136,8 @@ def align_cross_correlation(pixels1, pixels2):
     # There's not much information for points where the standard
     # deviation is less than 1/100 of the maximum. We exclude these
     # from consideration.
-    # 
-    corrnorm[(unit < np.product(s) / 2) & 
+    #
+    corrnorm[(unit < np.product(s) / 2) &
              (sd < np.mean(sd) / 100)] = 0
     i, j = np.unravel_index(np.argmax(corrnorm), fshape)
     #
@@ -151,10 +151,10 @@ def align_cross_correlation(pixels1, pixels2):
 
 def align_mutual_information(pixels1, pixels2, jin=0, iin=0):
         '''Align the second image with the first using mutual information
-        
+
         returns the x,y offsets to add to image1's indexes to align it with
         image2
-        
+
         The algorithm computes the mutual information content of the two
         images, offset by one in each direction (including diagonal) and
         then picks the direction in which there is the most mutual information.
@@ -163,7 +163,7 @@ def align_mutual_information(pixels1, pixels2, jin=0, iin=0):
         '''
         def mutualinf(x, y):
             return entropy(x) + entropy(y) - entropy2(x, y)
-        
+
         best = mutualinf(pixels1, pixels2)
         i = iin
         j = jin
@@ -218,7 +218,7 @@ def entropy2(x, y):
 def offset_slice(pixels1, pixels2, i, j):
     '''Return two sliced arrays where the first slice is offset by i,j
     relative to the second slice.
-    
+
     '''
     if i < 0:
         p1_imin = -i
