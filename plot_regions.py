@@ -19,10 +19,10 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-comparisons = [#(u'vlPRCb', u'vlPRCt'),
+comparisons = [(u'vlPRCb', u'vlPRCt'),
                (u'iPN', u'iPNsecond'),
                (u'iPNtract', u'betweenTract'),
-               #(u'betweenTract', u'vlPRCb'),
+               (u'betweenTract', u'vlPRCb'),
                (u'iPN', u'blackhole')]
 main_regions = [u'iPN', u'iPNtract', u'vlPRCt']
 to_turn = ['120112b_neu', '111012a', '111017a_neu', '111018a', '110902a']
@@ -39,13 +39,13 @@ for i, fname in enumerate(filelist):
 
 format = 'png'
 integrate = True
-results_path = '/home/jan/Documents/dros/new_data/aligned/results/'
+results_path = '/Users/dedan/projects/fu/results/'
 load_path = os.path.join(results_path, 'simil80n_bestFalse', 'nnma')
-save_path = os.path.join(load_path, 'boxplots')
+save_path = os.path.join(load_path, 'plots')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
-if not os.path.exists(os.path.join(load_path, 'odors')):
-    os.mkdir(os.path.join(load_path, 'odors'))
+if not os.path.exists(os.path.join(save_path, 'odors')):
+    os.mkdir(os.path.join(save_path, 'odors'))
 
 data = {}
 fulldatadic = {}
@@ -219,7 +219,7 @@ if integrate:
             ax.set_ylabel(conc, rotation='0')
         ax.set_xticks(range(len(all_region_labels)))
         ax.set_xticklabels(sorted(medians.keys()), rotation='90')
-        plt.savefig(os.path.join(load_path, 'odors', odor + '.' + format))
+        plt.savefig(os.path.join(save_path, 'odors', odor + '.' + format))
 
     # median heatmaps
     hm_data = np.array([medians[region] for region in main_regions])
@@ -229,7 +229,7 @@ if integrate:
     ax.set_xticks([])
     ax.set_yticks(range(len(main_regions)))
     ax.set_yticklabels(main_regions)
-    plt.savefig(os.path.join(load_path, 'heatmap.' + format))
+    plt.savefig(os.path.join(save_path, 'heatmap.' + format))
 
 
     # filter out the strange CO2 labels
@@ -269,7 +269,7 @@ if integrate:
         ax.set_xticks([])
     ax.set_xticks(range(len(all_odors)))
     ax.set_xticklabels(new_order, rotation='90')
-    plt.savefig(os.path.join(load_path, 'split_heatmap.' + format))
+    plt.savefig(os.path.join(save_path, 'split_heatmap.' + format))
 
     # normalize valenz for colormap
     all_vals = np.array(valenz.values())
@@ -297,7 +297,7 @@ if integrate:
     ax.set_yticklabels(conc)
     ax.set_xticks(range(len(new_order)))
     ax.set_xticklabels(new_order, rotation='90')
-    plt.savefig(os.path.join(load_path, 'split_heatmap_valenz.' + format))
+    plt.savefig(os.path.join(save_path, 'split_heatmap_valenz.' + format))
 
 
     # prepare data for 3 d plots
@@ -336,7 +336,7 @@ if integrate:
     ax.set_ylabel(main_regions[1])
     ax.set_zlabel(main_regions[2])
     plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
-    plt.savefig(os.path.join(load_path, '3dscatter.' + format))
+    plt.savefig(os.path.join(save_path, '3dscatter.' + format))
 
     # concentration matrix plot
     fig = plt.figure()
@@ -368,7 +368,7 @@ if integrate:
                 ax.set_xticks([])
                 ax.set_yticks([])
 
-    plt.savefig(os.path.join(load_path, 'matrix.' + format))
+    plt.savefig(os.path.join(save_path, 'matrix.' + format))
 
     # 3d valenz plot
     symbols = {'-1': 'o', '-2': 'o', '-3': 'o', '-5': 'o', '0': 'x'}
@@ -389,7 +389,7 @@ if integrate:
     ax.set_ylabel(main_regions[1])
     ax.set_zlabel(main_regions[2])
     #plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
-    plt.savefig(os.path.join(load_path, '3dscatter_valenz.' + format))
+    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + format))
 
     regressor = linear_model.LinearRegression(fit_intercept=False)
     x, y = [], []
@@ -427,7 +427,7 @@ if integrate:
         ax.set_title('%s %.2f' % (main_regions[i], np.corrcoef(agg[main_regions[i]], agg['val'])[0,1]))
         ax.set_xlabel('activation')
         ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(load_path, 'activation_vs_valenz.' + format))
+    plt.savefig(os.path.join(save_path, 'activation_vs_valenz.' + format))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -435,7 +435,7 @@ if integrate:
     ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(agg['diff'], agg['val'])[0,1])
     ax.set_xlabel('activation difference')
     ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(load_path, 'activation(difference)_vs_valenz.' + format))
+    plt.savefig(os.path.join(save_path, 'activation(difference)_vs_valenz.' + format))
 
     agg['val'].pop(idx)
     fig = plt.figure()
@@ -444,4 +444,4 @@ if integrate:
     ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(agg['ratio'], agg['val'])[0,1])
     ax.set_xlabel('activation ratio')
     ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(load_path, 'activation(ratio)_vs_valenz.' + format))
+    plt.savefig(os.path.join(save_path, 'activation(ratio)_vs_valenz.' + format))
