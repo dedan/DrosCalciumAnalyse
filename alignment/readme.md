@@ -1,9 +1,24 @@
 
+# General Comments
+
 We realized that the alignment of the images that we get from the experimentalists is not perfect. They use some GUI that all biologists use, I forgot the name. This folder here contains experiments of how the alignment of images could be improved.
 
 The first (and currently only attempt) is to use the algorithm from [here](http://xanthippi.ceid.upatras.gr/people/evangelidis/ecc/).
 
 I did not manage to get the C version of the algorithm running and currently used its matlab implementation in the script `test.m`
+
+Description of all files in this folder:
+
+* test.m: matlab script to run the algorithm on previously saved .pgm images
+* ts_to_images.py: creates what `test.m` needs, the images from TimeSeries objects
+* align.py: is a alignment script that jan gave me and that I didn't use yet.
+
+To create videos from the images I used the following command:
+
+    ffmpeg -r 10 -i test%03d.pgm ../janalign.mp4
+
+
+### some more comments
 
 which projection?
 
