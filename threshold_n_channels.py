@@ -3,42 +3,41 @@ investigate the influence of the sample similarity threshold on how many common
 channels are available for a group of n animals. The sample similarity is a
 value that shows how consistent the response is over repetitions.
 
+requirements: this script assumes the data to be stored in the following structure
+                * basepath/data/data_folder
+                * basepath/results/common_channels
+
+input: raw_data (the raw data as saved TimeSeries objects)
+
 @author: stephan.gabler@gmail.com
 '''
 
-import os
-import glob
-import pickle, json
+import os, glob, pickle, json, sys
+from configobj import ConfigObj
+from collections import defaultdict
 import numpy as np
 import pylab as plt
 import utils
-from collections import defaultdict
-import sys
 from NeuralImageProcessing import basic_functions as bf
 import matplotlib.gridspec as gridspec
-reload(bf)
 
-frames_per_trial = 40
-variance = 5
-lowpass = 2
-similarity_threshold = 0.3
-modesim_threshold = 0.5
-medianfilter = 5
 base_path = '/Users/dedan/projects/fu/'
+prefixes = ['LIN']#, '2PA', 'CVA', 'OCO']
+thresholds = [round(t, 1) for t in np.linspace(0.1, 1, 10)]
+lowpass = 2
+medianfilter = 5
 data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
 save_path = os.path.join(base_path, 'results', 'common_channels')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 
-prefixes = ['LIN', '2PA', 'CVA', 'OCO'] #, 'mic']
-thresholds = [round(t, 1) for t in np.linspace(0.1, 1, 10)]
 res = {}
 
 #####################################################
 #        initialize the processing functions
 #####################################################
 
-# temporal downsampling by factor 4 (originally 40 frames)
+# temporal downsampling by factor 2 (originally 40 frames)
 temporal_downsampling = bf.TrialMean(20)
 # cut baseline signal (odor starts at frame 4 (original frame8))
 baseline_cut = bf.CutOut((0, 3))
@@ -53,44 +52,28 @@ pixel_filter = bf.Filter('median', medianfilter)
 gauss_filter = bf.Filter('gauss', lowpass, downscale=3)
 #sorting
 sorted_trials = bf.SortBySamplename()
-
-# select stimuli such that their mean correlation is below similarity_threshold
-stimuli_mask = bf.SampleSimilarity(similarity_threshold)
-stimulirep = bf.SampleSimilarityPure()
 # select stimuli bases on stimuli mask
 stimuli_filter = bf.SelectTrials()
 
 for prefix in prefixes:
 
-    print prefix
+    print 'working on: %s' % prefix
     filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
-    tmp_filelist = []
-    for filename in filelist:
-        info = json.load(open(filename))
-        print "checking file: ", filename
-        if 'bad_data' in info:
-            print 'skip this file: bad_data flag found'
-            continue
-        else:
-            tmp_filelist.append(filename)
-    filelist = tmp_filelist
 
     collect = defaultdict(list)
     res[prefix] = {}
 
     for file_ind, filename in enumerate(filelist):
 
-        print filename
+        print "loading file: ", filename
         info = json.load(open(filename))
         if 'bad_data' in info:
             print 'skip this file: bad_data flag found'
             continue
-        # create timeseries
+        # create timeseries and change shape from list to tuple
         meas_path = os.path.splitext(filename)[0]
         ts = bf.TimeSeries()
         ts.load(meas_path)
-
-        # change shape from list to tuple!!
         ts.shape = tuple(ts.shape)
 
         ts = temporal_downsampling(ts)
@@ -108,7 +91,6 @@ for prefix in prefixes:
             collect[thres].append(stimuli_filter(preprocessed, stimuli_selection))
 
     for thres in thresholds:
-        print ts.label_sample
         allodors = list(set(ts.label_sample + sum([t.label_sample for t in collect[thres]], [])))
         allodors.sort()
         quality_mx = np.zeros((len(collect[thres]), len(allodors)))
@@ -142,6 +124,7 @@ for prefix in res.keys():
         p.set_title('# of animals: %d' % int(n))
         p.set_xticklabels([])
         p.set_yticks(range(0, np.size(quality_mx, 1), 5))
+    p.set_xlabel('threshold')
     p.set_xticklabels(thresholds)
     fig.savefig(os.path.join(save_path, 'groupsize_' + prefix + '.png'))
 
