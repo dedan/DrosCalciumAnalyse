@@ -19,7 +19,7 @@ from collections import defaultdict
 reload(bf)
 reload(vis)
 
-config_path = 'config/config.ini'
+config_path = 'config/run_dros.ini'
 config = ConfigObj(config_path, unrepr=True)
 
 add = config['filename_add']
