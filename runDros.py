@@ -18,8 +18,7 @@ import matplotlib as mpl
 reload(bf)
 reload(vis)
 
-config_path = 'config/run_dros.ini'
-config = ConfigObj(config_path, unrepr=True)
+config = ConfigObj(sys.argv[1], unrepr=True)
 
 add = config['filename_add']
 if config['normalize']:
