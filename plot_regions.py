@@ -1,20 +1,17 @@
 
-import os
-import glob
-import json
-import math
+import os, glob, json, math
 import itertools as it
+from collections import defaultdict
 from NeuralImageProcessing.pipeline import TimeSeries
 from NeuralImageProcessing import illustrate_decomposition as vis
 import NeuralImageProcessing.basic_functions as bf
-import logging as l
 import numpy as np
 import pylab as plt
 from mpl_toolkits.mplot3d import Axes3D
-from collections import defaultdict
-import utils
 from scipy.stats.mstats_basic import scoreatpercentile
 from sklearn import linear_model
+import utils
+import logging as l
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
@@ -66,7 +63,7 @@ filelist = [f for f in filelist if not 'regions' in os.path.basename(f)]
 average_over_stimulus_repetitions = bf.SingleSampleResponse()
 integrator = bf.StimulusIntegrator(threshold= -1000)
 
-# read data to dictionary
+# read data (matrix factorization results) to dictionary
 l.info('read files from: %s' % load_path)
 for fname in filelist:
     ts = TimeSeries()

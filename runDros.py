@@ -4,10 +4,10 @@ Created on Aug 11, 2011
 @author: jan
 '''
 
-import os, glob, sys, json
+import os, glob, sys, json, pickle
 from configobj import ConfigObj
-import pickle
 import itertools as it
+from collections import defaultdict
 import numpy as np
 import pylab as plt
 from scipy.cluster.hierarchy import dendrogram, linkage
@@ -15,7 +15,6 @@ from NeuralImageProcessing import basic_functions as bf
 from NeuralImageProcessing import illustrate_decomposition as vis
 import utils
 import matplotlib as mpl
-from collections import defaultdict
 reload(bf)
 reload(vis)
 

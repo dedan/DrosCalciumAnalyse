@@ -19,7 +19,6 @@ output: * plots of # of usable channels for certain thresholds (depending on the
 '''
 
 import os, glob, pickle, json, sys
-from configobj import ConfigObj
 from collections import defaultdict
 import numpy as np
 import pylab as plt

@@ -13,11 +13,8 @@ from NeuralImageProcessing import basic_functions as bf
 import utils
 reload(bf)
 
-frames_per_trial = 40
-variance = 5
 lowpass = 2
 similarity_threshold = 0.3
-modesim_threshold = 0.5
 medianfilter = 5
 base_path = '/Users/dedan/projects/fu/'
 data_path = os.path.join(base_path, 'data', 'dros_calcium_new')
@@ -31,7 +28,7 @@ prefixes = ['CVA', 'LIN', '2PA', 'OCO']
 #        initialize the processing functions
 #####################################################
 
-# temporal downsampling by factor 4 (originally 40 frames)
+# temporal downsampling by factor 2 (originally 40 frames)
 temporal_downsampling = bf.TrialMean(20)
 # cut baseline signal (odor starts at frame 4 (original frame8))
 baseline_cut = bf.CutOut((0, 3))
