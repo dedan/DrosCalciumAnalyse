@@ -123,12 +123,14 @@ for prefix in config['prefixes']:
         # calcualte mean response
         mean_resp_unsort = trial_mean(bf.CutOut((6, 12))(pp))
         mean_resp = sorted_trials(mean_resp_unsort)
-        # select stimuli such that their mean correlation is below similarity_threshold
+        # select stimuli such that their mean correlation distance is below similarity_threshold
         pp = sorted_trials(pp)
-        stimuli_mask = bf.SampleSimilarity(config['similarity_threshold'])
-        stimuli_selection = stimuli_mask(mean_resp)
-        stimuli_filter = bf.SelectTrials()
-        pp = stimuli_filter(pp, stimuli_selection)
+        if not prefix == 'mic':
+            stimuli_mask = bf.SampleSimilarity(config['similarity_threshold'])
+            stimuli_selection = stimuli_mask(mean_resp)
+            stimuli_filter = bf.SelectTrials()
+            pp = stimuli_filter(pp, stimuli_selection)
+
         # collect results
         all_raw.append(pp)
 
