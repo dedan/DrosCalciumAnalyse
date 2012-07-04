@@ -25,9 +25,8 @@ if config['normalize']:
     add += '_maxnorm'
 
 savefolder = os.path.join(config['save_path'],
-                 'simil' + str(int(config['similarity_threshold'] * 100))
-              + 'n_best' + str(config['n_best']) + add)
-
+                          'simil' + str(int(config['similarity_threshold'] * 100))
+                          + 'n_best' + str(config['n_best']) + add)
 if not os.path.exists(savefolder):
     os.mkdir(savefolder)
 
@@ -51,6 +50,15 @@ rel_change = bf.RelativeChange()
 # spatial filtering
 pixel_filter = bf.Filter('median', config['medianfilter'])
 gauss_filter = bf.Filter('gauss', config['lowpass'], downscale=config['spatial_down'])
+
+saveplace = os.path.join(savefolder, config['individualMF']['method'])
+if not os.path.exists(saveplace):
+    os.mkdir(saveplace)
+else:
+    answer = raw_input('output folder already exists, overwrite results? (y/n): ')
+    if not answer == 'y':
+        print 'abort run, output folder contains files'
+        sys.exit()
 
 for prefix in config['prefixes']:
 
@@ -141,9 +149,6 @@ for prefix in config['prefixes']:
             mf = mf_func(pp)
             path = os.path.dirname(savename_ind)
             fname = os.path.basename(savename_ind)
-            saveplace = os.path.join(path, config['individualMF']['method'])
-            if not os.path.exists(saveplace):
-                os.mkdir(saveplace)
             if 'save' in config['individualMF']['do']:
                 mf.save(os.path.join(saveplace, fname + '_' + config['individualMF']['method']))
                 sorted_baseline.save(os.path.join(saveplace, fname + '_baseline'))
