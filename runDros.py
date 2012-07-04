@@ -104,18 +104,17 @@ for prefix in config['prefixes']:
         # temporal downsampling by factor 2 (originally 40 frames)
         ts = bf.TrialMean(20)(ts)
 
-
-
-
         # preprocess timeseries
-        pp = gauss_filter(pixel_filter(rel_change(ts, baseline)))
-        pp.timecourses[np.isnan(pp.timecourses)] = 0
-        pp.timecourses[np.isinf(pp.timecourses)] = 0
+        pp = rel_change(ts, baseline)
         if 'mask' in config['filename_add']:
             maskpath = os.path.dirname(meas_path)
-            maskfile = '_'.join(os.path.basename(meas_path).split('_')[1:]) + '_mask.png'
-            spatial_mask = (plt.imread(os.path.join(maskpath, maskfile))[:, :, 0]).astype('bool')
-            pp.timecourses[:, spatial_mask.flatten()] = 0
+            maskfile = '_'.join(os.path.basename(meas_path).split('_')[1:]) + '_mask.npy'
+            spatial_mask = np.load(os.path.join(maskpath, maskfile)).astype('bool')
+            pp.timecourses[:, np.logical_not(spatial_mask.flatten())] = 0
+
+        pp = gauss_filter(pixel_filter(pp))
+        pp.timecourses[np.isnan(pp.timecourses)] = 0
+        pp.timecourses[np.isinf(pp.timecourses)] = 0
 
         if config['normalize']:
             pp.timecourses = pp.timecourses / np.max(pp.timecourses)
