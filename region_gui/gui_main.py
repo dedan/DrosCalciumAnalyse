@@ -43,34 +43,25 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         self.select_region_file(regions_file)
 
         # add plot widget
-        self.SpatialBase = PlotWidget(self.centralwidget)
+        self.plots = PlotWidget(self.centralwidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-        sizePolicy.setHeightForWidth(self.SpatialBase.sizePolicy().hasHeightForWidth())
-        self.SpatialBase.setSizePolicy(sizePolicy)
-        self.horizontalLayout_4.addWidget(self.SpatialBase)
-        self.TemporalBase = PlotWidget(self.centralwidget)
-        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
-        sizePolicy.setHeightForWidth(self.TemporalBase.sizePolicy().hasHeightForWidth())
-        self.TemporalBase.setSizePolicy(sizePolicy)
-        self.horizontalLayout_4.addWidget(self.TemporalBase)
+        sizePolicy.setHeightForWidth(self.plots.sizePolicy().hasHeightForWidth())
+        self.plots.setSizePolicy(sizePolicy)
+        self.horizontalLayout_4.addWidget(self.plots)
+        self.vis = Vis()
+        self.vis.fig = self.plots.canvas.fig
 
         # connect signals to slots
         self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
         self.connect(self.filesListBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.load_file)
         self.connect(self.nextButton, QtCore.SIGNAL("clicked()"), self.next_button_click)
-        # create plot arena
-        self.baseaxes = [self.SpatialBase.canvas.fig.add_subplot(num_modes, 1, i + 1)
-                          for i in range(num_modes)]
-        self.timeaxes = [self.TemporalBase.canvas.fig.add_subplot(num_modes, 1, i + 1)
-                          for i in range(num_modes)]
-        # instantiate plot functions
-        self.vis = Vis()
+
 
 
     def init_boxes_and_labels(self, n):
         self.boxes = []
         self.labels = []
-        for i in range(n):
+        for i in range(n, 0, -1):
             tmp_box = QtGui.QComboBox(self.centralwidget)
             self.gridLayout.addWidget(tmp_box, 1, i, 1, 1)
             self.boxes.append(tmp_box)
@@ -91,7 +82,6 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.connect(box,
                          QtCore.SIGNAL("currentIndexChanged(int)"),
                          self.selection_changed)
-
 
 
     def next_button_click(self):
@@ -137,19 +127,30 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.filesListBox.setEnabled(True)
 
     def load_file(self):
-        """load the serialized TimeSeries object that contains the MF results"""
+        """load the serialized TimeSeries object that contains the MF results
+
+            * change figure to contain correct number of modes
+            * draw correct number of boxes and labels
+        """
         fname = os.path.join(self.folder, str(self.filesListBox.currentText()))
         l.info('loading: %s' % fname)
+
+        # tupelization magic (set TimeSeries to correct size)
         self.data.load(fname)
         self.data.shape = tuple(self.data.shape)
-        self.init_boxes_and_labels(self.data.shape[0])
         self.data.base.shape = tuple(self.data.base.shape)
         self.data.name = os.path.basename(fname)
         self.baseline.load('_'.join(fname.split('_')[:-1]) + '_baseline')
         self.baseline.shape = tuple(self.baseline.shape)
+
+        # initialize gui for current number of modes
+        n_modes = self.data.shape[0]
+        self.init_boxes_and_labels(n_modes)
+        self.vis.base_and_time(n_modes)
+
         # init gui when labels already exist
         if self.data.name in self.regions:
-            l.debug('name found in regions')
+            l.debug('already labeled, load this labeling..')
             for i, label in enumerate(self.regions[self.data.name]):
                 idx = self.boxes[i].findText(label)
                 if idx < 0:
@@ -166,25 +167,26 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
     def draw_spatial_plots(self):
         # TODO: only replot the changed subplots
         bases = self.data.base.shaped2D()
-        #aspect_ratio = self.data.base.shape[0] / float(self.data.base.shape[1])
         for i in range(self.data.num_objects):
             colormap = config['labels'][str(self.boxes[i].currentText())]
-            ax = self.baseaxes[i]
+            ax = self.vis.axes['base'][i]
             ax.hold(False)
             self.vis.imshow(ax, np.mean(self.baseline.shaped2D(), 0),
                                      cmap=plt.cm.bone_r)
             ax.hold(True)
             self.vis.overlay_image(ax, bases[i], threshold=0.2, colormap=colormap)
-        self.SpatialBase.canvas.draw()
+        self.plots.canvas.draw()
 
     def draw_temporal_plots(self):
         for i in range(self.data.num_objects):
-            ax = self.timeaxes[i]
+            ax = self.vis.axes['time'][i]
             ax.hold(False)
             self.vis.plot(ax, self.data.timecourses[:, i])
             self.vis.add_labelshade(ax, self.data)
-        self.vis.add_samplelabel(self.timeaxes[0], self.data, rotation='45', toppos=True)
-        self.TemporalBase.canvas.draw()
+            ax.set_xticks([])
+            ax.set_yticks([])
+        self.vis.add_samplelabel(self.vis.axes['time'][self.data.num_objects-1], self.data, rotation='45', toppos=True)
+        self.plots.canvas.draw()
 
 class PlotCanvas(FigureCanvas):
 
