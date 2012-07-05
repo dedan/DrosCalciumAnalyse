@@ -153,7 +153,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             ax = self.baseaxes[i]
             ax.hold(False)
             self.vis.imshow(ax, np.mean(self.baseline.shaped2D(), 0),
-                                     colormap=plt.cm.bone_r)
+                                     cmap=plt.cm.bone_r)
             ax.hold(True)
             self.vis.overlay_image(ax, bases[i], threshold=0.2, colormap=colormap)
         self.SpatialBase.canvas.draw()
