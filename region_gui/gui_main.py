@@ -9,6 +9,8 @@ from PyQt4 import QtGui
 from NeuralImageProcessing import pipeline
 from NeuralImageProcessing.illustrate_decomposition import VisualizeTimeseries as Vis
 from matplotlib.colors import rgb2hex
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 from layout import Ui_RegionGui # Module generated from reading ui file 'layout.ui',
 from DrosCalciumAnalyse import utils
@@ -39,6 +41,18 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
         self.setupUi(self)
         self.select_region_file(regions_file)
+
+        # add plot widget
+        self.SpatialBase = PlotWidget(self.centralwidget)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        sizePolicy.setHeightForWidth(self.SpatialBase.sizePolicy().hasHeightForWidth())
+        self.SpatialBase.setSizePolicy(sizePolicy)
+        self.horizontalLayout_4.addWidget(self.SpatialBase)
+        self.TemporalBase = PlotWidget(self.centralwidget)
+        sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        sizePolicy.setHeightForWidth(self.TemporalBase.sizePolicy().hasHeightForWidth())
+        self.TemporalBase.setSizePolicy(sizePolicy)
+        self.horizontalLayout_4.addWidget(self.TemporalBase)
 
         # connect signals to slots
         self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
@@ -171,6 +185,24 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.vis.add_labelshade(ax, self.data)
         self.vis.add_samplelabel(self.timeaxes[0], self.data, rotation='45', toppos=True)
         self.TemporalBase.canvas.draw()
+
+class PlotCanvas(FigureCanvas):
+
+    def __init__(self):
+        self.fig = Figure()
+        FigureCanvas.__init__(self, self.fig)
+        FigureCanvas.setSizePolicy(self, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
+
+class PlotWidget(QtGui.QWidget):
+
+    def __init__(self, parent=None):
+        QtGui.QWidget.__init__(self, parent)
+        self.canvas = PlotCanvas()
+        self.vbl = QtGui.QVBoxLayout()
+        self.vbl.addWidget(self.canvas)
+        self.setLayout(self.vbl)
+
 
 
 
