@@ -26,13 +26,13 @@ config = {"labels": {"vlPRCt": utils.redmap,
                      "iPNtract": utils.greenmap,
                      "betweenTract": utils.cyanmap,
                      "blackhole": utils.violetmap,
-                     "!nolabel": plt.cm.hsv_r                   
+                     "!nolabel": plt.cm.hsv_r
                      }}
 
 class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
     def __init__(self, regions_file, num_modes, parent=None):
-        """initialize the gui, color the boxes, etc.."""
+        """initialize the gui, connect signals, add axes objects, etc.."""
         super(MyGui, self).__init__(parent)
         self.data = pipeline.TimeSeries()
         self.baseline = pipeline.TimeSeries()
@@ -112,6 +112,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             filelist = glob.glob(os.path.join(self.folder, '*.json'))
             filelist = [os.path.splitext(os.path.basename(f))[0] for f in filelist]
             filelist = [f for f in filelist if not 'base' in f]
+            filelist = [f for f in filelist if not 'regions' in f]
             self.filesListBox.clear()
             self.filesListBox.addItems(filelist)
             self.nextButton.setEnabled(True)
@@ -159,7 +160,6 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         self.SpatialBase.canvas.draw()
 
     def draw_temporal_plots(self):
-        
         for i in range(self.data.num_objects):
             ax = self.timeaxes[i]
             ax.hold(False)
