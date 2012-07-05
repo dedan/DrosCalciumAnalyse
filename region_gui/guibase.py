@@ -36,18 +36,37 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         super(MyGui, self).__init__(parent)
         self.data = pipeline.TimeSeries()
         self.baseline = pipeline.TimeSeries()
-        
-        # gui init stuff
-        self.setupUi(self)
-        self.boxes = [self.ComboBox_1, self.ComboBox_2, self.ComboBox_3,
-                      self.ComboBox_4, self.ComboBox_5, self.ComboBox_6]
-        self.labels = [self.label_1, self.label_2, self.label_3,
-                       self.label_4, self.label_5, self.label_6]
 
+        self.setupUi(self)
         self.select_region_file(regions_file)
 
-        # initialize the boxes
-        size = self.ComboBox_1.style().pixelMetric(QtGui.QStyle.PM_SmallIconSize)
+        # connect signals to slots
+        self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
+        self.connect(self.filesListBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.load_file)
+        self.connect(self.nextButton, QtCore.SIGNAL("clicked()"), self.next_button_click)
+        # create plot arena
+        self.baseaxes = [self.SpatialBase.canvas.fig.add_subplot(num_modes, 1, i + 1)
+                          for i in range(num_modes)]
+        self.timeaxes = [self.TemporalBase.canvas.fig.add_subplot(num_modes, 1, i + 1)
+                          for i in range(num_modes)]
+        # instantiate plot functions
+        self.vis = Vis()
+
+
+    def init_boxes_and_labels(self, n):
+        self.boxes = []
+        self.labels = []
+        for i in range(n):
+            tmp_box = QtGui.QComboBox(self.centralwidget)
+            self.gridLayout.addWidget(tmp_box, 1, i, 1, 1)
+            self.boxes.append(tmp_box)
+
+            tmp_label = QtGui.QLabel(self.centralwidget)
+            tmp_label.setText('Mode %d' % (i + 1))
+            self.gridLayout.addWidget(tmp_label, 0, i, 1, 1)
+            self.labels.append(tmp_label)
+
+        size = self.boxes[0].style().pixelMetric(QtGui.QStyle.PM_SmallIconSize)
         pixmap = QtGui.QPixmap(size - 3, size - 3)
         for box in self.boxes:
             for i, label in enumerate(sorted(config["labels"].keys())):
@@ -59,22 +78,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
                          QtCore.SIGNAL("currentIndexChanged(int)"),
                          self.selection_changed)
 
-        # connect signals to slots
-        self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
-        self.connect(self.filesListBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.load_file)
-        self.connect(self.nextButton, QtCore.SIGNAL("clicked()"), self.next_button_click)
-        
-        # create plot arena
-        self.baseaxes = [self.SpatialBase.canvas.fig.add_subplot(num_modes, 1, i + 1)
-                          for i in range(num_modes)]
-        self.timeaxes = [self.TemporalBase.canvas.fig.add_subplot(num_modes, 1, i + 1)
-                          for i in range(num_modes)]
-        # instantiate plot functions
-        self.vis = Vis()
-        
-        if debug:
-            test_path = '/Users/dedan/projects/fu/results/test/onemode/OCO_111018a_nnma.json'
-            # self.FilePath.setText(test_path)
+
 
     def next_button_click(self):
         box = self.filesListBox
@@ -124,11 +128,11 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         l.info('loading: %s' % fname)
         self.data.load(fname)
         self.data.shape = tuple(self.data.shape)
+        self.init_boxes_and_labels(self.data.shape[0])
         self.data.base.shape = tuple(self.data.base.shape)
         self.data.name = os.path.basename(fname)
         self.baseline.load('_'.join(fname.split('_')[:-1]) + '_baseline')
         self.baseline.shape = tuple(self.baseline.shape)
-        # TODO: update the number of active comboboxes and labels
         # init gui when labels already exist
         if self.data.name in self.regions:
             l.debug('name found in regions')
