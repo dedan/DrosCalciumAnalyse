@@ -112,9 +112,12 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
                 l.error('no regions.json selected --> quitting')
                 sys.exit(-1)
 
-    def select_folder(self):
+    def select_folder(self, folder=None):
         """open file select dialog and enter returned path to the line edit"""
-        fname = str(QtGui.QFileDialog.getExistingDirectory())
+        if folder:
+            fname = folder
+        else:
+            fname = str(QtGui.QFileDialog.getExistingDirectory())
         if fname:
             self.folder = fname
             filelist = glob.glob(os.path.join(self.folder, '*.json'))
@@ -215,4 +218,5 @@ if __name__ == '__main__':
     my_view = MyGui(regions_file, num_modes)
     my_view.show()
     app.setActiveWindow(my_view)
+    my_view.select_folder('/Users/dedan/projects/fu/results/simil80n_bestFalsemask/sica/')
     sys.exit(app.exec_())
