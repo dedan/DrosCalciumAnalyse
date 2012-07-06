@@ -187,7 +187,6 @@ class PlotWidget(QtGui.QWidget):
             self.menu.addAction(label)
 
     def on_click(self, event):
-        print 'click'
         if self.current_plot != None:
             local_pos = (event.x, self.canvas.fig.get_figheight() * self.canvas.fig.get_dpi() - event.y)
             global_pos = self.mapToGlobal(QtCore.QPoint(*local_pos))
@@ -202,13 +201,10 @@ class PlotWidget(QtGui.QWidget):
                 self.gui.draw_spatial_plots()
 
     def enter_axes(self, event):
-        print 'enter'
         self.current_plot = event.inaxes.get_gid()
-        print self.current_plot
         self.current_transform = event.inaxes.transData.transform
 
     def leave_axes(self, event):
-        print 'leave'
         self.current_plot = None
         self.current_transform = None
 
