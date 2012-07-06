@@ -188,16 +188,16 @@ class PlotWidget(QtGui.QWidget):
 
     def on_click(self, event):
         print 'click'
-        print(dir(event))
-        print self.current_plot
         if self.current_plot != None:
-            print event.x, event.y
-            # print self.current_transform(QtCore.QPoint(20, 20))
-            print self.current_transform((20,20))
-            action = self.menu.exec_(QtCore.QPoint(*self.current_transform((20, 20))))
+            local_pos = (event.x, self.canvas.fig.get_figheight() * self.canvas.fig.get_dpi() - event.y)
+            global_pos = self.mapToGlobal(QtCore.QPoint(*local_pos))
+            action = self.menu.exec_(global_pos)
+
             if action:
+                print self.current_plot
                 self.gui.vis.axes['base'][self.current_plot].set_ylabel(action.text())
-                self.gui.regions[self.gui.data.name] = [p.get_ylabel() for p in self.gui.vis.axes['base']]
+                self.gui.current_labels = [p.get_ylabel() for p in self.gui.vis.axes['base']]
+                self.gui.regions[self.gui.data.name] = self.gui.current_labels
                 json.dump(self.gui.regions, open(self.gui.regions_file, 'w'))
                 self.gui.draw_spatial_plots()
 
