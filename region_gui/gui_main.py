@@ -31,6 +31,7 @@ config = {"labels": {"vlPRCt": utils.redmap,
                      "!nolabel": plt.cm.hsv_r
                      }}
 
+
 class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
     def __init__(self, regions_file, num_modes, parent=None):
@@ -41,9 +42,10 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
         self.setupUi(self)
         self.select_region_file(regions_file)
+        self.labels = sorted(config["labels"].keys())
 
         # add plot widget
-        self.plots = PlotWidget(self.centralwidget)
+        self.plots = PlotWidget(self, self.centralwidget)
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHeightForWidth(self.plots.sizePolicy().hasHeightForWidth())
         self.plots.setSizePolicy(sizePolicy)
@@ -56,45 +58,17 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         self.connect(self.filesListBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.load_file)
         self.connect(self.nextButton, QtCore.SIGNAL("clicked()"), self.next_button_click)
 
-
-
-    def init_boxes_and_labels(self, n):
-        self.boxes = []
-        self.labels = []
-        for i in range(n, 0, -1):
-            tmp_box = QtGui.QComboBox(self.centralwidget)
-            self.gridLayout.addWidget(tmp_box, 1, i, 1, 1)
-            self.boxes.append(tmp_box)
-
-            tmp_label = QtGui.QLabel(self.centralwidget)
-            tmp_label.setText('Mode %d' % (i + 1))
-            self.gridLayout.addWidget(tmp_label, 0, i, 1, 1)
-            self.labels.append(tmp_label)
-
-        size = self.boxes[0].style().pixelMetric(QtGui.QStyle.PM_SmallIconSize)
-        pixmap = QtGui.QPixmap(size - 3, size - 3)
-        for box in self.boxes:
-            for i, label in enumerate(sorted(config["labels"].keys())):
-                box.addItem(label, QtGui.QColor(i))
-                pixmap.fill(QtGui.QColor(rgb2hex(config["labels"][label](1.))))
-                box.setItemData(i, pixmap, QtCore.Qt.DecorationRole)
-            # connect callback
-            self.connect(box,
-                         QtCore.SIGNAL("currentIndexChanged(int)"),
-                         self.selection_changed)
-
-
     def next_button_click(self):
         box = self.filesListBox
         box.setCurrentIndex((box.currentIndex() + 1) % (len(box) - 1))
 
-    def selection_changed(self):
-        """replot and save to regions.json when a combobox changed"""
-        l.info('selection made')
-        box = self.sender()
-        self.regions[self.data.name] = [str(box.currentText()) for box in self.boxes]
-        json.dump(self.regions, open(self.regions_file, 'w'))
-        self.draw_spatial_plots()
+    # def selection_changed(self):
+    #     """replot and save to regions.json when a combobox changed"""
+    #     l.info('selection made')
+    #     box = self.sender()
+    #     self.regions[self.data.name] = [str(box.currentText()) for box in self.boxes]
+    #     json.dump(self.regions, open(self.regions_file, 'w'))
+    #     self.draw_spatial_plots()
 
     def select_region_file(self, regions_file=None):
 
@@ -148,22 +122,15 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
         # initialize gui for current number of modes
         n_modes = self.data.shape[0]
-        self.init_boxes_and_labels(n_modes)
-        self.vis.base_and_time(n_modes)
+        # self.init_boxes_and_labels(n_modes)
+        self.vis.base_and_time(n_modes, height=0.8)
 
         # init gui when labels already exist
         if self.data.name in self.regions:
             l.debug('already labeled, load this labeling..')
-            for i, label in enumerate(self.regions[self.data.name]):
-                idx = self.boxes[i].findText(label)
-                if idx < 0:
-                    l.warning('unknown label')
-                old_state = self.boxes[i].blockSignals(True);
-                self.boxes[i].setCurrentIndex(idx)
-                self.boxes[i].blockSignals(old_state)
+            self.current_labels = self.regions[self.data.name]
         else:
-            for box in self.boxes:
-                box.setCurrentIndex(0)
+            self.current_labels = [self.labels[0] for i in range(n_modes)]
         self.draw_spatial_plots()
         self.draw_temporal_plots()
 
@@ -171,13 +138,14 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         # TODO: only replot the changed subplots
         bases = self.data.base.shaped2D()
         for i in range(self.data.num_objects):
-            colormap = config['labels'][str(self.boxes[i].currentText())]
+            colormap = config['labels'][self.current_labels[i]]
             ax = self.vis.axes['base'][i]
             ax.hold(False)
             self.vis.imshow(ax, np.mean(self.baseline.shaped2D(), 0),
                                      cmap=plt.cm.bone_r)
             ax.hold(True)
             self.vis.overlay_image(ax, bases[i], threshold=0.2, colormap=colormap)
+            ax.set_ylabel(self.current_labels[i], rotation='0')
         self.plots.canvas.draw()
 
     def draw_temporal_plots(self):
@@ -188,6 +156,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.vis.add_labelshade(ax, self.data)
             ax.set_xticks([])
             ax.set_yticks([])
+        # TODO: samplelabel not shown
         self.vis.add_samplelabel(self.vis.axes['time'][self.data.num_objects-1], self.data, rotation='45', toppos=True)
         self.plots.canvas.draw()
 
@@ -202,34 +171,46 @@ class PlotCanvas(FigureCanvas):
 
 class PlotWidget(QtGui.QWidget):
 
-    def lala(self, event):
-        print 'lala'
-
-    def bla(self, event):
-        print event.canvas
-        event.inaxes.plot([1,2,3])
-        print event.inaxes.get_gid()
-        print event.inaxes.transData.transform((5, 0))
-        self.canvas.fig.canvas.draw()
-        # print dir(event.inaxes)
-        # print event.inaxes.name
-        # menu = QtGui.QMenu(event.canvas)
-        # quitAction = menu.addAction("Quit")
-        # action = menu.exec_(event.canvas.mapToGlobal(QtCore.QPoint(20,20)))
-
-    def leave_axes(self, event):
-        self.current_plot = None
-        self.current_transform = None
-
-    def __init__(self, parent=None):
+    def __init__(self, gui, parent=None):
         QtGui.QWidget.__init__(self, parent)
+        self.gui = gui
+        self.current_plot = None
         self.canvas = PlotCanvas()
-        self.canvas.fig.canvas.mpl_connect('button_press_event', self.lala)
-        self.canvas.fig.canvas.mpl_connect('axes_enter_event', self.bla)
+        self.canvas.fig.canvas.mpl_connect('button_press_event', self.on_click)
+        self.canvas.fig.canvas.mpl_connect('axes_enter_event', self.enter_axes)
+        self.canvas.fig.canvas.mpl_connect('axes_leave_event', self.leave_axes)
         self.vbl = QtGui.QVBoxLayout()
         self.vbl.addWidget(self.canvas)
         self.setLayout(self.vbl)
+        self.menu = QtGui.QMenu(self.canvas.fig.canvas)
+        for label in self.gui.labels:
+            self.menu.addAction(label)
 
+    def on_click(self, event):
+        print 'click'
+        print(dir(event))
+        print self.current_plot
+        if self.current_plot != None:
+            print event.x, event.y
+            # print self.current_transform(QtCore.QPoint(20, 20))
+            print self.current_transform((20,20))
+            action = self.menu.exec_(QtCore.QPoint(*self.current_transform((20, 20))))
+            if action:
+                self.gui.vis.axes['base'][self.current_plot].set_ylabel(action.text())
+                self.gui.regions[self.gui.data.name] = [p.get_ylabel() for p in self.gui.vis.axes['base']]
+                json.dump(self.gui.regions, open(self.gui.regions_file, 'w'))
+                self.gui.draw_spatial_plots()
+
+    def enter_axes(self, event):
+        print 'enter'
+        self.current_plot = event.inaxes.get_gid()
+        print self.current_plot
+        self.current_transform = event.inaxes.transData.transform
+
+    def leave_axes(self, event):
+        print 'leave'
+        self.current_plot = None
+        self.current_transform = None
 
 
 
