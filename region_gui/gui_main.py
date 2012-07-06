@@ -50,7 +50,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         sizePolicy = QtGui.QSizePolicy(QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         sizePolicy.setHeightForWidth(self.plots.sizePolicy().hasHeightForWidth())
         self.plots.setSizePolicy(sizePolicy)
-        self.horizontalLayout_4.addWidget(self.plots)
+        self.scrollArea.setWidget(self.plots)
         self.vis = Vis()
         self.vis.fig = self.plots.canvas.fig
 
@@ -120,6 +120,12 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.current_labels = self.regions[self.data.name]
         else:
             self.current_labels = [self.labels[0] for i in range(n_modes)]
+        self.plots.canvas.fig.set_figheight(20)
+        # self.plots.canvas.fig.set_figwidth(10)
+        h = self.plots.canvas.fig.get_figheight() * self.plots.canvas.fig.get_dpi()
+        w = self.plots.canvas.fig.get_figwidth() * self.plots.canvas.fig.get_dpi()
+        self.plots.setMinimumSize(w, h)
+
         self.draw_spatial_plots()
         self.draw_temporal_plots()
 
