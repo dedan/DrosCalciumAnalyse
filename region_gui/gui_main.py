@@ -199,11 +199,33 @@ class PlotCanvas(FigureCanvas):
         FigureCanvas.setSizePolicy(self, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
         FigureCanvas.updateGeometry(self)
 
+
 class PlotWidget(QtGui.QWidget):
+
+    def lala(self, event):
+        print 'lala'
+
+    def bla(self, event):
+        print event.canvas
+        event.inaxes.plot([1,2,3])
+        print event.inaxes.get_gid()
+        print event.inaxes.transData.transform((5, 0))
+        self.canvas.fig.canvas.draw()
+        # print dir(event.inaxes)
+        # print event.inaxes.name
+        # menu = QtGui.QMenu(event.canvas)
+        # quitAction = menu.addAction("Quit")
+        # action = menu.exec_(event.canvas.mapToGlobal(QtCore.QPoint(20,20)))
+
+    def leave_axes(self, event):
+        self.current_plot = None
+        self.current_transform = None
 
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.canvas = PlotCanvas()
+        self.canvas.fig.canvas.mpl_connect('button_press_event', self.lala)
+        self.canvas.fig.canvas.mpl_connect('axes_enter_event', self.bla)
         self.vbl = QtGui.QVBoxLayout()
         self.vbl.addWidget(self.canvas)
         self.setLayout(self.vbl)
