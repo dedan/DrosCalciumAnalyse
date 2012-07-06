@@ -157,7 +157,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             ax.set_xticks([])
             ax.set_yticks([])
         # TODO: samplelabel not shown
-        self.vis.add_samplelabel(self.vis.axes['time'][self.data.num_objects-1], self.data, rotation='45', toppos=True)
+        self.vis.add_samplelabel(self.vis.axes['time'][0], self.data, rotation='45', toppos=True)
         self.plots.canvas.draw()
 
 class PlotCanvas(FigureCanvas):
