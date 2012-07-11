@@ -1,4 +1,6 @@
 '''
+hierarchical clustering of previously computed modes
+
 Created on Dec 12, 2011
 
 @author: jan
