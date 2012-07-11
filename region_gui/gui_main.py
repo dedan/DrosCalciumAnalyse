@@ -40,6 +40,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         super(MyGui, self).__init__(parent)
         self.data = pipeline.TimeSeries()
         self.baseline = pipeline.TimeSeries()
+        self.axes = {'base':[], 'time':[]}
 
         self.setupUi(self)
         self.select_region_file(regions_file)
@@ -100,6 +101,32 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.nextButton.setEnabled(True)
             self.filesListBox.setEnabled(True)
 
+    def make_plot_layout(self, n_modes, base_plot_size=50, vertical_plotting_space=0.8):
+        '''initialize gui for current number of modes
+        '''
+        dpi = self.plots.canvas.fig.get_dpi()
+        fig = self.plots.canvas.fig
+        fig_height = (base_plot_size * n_modes) / (float(dpi) * vertical_plotting_space)
+        fig.set_figheight(fig_height)
+        h = fig.get_figheight() * dpi
+        w = fig.get_figwidth() * dpi
+        self.plots.setMinimumSize(w, h)
+
+        height_fraction = vertical_plotting_space / n_modes
+        for i in range(n_modes):
+            #create timeaxes
+            ax = fig.add_axes([0.25, height_fraction * i + 0.05, 0.70, height_fraction])
+            ax.set_xticklabels([])
+            self.axes['time'].append(ax)
+            #create baseaxes
+            ax = fig.add_axes([0.1, height_fraction * i + 0.05, 0.15, height_fraction])
+            ax.set_axis_off()
+            ax.set_gid(n_modes - 1 - i)
+            self.axes['base'].append(ax)
+        # bring plots in order as you would expect from subplot
+        self.axes['base'].reverse()
+        self.axes['time'].reverse()
+
     def load_file(self):
         """ load the serialized TimeSeries object that contains the MF results """
         fname = os.path.join(self.folder, str(self.filesListBox.currentText()))
@@ -113,9 +140,8 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         self.baseline.load('_'.join(fname.split('_')[:-1]) + '_baseline')
         self.baseline.shape = tuple(self.baseline.shape)
 
-        # initialize gui for current number of modes
-        n_modes = self.data.shape[0]
-        self.vis.base_and_time(n_modes, height=0.8)
+        n_modes = self.data.num_objects
+        self.make_plot_layout(n_modes)
 
         # init gui when labels already exist
         if self.data.name in self.regions:
@@ -131,7 +157,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         bases = self.data.base.shaped2D()
         for i in range(self.data.num_objects):
             colormap = config['labels'][self.current_labels[i]]
-            ax = self.vis.axes['base'][i]
+            ax = self.axes['base'][i]
             ax.hold(False)
             self.vis.imshow(ax, np.mean(self.baseline.shaped2D(), 0), cmap=plt.cm.bone_r)
             ax.hold(True)
@@ -141,13 +167,13 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
 
     def draw_temporal_plots(self):
         for i in range(self.data.num_objects):
-            ax = self.vis.axes['time'][i]
+            ax = self.axes['time'][i]
             ax.hold(False)
             self.vis.plot(ax, self.data.timecourses[:, i])
             self.vis.add_labelshade(ax, self.data)
             ax.set_xticks([])
             ax.set_yticks([])
-        self.vis.add_samplelabel(self.vis.axes['time'][0], self.data, rotation='45', toppos=True)
+        self.vis.add_samplelabel(self.axes['time'][0], self.data, rotation='45', toppos=True)
         self.plots.canvas.draw()
 
 
@@ -185,8 +211,8 @@ class PlotWidget(QtGui.QWidget):
             global_pos = self.mapToGlobal(QtCore.QPoint(*local_pos))
             action = self.menu.exec_(global_pos)
             if action:
-                self.gui.vis.axes['base'][self.current_plot].set_ylabel(action.text())
-                self.gui.current_labels = [p.get_ylabel() for p in self.gui.vis.axes['base']]
+                self.gui.axes['base'][self.current_plot].set_ylabel(action.text())
+                self.gui.current_labels = [p.get_ylabel() for p in self.gui.axes['base']]
                 self.gui.regions[self.gui.data.name] = self.gui.current_labels
                 json.dump(self.gui.regions, open(self.gui.regions_file, 'w'))
                 self.gui.draw_spatial_plots()
