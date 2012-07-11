@@ -4,6 +4,7 @@ Created on Aug 11, 2011
 @author: jan
 '''
 
+import runlib
 import os, glob, sys, json, pickle
 from configobj import ConfigObj
 import itertools as it
@@ -17,6 +18,7 @@ import utils
 import matplotlib as mpl
 reload(bf)
 reload(vis)
+reload(runlib)
 
 config = ConfigObj(sys.argv[1], unrepr=True)
 
@@ -36,8 +38,6 @@ if not os.path.exists(savefolder):
 #####################################################
 total_resp = []
 
-# calculate trial mean
-trial_mean = bf.TrialMean()
 #sorting
 sorted_trials = bf.SortBySamplename()
 # calculate (delta F) / F
@@ -47,13 +47,13 @@ pixel_filter = bf.Filter('median', config['medianfilter'])
 gauss_filter = bf.Filter('gauss', config['lowpass'], downscale=config['spatial_down'])
 
 saveplace = os.path.join(savefolder, config['individualMF']['method'])
-if not os.path.exists(saveplace):
-    os.mkdir(saveplace)
-else:
-    answer = raw_input('output folder already exists, overwrite results? (y/n): ')
-    if not answer == 'y':
-        print 'abort run, output folder contains files'
-        sys.exit()
+# if not os.path.exists(saveplace):
+#     os.mkdir(saveplace)
+# else:
+#     answer = raw_input('output folder already exists, overwrite results? (y/n): ')
+#     if not answer == 'y':
+#         print 'abort run, output folder contains files'
+#         sys.exit()
 print 'results are written to : %s' % savefolder
 
 for prefix in config['prefixes']:
@@ -90,64 +90,20 @@ for prefix in config['prefixes']:
         # change shape from list to tuple!!
         ts.shape = tuple(ts.shape)
 
-        ####################################################################
-        # preprocess
-        ####################################################################
-
-        # cut baseline signal (odor starts at frame 4 (original frame8))
-        baseline = trial_mean(bf.CutOut((0, 6))(ts))
-        baselines.append(baseline)
-
-        sorted_baseline = sorted_trials(bf.CutOut((0, 1))(ts))
-        #downscale sorted baseline
-        ds = config['spatial_down']
-        ds_baseline = sorted_baseline.shaped2D()[:, ::ds, ::ds]
-        sorted_baseline.shape = tuple(ds_baseline.shape[1:])
-        sorted_baseline.set_timecourses(ds_baseline)
-
-        # temporal downsampling by factor 2 (originally 40 frames)
-        ts = bf.TrialMean(20)(ts)
-
-        # preprocess timeseries
-        pp = rel_change(ts, baseline)
-        if 'mask' in config['filename_add']:
-            maskpath = os.path.dirname(meas_path)
-            maskfile = '_'.join(os.path.basename(meas_path).split('_')[1:]) + '_mask.npy'
-            spatial_mask = np.load(os.path.join(maskpath, maskfile)).astype('bool')
-            pp.timecourses[:, np.logical_not(spatial_mask.flatten())] = 0
-
-        pp = gauss_filter(pixel_filter(pp))
-        pp.timecourses[np.isnan(pp.timecourses)] = 0
-        pp.timecourses[np.isinf(pp.timecourses)] = 0
-
-        if config['normalize']:
-            pp.timecourses = pp.timecourses / np.max(pp.timecourses)
-
-        # calcualte mean response
-        mean_resp_unsort = trial_mean(bf.CutOut((6, 12))(pp))
-        mean_resp = sorted_trials(mean_resp_unsort)
-        # select stimuli such that their mean correlation distance is below similarity_threshold
-        pp = sorted_trials(pp)
-        if not prefix == 'mic':
-            stimuli_mask = bf.SampleSimilarity(config['similarity_threshold'])
-            stimuli_selection = stimuli_mask(mean_resp)
-            stimuli_filter = bf.SelectTrials()
-            pp = stimuli_filter(pp, stimuli_selection)
-
-        # collect results
-        all_raw.append(pp)
+        out = runlib.preprocess(ts, config)
+        all_raw.append(out['pp'])
 
         ####################################################################
         # do individual matrix factorization
         ####################################################################
         if config['individualMF']['do']:
             mf_func = utils.create_mf(config['individualMF'])
-            mf = mf_func(pp)
+            mf = mf_func(out['pp'])
             path = os.path.dirname(savename_ind)
             fname = os.path.basename(savename_ind)
             if 'save' in config['individualMF']['do']:
                 mf.save(os.path.join(saveplace, fname + '_' + config['individualMF']['method']))
-                sorted_baseline.save(os.path.join(saveplace, fname + '_baseline'))
+                # sorted_baseline.save(os.path.join(saveplace, fname + '_baseline'))
             if 'plot' in config['individualMF']['do']:
 
                 mf_overview = vis.VisualizeTimeseries()
