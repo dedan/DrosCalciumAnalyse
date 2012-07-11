@@ -1,11 +1,11 @@
 '''
 Created on Aug 11, 2011
 
+create time series objects from png images
+
 @author: jan
 '''
 import sys
-sys.path.append('/home/jan/repos/NeuralImageProcessing/NeuralImageProcessing')
-
 import os
 import numpy as np
 import pylab as plt
