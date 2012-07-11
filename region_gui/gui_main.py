@@ -211,5 +211,4 @@ if __name__ == '__main__':
     my_view = MyGui(regions_file, num_modes)
     my_view.show()
     app.setActiveWindow(my_view)
-    my_view.select_folder('/Users/dedan/projects/fu/results/simil80n_bestFalsemask/sica/')
     sys.exit(app.exec_())
