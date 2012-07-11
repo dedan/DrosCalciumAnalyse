@@ -59,6 +59,7 @@ else:
     if not answer == 'y':
         print 'abort run, output folder contains files'
         sys.exit()
+print 'results are written to : %s' % savefolder
 
 for prefix in config['prefixes']:
 
