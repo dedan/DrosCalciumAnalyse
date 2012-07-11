@@ -30,6 +30,16 @@ def preprocess(ts, config):
     # cut baseline signal (odor starts at frame 4 (original frame8))
     out['baseline'] = trial_mean(bf.CutOut((0, 6))(ts))
 
+    # TODO: what is this sorted baseline for?
+    sorted_baseline = sorted_trials(bf.CutOut((0, 1))(ts))
+    #downscale sorted baseline
+    ds = config['spatial_down']
+    ds_baseline = sorted_baseline.shaped2D()[:, ::ds, ::ds]
+    sorted_baseline.shape = tuple(ds_baseline.shape[1:])
+    sorted_baseline.set_timecourses(ds_baseline)
+    out['sorted_baseline'] = sorted_baseline
+
+
     # temporal downsampling by factor 2 (originally 40 frames)
     ts = bf.TrialMean(20)(ts)
 

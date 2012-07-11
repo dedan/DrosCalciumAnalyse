@@ -103,7 +103,7 @@ for prefix in config['prefixes']:
             fname = os.path.basename(savename_ind)
             if 'save' in config['individualMF']['do']:
                 mf.save(os.path.join(saveplace, fname + '_' + config['individualMF']['method']))
-                # sorted_baseline.save(os.path.join(saveplace, fname + '_baseline'))
+                out['sorted_baseline'].save(os.path.join(saveplace, fname + '_baseline'))
             if 'plot' in config['individualMF']['do']:
 
                 mf_overview = vis.VisualizeTimeseries()
