@@ -35,7 +35,7 @@ config = {"labels": {"vlPRCt": utils.redmap,
 class MyGui(QtGui.QMainWindow, Ui_RegionGui):
     '''gui main class'''
 
-    def __init__(self, regions_file, num_modes, parent=None):
+    def __init__(self, regions_file, parent=None):
         """initialize the gui, connect signals, add axes objects, etc.."""
         super(MyGui, self).__init__(parent)
         self.data = pipeline.TimeSeries()
@@ -123,12 +123,6 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
             self.current_labels = self.regions[self.data.name]
         else:
             self.current_labels = [self.labels[0] for i in range(n_modes)]
-        self.plots.canvas.fig.set_figheight(20)
-        # self.plots.canvas.fig.set_figwidth(10)
-        h = self.plots.canvas.fig.get_figheight() * self.plots.canvas.fig.get_dpi()
-        w = self.plots.canvas.fig.get_figwidth() * self.plots.canvas.fig.get_dpi()
-        self.plots.setMinimumSize(w, h)
-
         self.draw_spatial_plots()
         self.draw_temporal_plots()
 
@@ -210,8 +204,7 @@ class PlotWidget(QtGui.QWidget):
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     regions_file = sys.argv[1] if len(sys.argv) > 1 else ""
-    num_modes = sys.argv[2] if len(sys.argv) > 2 else 5
-    my_view = MyGui(regions_file, num_modes)
+    my_view = MyGui(regions_file)
     my_view.show()
     app.setActiveWindow(my_view)
     sys.exit(app.exec_())
