@@ -68,7 +68,10 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         '''load regions.json, either from commandline or show dialog'''
         if regions_file:
             self.regions_file = regions_file
-            self.regions = json.load(open(regions_file))
+            if os.path.exists(self.regions_file):
+                self.regions = json.load(open(regions_file))
+            else:
+                self.regions = {}
         else:
             fname = QtGui.QFileDialog.getOpenFileNameAndFilter(caption='select regions.json',
                                                                filter='*.json')
