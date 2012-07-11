@@ -1,6 +1,11 @@
 #!/usr/bin/env python
 # encoding: utf-8
 """
+I think this file was used to determine a reasonable number of modes. It plots
+the eigenvalue spectrum of the ICA to investigate a good number of components.
+
+It does not work anymore with the other components of the code but should be
+easy to fix.
 
 Created by Stephan on 2012-01-27.
 Copyright (c) 2012. All rights reserved.
