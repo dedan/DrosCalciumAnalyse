@@ -1,0 +1,21 @@
+
+microlesions stuff
+
+which region input from where
+mutual influence of the regions
+
+
+TODO: add description of idea behind microlesion experiments
+
+
+
+runDros
+	input:
+	output:
+
+common_channels
+	input: raw data
+	output: plots (how many channesl in common)
+
+
+

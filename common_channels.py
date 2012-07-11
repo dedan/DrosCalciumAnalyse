@@ -3,6 +3,9 @@
 create the plots which show the matrix of channels available in common
 for n animals for a given threshold.
 
+input: raw_data
+output: plots
+
 @author: stephan.gabler@gmail.com
 '''
 
@@ -51,6 +54,7 @@ stimuli_filter = bf.SelectTrials()
 
 for prefix in prefixes:
 
+    print 'working on: %s' % prefix
     filelist = glob.glob(os.path.join(data_path, prefix) + '*.json')
     all_raw = []
 
