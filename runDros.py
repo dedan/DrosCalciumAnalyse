@@ -30,11 +30,6 @@ savefolder = os.path.join(config['save_path'],
 if not os.path.exists(savefolder):
     os.mkdir(savefolder)
 
-def create_mf(mf_dic):
-    # creates a matrixfactorization according to mf_dic specification
-    mf_methods = {'nnma':bf.NNMA, 'nnman':bf.NNMA, 'sica': bf.sICA, 'stica': bf.stICA}
-    mf = mf_methods[mf_dic['method']](**mf_dic['param'])
-    return mf
 
 #####################################################
 #        initialize the processing functions
@@ -146,7 +141,7 @@ for prefix in config['prefixes']:
         # do individual matrix factorization
         ####################################################################
         if config['individualMF']['do']:
-            mf_func = create_mf(config['individualMF'])
+            mf_func = utils.create_mf(config['individualMF'])
             mf = mf_func(pp)
             path = os.path.dirname(savename_ind)
             fname = os.path.basename(savename_ind)
@@ -267,7 +262,7 @@ for prefix in config['prefixes']:
         intersection = sorted_trials(combine_common(all_raw))
         variance = config['commonMF']['param']['variance']
         mo = bf.PCA(variance)(intersection)
-        mf = create_mf(config['commonMF'])
+        mf = utils.create_mf(config['commonMF'])
         mo2 = mf(intersection)
         single_response = bf.SingleSampleResponse(config['condense'])(mo2)
         if 'plot' in config['commonMF']['do']:

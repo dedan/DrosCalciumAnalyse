@@ -6,6 +6,12 @@ from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 import array
 reload(bf)
 
+def create_mf(mf_dic):
+    '''creates a matrixfactorization according to mf_dic specification'''
+    mf_methods = {'nnma':bf.NNMA, 'nnman':bf.NNMA, 'sica': bf.sICA, 'stica': bf.stICA}
+    mf = mf_methods[mf_dic['method']](**mf_dic['param'])
+    return mf
+
 def colormap_from_lut(filename):
     """create a colormap from a .lut file like we get them from antonia"""
     with open(filename, 'rb') as f:
