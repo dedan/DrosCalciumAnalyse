@@ -25,22 +25,11 @@ config = ConfigObj(sys.argv[1], unrepr=True)
 add = config['filename_add']
 if config['normalize']:
     add += '_maxnorm'
-
 savefolder = os.path.join(config['save_path'],
                           'simil' + str(int(config['similarity_threshold'] * 100))
                           + 'n_best' + str(config['n_best']) + add)
 if not os.path.exists(savefolder):
     os.mkdir(savefolder)
-
-
-#####################################################
-#        initialize the processing functions
-#####################################################
-total_resp = []
-
-#sorting
-sorted_trials = bf.SortBySamplename()
-
 plots_folder = os.path.join(savefolder, config['individualMF']['method'])
 data_folder = os.path.join(plots_folder, 'data')
 if not os.path.exists(plots_folder):
@@ -53,6 +42,7 @@ else:
         sys.exit()
 print 'results are written to : %s' % savefolder
 
+total_resp = []
 for prefix in config['prefixes']:
 
     filelist = glob.glob(os.path.join(config['data_path'], prefix) + '*.json')
@@ -200,7 +190,8 @@ for prefix in config['prefixes']:
             combine_common = bf.ObjectScrambledConcat(config['n_best'])
         else:
             combine_common = bf.ObjectConcat(**config['combine']['param'])
-        intersection = sorted_trials(combine_common(all_raw))
+
+        intersection = bf.SortBySamplename()(combine_common(all_raw))
         variance = config['commonMF']['param']['variance']
         mo = bf.PCA(variance)(intersection)
         mf = utils.create_mf(config['commonMF'])
