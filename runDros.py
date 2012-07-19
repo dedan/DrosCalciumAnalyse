@@ -104,27 +104,6 @@ for prefix in config['prefixes']:
             qual_view = runlib.quality_overview_plot(distanceself, distancecross, ts.name)
             qual_view.savefig(plot_name_base + '_quality.' + config['format'])
 
-    ####################################################################
-    # odorset quality overview
-    ####################################################################
-    if config['odorset_quality']:
-        allodors = list(set(ts.label_sample + sum([t.label_sample for t in all_raw], [])))
-        allodors.sort()
-        quality_mx = np.zeros((len(all_raw), len(allodors)))
-        for t_ind, t in enumerate(all_raw):
-            for od in set(t.label_sample):
-                quality_mx[t_ind, allodors.index(od)] = 1
-
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        ax.imshow(quality_mx, interpolation='nearest', cmap=plt.cm.bone)
-        ax.set_yticks(range(len(all_raw)))
-        ax.set_yticklabels([t.name for t in all_raw])
-        ax.set_xticks(range(len(allodors)))
-        ax.set_xticklabels(allodors, rotation='45')
-        ax.set_title(prefix + '_' + str(config['similarity_threshold']))
-        fig.savefig('_'.join(savename_ind.split('_')[:-1]) + 'mask.' + config['format'])
-
 
     ####################################################################
     # simultanieous ICA
