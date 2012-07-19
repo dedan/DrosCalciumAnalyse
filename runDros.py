@@ -58,7 +58,8 @@ for prefix in config['prefixes']:
     all_sel_modes, all_sel_modes_condensed, all_raw = [], [], []
     baselines, all_stimulifilter = [], []
 
-    for file_ind, filename in enumerate([filelist[0]]):
+    filelist = filelist[0:2]
+    for file_ind, filename in enumerate(filelist):
 
         print prefix, filename
         meas_path = os.path.splitext(filename)[0]
@@ -80,6 +81,7 @@ for prefix in config['prefixes']:
         if config['individualMF']['do']:
             mf_func = utils.create_mf(config['individualMF'])
             mf = mf_func(out['pp'])
+            baselines.append(out['baseline'])
 
         # save results
         if 'save' in config['individualMF']['do']:
@@ -106,7 +108,7 @@ for prefix in config['prefixes']:
 
 
     ####################################################################
-    # simultanieous ICA
+    # simultanieous ICA of one odor-set
     ####################################################################
     if config['commonMF']['do']:
         if config['combine']['scramble']:
@@ -139,9 +141,10 @@ for prefix in config['prefixes']:
                     ax.imshow(single_bases[base_num] * -1, cmap=plt.cm.hsv, vmin= -data_max, vmax=data_max)
                     ax.set_title('%.2f' % data_max, fontsize=8)
                     ax.set_axis_off()
-            fig.savefig('_'.join(savename_ind.split('_')[:-1]) + '_bases.' + config['format'])
+            fig.savefig(os.path.join(plots_folder, prefix + 'simultan_bases.' + config['format']))
             # plot timecourses
             fig = plt.figure()
+            modefilter = bf.CalcStimulusDrive()
             stim_driven = modefilter(mo2).timecourses
             for modenum in range(variance):
                 ax = fig.add_subplot(variance, 1, modenum + 1)
@@ -151,7 +154,7 @@ for prefix in config['prefixes']:
                 ax.grid(True)
             ax.set_xticks(np.arange(3, single_response.samplepoints, single_response.timepoints))
             ax.set_xticklabels(single_response.label_sample, fontsize=12, rotation=45)
-            fig.savefig('_'.join(savename_ind.split('_')[:-1]) + '_simultan_time.' + config['format'])
+            fig.savefig(os.path.join(plots_folder, prefix + '_simultan_time.' + config['format']))
             plt.close('all')
 
 ####################################################################
