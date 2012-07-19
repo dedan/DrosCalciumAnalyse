@@ -25,12 +25,12 @@ config = ConfigObj(sys.argv[1], unrepr=True)
 add = config['filename_add']
 if config['normalize']:
     add += '_maxnorm'
-savefolder = os.path.join(config['save_path'],
+save_base_path = os.path.join(config['save_path'],
                           'simil' + str(int(config['similarity_threshold'] * 100))
-                          + 'n_best' + str(config['n_best']) + add)
-if not os.path.exists(savefolder):
-    os.mkdir(savefolder)
-plots_folder = os.path.join(savefolder, config['individualMF']['method'])
+                          + 'n_best' + str(config['n_best']) + add + '_new')
+if not os.path.exists(save_base_path):
+    os.mkdir(save_base_path)
+plots_folder = os.path.join(save_base_path, config['individualMF']['method'])
 data_folder = os.path.join(plots_folder, 'data')
 if not os.path.exists(plots_folder):
     os.mkdir(plots_folder)
@@ -40,7 +40,7 @@ else:
     if not answer == 'y':
         print 'abort run, output folder contains files'
         sys.exit()
-print 'results are written to : %s' % savefolder
+print 'results are written to : %s' % save_base_path
 
 total_resp = []
 for prefix in config['prefixes']:
@@ -54,40 +54,34 @@ for prefix in config['prefixes']:
         best = utils.select_n_channels(res[prefix][config['choose_threshold']], config['n_best'])
         filelist = [filelist[i] for i in best]
 
-
     #create lists to collect results
     all_sel_modes, all_sel_modes_condensed, all_raw = [], [], []
-    baselines = []
-    all_stimulifilter = []
+    baselines, all_stimulifilter = [], []
 
-    for file_ind, filename in enumerate(filelist):
+    for file_ind, filename in enumerate([filelist[0]]):
+
         print prefix, filename
-        # load timeseries, shape and labels
         meas_path = os.path.splitext(filename)[0]
-        # savelocation
-        savename_ind = os.path.join(savefolder, os.path.basename(meas_path))
+        fname = os.path.basename(meas_path)
+        plot_name_base = os.path.join(plots_folder, fname)
 
         #assign each file a color:
         f_ind = file_ind / (len(filelist) - 1.)
         colorlist[os.path.basename(meas_path)] = plt.cm.jet(f_ind)
 
-        # create timeseries
+        # create timeseries, change shape and preprocess
         ts = bf.TimeSeries()
         ts.load(meas_path)
-        # change shape from list to tuple!!
         ts.shape = tuple(ts.shape)
-
         out = runlib.preprocess(ts, config)
         all_raw.append(out['pp'])
 
-        ####################################################################
-        # do individual matrix factorization
-        ####################################################################
+        # do matrix factorization
         if config['individualMF']['do']:
             mf_func = utils.create_mf(config['individualMF'])
             mf = mf_func(out['pp'])
-            path = os.path.dirname(savename_ind)
-            fname = os.path.basename(savename_ind)
+
+        # save results
         if 'save' in config['individualMF']['do']:
             mf.save(os.path.join(data_folder, fname + '_' + config['individualMF']['method']))
             out['sorted_baseline'].save(os.path.join(data_folder, fname + '_baseline'))
