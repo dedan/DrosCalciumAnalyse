@@ -9,6 +9,7 @@ Copyright (c) 2012. All rights reserved.
 """
 
 from NeuralImageProcessing import basic_functions as bf
+from NeuralImageProcessing import illustrate_decomposition as vis
 import numpy as np
 import pylab as plt
 
@@ -27,7 +28,8 @@ def preprocess(ts, config):
 
     out = {}
 
-    # cut baseline signal (odor starts at frame 4 (original frame8))
+    # cut baseline signal (odor starts at frame 8)
+    # TODO: set this as parameter
     out['baseline'] = trial_mean(bf.CutOut((0, 6))(ts))
 
     # TODO: what is this sorted baseline for?
@@ -38,7 +40,6 @@ def preprocess(ts, config):
     sorted_baseline.shape = tuple(ds_baseline.shape[1:])
     sorted_baseline.set_timecourses(ds_baseline)
     out['sorted_baseline'] = sorted_baseline
-
 
     # temporal downsampling by factor 2 (originally 40 frames)
     ts = bf.TrialMean(20)(ts)
@@ -78,3 +79,20 @@ def preprocess(ts, config):
 def factorize(config):
     pass
 
+def mf_overview_plot(mf):
+    '''plot overview of factorization result
+
+        spatial bases on the left, temporal on the right
+    '''
+    mf_overview = vis.VisualizeTimeseries()
+    mf_overview.base_and_time(mf.num_objects)
+    for ind, resp in enumerate(mf.base.shaped2D()):
+        mf_overview.imshow(mf_overview.axes['base'][ind],
+                            resp,
+                            title={'label': mf.label_sample[ind]})
+        mf_overview.plot(mf_overview.axes['time'][ind],
+                          mf.timecourses[:, ind])
+        mf_overview.add_labelshade(mf_overview.axes['time'][ind], mf)
+    mf_overview.add_samplelabel(mf_overview.axes['time'][-1], mf, rotation='45', toppos=True)
+    [ax.set_title(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
+    return mf_overview.fig

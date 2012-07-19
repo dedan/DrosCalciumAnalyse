@@ -40,20 +40,17 @@ total_resp = []
 
 #sorting
 sorted_trials = bf.SortBySamplename()
-# calculate (delta F) / F
-rel_change = bf.RelativeChange()
-# spatial filtering
-pixel_filter = bf.Filter('median', config['medianfilter'])
-gauss_filter = bf.Filter('gauss', config['lowpass'], downscale=config['spatial_down'])
 
-saveplace = os.path.join(savefolder, config['individualMF']['method'])
-# if not os.path.exists(saveplace):
-#     os.mkdir(saveplace)
-# else:
-#     answer = raw_input('output folder already exists, overwrite results? (y/n): ')
-#     if not answer == 'y':
-#         print 'abort run, output folder contains files'
-#         sys.exit()
+plots_folder = os.path.join(savefolder, config['individualMF']['method'])
+data_folder = os.path.join(plots_folder, 'data')
+if not os.path.exists(plots_folder):
+    os.mkdir(plots_folder)
+    os.mkdir(data_folder)
+else:
+    answer = raw_input('output folder already exists, overwrite results? (y/n): ')
+    if not answer == 'y':
+        print 'abort run, output folder contains files'
+        sys.exit()
 print 'results are written to : %s' % savefolder
 
 for prefix in config['prefixes']:
@@ -101,25 +98,13 @@ for prefix in config['prefixes']:
             mf = mf_func(out['pp'])
             path = os.path.dirname(savename_ind)
             fname = os.path.basename(savename_ind)
-            if 'save' in config['individualMF']['do']:
-                mf.save(os.path.join(saveplace, fname + '_' + config['individualMF']['method']))
-                out['sorted_baseline'].save(os.path.join(saveplace, fname + '_baseline'))
-            if 'plot' in config['individualMF']['do']:
-
-                mf_overview = vis.VisualizeTimeseries()
-                mf_overview.base_and_time(mf.num_objects)
-                for ind, resp in enumerate(mf.base.shaped2D()):
-                    mf_overview.imshow(mf_overview.axes['base'][ind],
-                                        resp,
-                                        title=mf.label_sample[ind])
-                    mf_overview.plot(mf_overview.axes['time'][ind],
-                                      mf.timecourses[:, ind])
-                    mf_overview.add_labelshade(mf_overview.axes['time'][ind], mf)
-                    #ica_overview.add_shade('time', 'onetoall', stimuli_selection, 20)
-                mf_overview.add_samplelabel(mf_overview.axes['time'][-1], mf, rotation='45', toppos=True)
-                [ax.set_title(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
-                mf_overview.fig.savefig(os.path.join(saveplace, fname + '_' + config['individualMF']['method'] + '.' + config['format']))
-
+        if 'save' in config['individualMF']['do']:
+            mf.save(os.path.join(data_folder, fname + '_' + config['individualMF']['method']))
+            out['sorted_baseline'].save(os.path.join(data_folder, fname + '_baseline'))
+        if 'plot' in config['individualMF']['do']:
+            mf_overview = runlib.mf_overview_plot(mf)
+            save_name = fname + '_' + config['individualMF']['method'] + '_overview.' + config['format']
+            mf_overview.savefig(os.path.join(plots_folder, save_name))
 
         ####################################################################
         # plot signals
