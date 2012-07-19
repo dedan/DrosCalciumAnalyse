@@ -32,9 +32,11 @@ if not os.path.exists(save_base_path):
     os.mkdir(save_base_path)
 plots_folder = os.path.join(save_base_path, config['individualMF']['method'])
 data_folder = os.path.join(plots_folder, 'data')
+odor_plots_folder = os.path.join(plots_folder, 'odors')
 if not os.path.exists(plots_folder):
     os.mkdir(plots_folder)
     os.mkdir(data_folder)
+    os.mkdir(odor_plots_folder)
 else:
     answer = raw_input('output folder already exists, overwrite results? (y/n): ')
     if not answer == 'y':
@@ -146,17 +148,14 @@ if config['plot_signals']:
         for ind, stim in enumerate(data):
             toplot = stim[1].copy()
             toplot[toplot > vmax] = vmax
-            #max(np.abs(np.min(toplot)), 0.01)
             odor_overview.imshow(odor_overview.axes['base'][ind], toplot ,
-            title={'label':stim[0], 'size':10},
-            colorbar=False, vmin=vmin, vmax=vmax, cmap=plt.cm.Blues_r)
-            print np.sum(stim[1] > 0)
-            #odor_overview.axes['base'][ind].set_ylabel('%.2f' % minval)
+                                 title={'label':stim[0], 'size':10},
+                                 colorbar=False, vmin=vmin, vmax=vmax, cmap=plt.cm.Blues_r)
         plt.suptitle(odor)
-        axc = odor_overview.fig.add_axes([0.05, 0.04, 0.9, 0.045])
-        cb1 = mpl.colorbar.ColorbarBase(axc, cmap=mpl.cm.Blues_r,
-                                           norm=mpl.colors.Normalize(vmin=vmin, vmax=vmax),
-                                           orientation='horizontal')
-        odor_overview.fig.savefig(os.path.join(os.path.dirname(savename_ind),
+        # axc = odor_overview.fig.add_axes([0.05, 0.04, 0.9, 0.045])
+        # cb1 = mpl.colorbar.ColorbarBase(axc, cmap=mpl.cm.Blues_r,
+        #                                    norm=mpl.colors.Normalize(vmin=vmin, vmax=vmax),
+        #                                    orientation='horizontal')
+        odor_overview.fig.savefig(os.path.join(odor_plots_folder,
                                  odor + '_allmeas_neg.' + config['format']))
         plt.close('all')
