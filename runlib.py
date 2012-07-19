@@ -67,7 +67,9 @@ def preprocess(ts, config):
     # --> use only repeatable stimuli
     pp = sorted_trials(pp)
     stimuli_mask = bf.SampleSimilarity(config['similarity_threshold'])
-    mean_resp = sorted_trials(trial_mean(bf.CutOut((6, 12))(pp)))
+    mean_resp_unsort = trial_mean(bf.CutOut((6, 12))(pp))
+    mean_resp = sorted_trials(mean_resp_unsort)
+    out['mean_resp_unsort'] = mean_resp_unsort
     out['mean_resp'] = mean_resp
     stimuli_selection = stimuli_mask(mean_resp)
     stimuli_filter = bf.SelectTrials()
@@ -116,6 +118,24 @@ def raw_response_overview(out, prefix):
                                     title={'label':out['mean_resp'].label_sample[ind], 'size':10})
         resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
     return resp_overview.fig
+
+def raw_unsort_response_overview(prefix, out):
+    uresp_overview = vis.VisualizeTimeseries()
+    if prefix == 'mic':
+        uresp_overview.subplot(out['mean_resp_unsort'].samplepoints, dim2=4)
+    else:
+        uresp_overview.subplot(out['mean_resp_unsort'].samplepoints)
+    out['mean_resp_unsort'].strength = []
+    for ind, resp in enumerate(out['mean_resp_unsort'].shaped2D()):
+        max_data = np.max(np.abs(resp))
+        normedresp = resp / max_data
+        uresp_overview.imshow(uresp_overview.axes['base'][ind],
+                               normedresp,
+                               title={'label':out['mean_resp_unsort'].label_sample[ind], 'size':10},
+                               colorbar=False, vmin= -1, vmax=1)
+        uresp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
+        out['mean_resp_unsort'].strength.append(max_data)
+    return uresp_overview.fig
 
 def quality_overview_plot(distanceself, distancecross, title):
     '''draw quality overview

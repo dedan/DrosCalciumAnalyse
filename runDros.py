@@ -76,12 +76,14 @@ for prefix in config['prefixes']:
         ts.shape = tuple(ts.shape)
         out = runlib.preprocess(ts, config)
         all_raw.append(out['pp'])
+        total_resp.append(out['mean_resp_unsort'])
 
         # do matrix factorization
         if config['individualMF']['do']:
             mf_func = utils.create_mf(config['individualMF'])
             mf = mf_func(out['pp'])
             baselines.append(out['baseline'])
+
 
         # save results
         if 'save' in config['individualMF']['do']:
@@ -98,6 +100,8 @@ for prefix in config['prefixes']:
         if config['plot_signals']:
             raw_resp_overview = runlib.raw_response_overview(out, prefix)
             raw_resp_overview.savefig(plot_name_base + '_raw_overview.' + config['format'])
+            raw_resp_unsort_overview = runlib.raw_unsort_response_overview(prefix, out)
+            raw_resp_unsort_overview.savefig(plot_name_base + '_raw_unsort_overview.' + config['format'])
 
         # calc reproducibility and plot quality
         if config['stimuli_rep']:
@@ -127,10 +131,7 @@ for prefix in config['prefixes']:
         ica_timeplots = runlib.simultan_ica_timeplot(mo2, single_response)
         ica_timeplots.savefig(os.path.join(plots_folder, prefix + '_simultan_time.' + config['format']))
 
-####################################################################
-# odor overview
-####################################################################
-
+# plot odor overview
 if config['plot_signals']:
     vmin = -0.1
     vmax = 0.1
