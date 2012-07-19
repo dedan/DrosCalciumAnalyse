@@ -85,32 +85,17 @@ for prefix in config['prefixes']:
         if 'save' in config['individualMF']['do']:
             mf.save(os.path.join(data_folder, fname + '_' + config['individualMF']['method']))
             out['sorted_baseline'].save(os.path.join(data_folder, fname + '_baseline'))
+
+        # plot overview of matrix factorization
         if 'plot' in config['individualMF']['do']:
             mf_overview = runlib.mf_overview_plot(mf)
-            save_name = fname + '_' + config['individualMF']['method'] + '_overview.' + config['format']
-            mf_overview.savefig(os.path.join(plots_folder, save_name))
+            mf_overview.savefig(plot_name_base + '_' + config['individualMF']['method'] +
+                                '_overview.' + config['format'])
 
-        ####################################################################
-        # plot signals
-        ####################################################################
+        # overview of raw responses
         if config['plot_signals']:
-            # draw signal overview
-            resp_overview = vis.VisualizeTimeseries()
-            if prefix == 'mic':
-                resp_overview.subplot(mean_resp.samplepoints, dim2=4)
-            else:
-                resp_overview.subplot(mean_resp.samplepoints)
-            for ind, resp in enumerate(mean_resp.shaped2D()):
-                max_data = np.max(np.abs(resp))
-                resp /= max_data
-                resp_overview.imshow(resp_overview.axes['base'][ind],
-                                     sorted_baseline.shaped2D()[ind],
-                                     cmap=plt.cm.bone)
-                resp_overview.overlay_image(resp_overview.axes['base'][ind],
-                                            resp, threshold=0.3,
-                                            title={'label':mean_resp.label_sample[ind], 'size':10})
-                resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
-            resp_overview.fig.savefig(savename_ind + '_overview.' + config['format'])
+            raw_resp_overview = runlib.raw_response_overview(out, prefix)
+            raw_resp_overview.savefig(plot_name_base + '_raw_overview.' + config['format'])
 
             # draw unsorted signal overview
             uresp_overview = vis.VisualizeTimeseries()

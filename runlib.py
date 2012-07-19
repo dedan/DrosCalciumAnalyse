@@ -68,6 +68,7 @@ def preprocess(ts, config):
     pp = sorted_trials(pp)
     stimuli_mask = bf.SampleSimilarity(config['similarity_threshold'])
     mean_resp = sorted_trials(trial_mean(bf.CutOut((6, 12))(pp)))
+    out['mean_resp'] = mean_resp
     stimuli_selection = stimuli_mask(mean_resp)
     stimuli_filter = bf.SelectTrials()
     pp = stimuli_filter(pp, stimuli_selection)
@@ -96,3 +97,22 @@ def mf_overview_plot(mf):
     mf_overview.add_samplelabel(mf_overview.axes['time'][-1], mf, rotation='45', toppos=True)
     [ax.set_title(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
     return mf_overview.fig
+
+def raw_response_overview(out, prefix):
+    '''overview of responses to different odors'''
+    resp_overview = vis.VisualizeTimeseries()
+    if prefix == 'mic':
+        resp_overview.subplot(out['mean_resp'].samplepoints, dim2=4)
+    else:
+        resp_overview.subplot(out['mean_resp'].samplepoints)
+    for ind, resp in enumerate(out['mean_resp'].shaped2D()):
+        max_data = np.max(np.abs(resp))
+        resp /= max_data
+        resp_overview.imshow(resp_overview.axes['base'][ind],
+                             out['sorted_baseline'].shaped2D()[ind],
+                             cmap=plt.cm.bone)
+        resp_overview.overlay_image(resp_overview.axes['base'][ind],
+                                    resp, threshold=0.3,
+                                    title={'label':out['mean_resp'].label_sample[ind], 'size':10})
+        resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
+    return resp_overview.fig
