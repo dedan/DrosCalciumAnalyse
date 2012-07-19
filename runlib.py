@@ -137,3 +137,39 @@ def quality_overview_plot(distanceself, distancecross, title):
         qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]),
                                         distanceself[stim], 'o', mew=2, mec='k', mfc='None')
     return qual_view.fig
+
+def simultan_ica_baseplot(mo, mo2, all_raw, baselines):
+    '''plot the spatial bases after simultaneous ica'''
+    fig = plt.figure()
+    fig.suptitle(np.sum(mo.eigen))
+    num_bases = len(all_raw)
+    names = [t.name for t in all_raw]
+    for modenum in range(mo.num_objects):
+        single_bases = mo2.base.objects_sample(modenum)
+        for base_num in range(num_bases):
+            ax = fig.add_subplot(mo.num_objects + 1, num_bases, base_num + 1)
+            ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
+            ax.set_axis_off()
+            ax.set_title(names[base_num])
+            data_max = np.max(np.abs(single_bases[base_num]))
+            ax = fig.add_subplot(mo.num_objects + 1, num_bases,
+                                 ((num_bases * modenum) + num_bases) + base_num + 1)
+            ax.imshow(single_bases[base_num] * -1, cmap=plt.cm.hsv, vmin= -data_max, vmax=data_max)
+            ax.set_title('%.2f' % data_max, fontsize=8)
+            ax.set_axis_off()
+    return fig
+
+def simultan_ica_timeplot(mo2, single_response):
+    '''plot temporal bases after spatial ica'''
+    fig = plt.figure()
+    modefilter = bf.CalcStimulusDrive()
+    stim_driven = modefilter(mo2).timecourses
+    for modenum in range(mo2.num_objects):
+        ax = fig.add_subplot(mo2.num_objects, 1, modenum + 1)
+        ax.plot(single_response.timecourses[:, modenum])
+        ax.set_xticklabels([], fontsize=12, rotation=45)
+        ax.set_ylabel("%1.2f" % stim_driven[0, modenum])
+        ax.grid(True)
+    ax.set_xticks(np.arange(3, single_response.samplepoints, single_response.timepoints))
+    ax.set_xticklabels(single_response.label_sample, fontsize=12, rotation=45)
+    return fig

@@ -107,55 +107,25 @@ for prefix in config['prefixes']:
             qual_view.savefig(plot_name_base + '_quality.' + config['format'])
 
 
-    ####################################################################
     # simultanieous ICA of one odor-set
-    ####################################################################
     if config['commonMF']['do']:
         if config['combine']['scramble']:
             combine_common = bf.ObjectScrambledConcat(config['n_best'])
         else:
             combine_common = bf.ObjectConcat(**config['combine']['param'])
-
         intersection = bf.SortBySamplename()(combine_common(all_raw))
         variance = config['commonMF']['param']['variance']
         mo = bf.PCA(variance)(intersection)
         mf = utils.create_mf(config['commonMF'])
         mo2 = mf(intersection)
         single_response = bf.SingleSampleResponse(config['condense'])(mo2)
-        if 'plot' in config['commonMF']['do']:
-            # plot bases
-            fig = plt.figure()
-            fig.suptitle(np.sum(mo.eigen))
-            num_bases = len(filelist)
-            names = [t.name for t in all_raw]
-            for modenum in range(variance):
-                single_bases = mo2.base.objects_sample(modenum)
-                for base_num in range(num_bases):
-                    ax = fig.add_subplot(variance + 1, num_bases, base_num + 1)
-                    ax.imshow(np.mean(baselines[base_num].shaped2D(), 0), cmap=plt.cm.gray)
-                    ax.set_axis_off()
-                    ax.set_title(names[base_num])
-                    data_max = np.max(np.abs(single_bases[base_num]))
-                    ax = fig.add_subplot(variance + 1, num_bases,
-                                         ((num_bases * modenum) + num_bases) + base_num + 1)
-                    ax.imshow(single_bases[base_num] * -1, cmap=plt.cm.hsv, vmin= -data_max, vmax=data_max)
-                    ax.set_title('%.2f' % data_max, fontsize=8)
-                    ax.set_axis_off()
-            fig.savefig(os.path.join(plots_folder, prefix + 'simultan_bases.' + config['format']))
-            # plot timecourses
-            fig = plt.figure()
-            modefilter = bf.CalcStimulusDrive()
-            stim_driven = modefilter(mo2).timecourses
-            for modenum in range(variance):
-                ax = fig.add_subplot(variance, 1, modenum + 1)
-                ax.plot(single_response.timecourses[:, modenum])
-                ax.set_xticklabels([], fontsize=12, rotation=45)
-                ax.set_ylabel("%1.2f" % stim_driven[0, modenum])
-                ax.grid(True)
-            ax.set_xticks(np.arange(3, single_response.samplepoints, single_response.timepoints))
-            ax.set_xticklabels(single_response.label_sample, fontsize=12, rotation=45)
-            fig.savefig(os.path.join(plots_folder, prefix + '_simultan_time.' + config['format']))
-            plt.close('all')
+
+    # plot spatial and temporal bases of simultaneous ica
+    if 'plot' in config['commonMF']['do']:
+        ica_baseplots = runlib.simultan_ica_baseplot(mo, mo2, all_raw, baselines)
+        ica_baseplots.savefig(os.path.join(plots_folder, prefix + '_simultan_bases.' + config['format']))
+        ica_timeplots = runlib.simultan_ica_timeplot(mo2, single_response)
+        ica_timeplots.savefig(os.path.join(plots_folder, prefix + '_simultan_time.' + config['format']))
 
 ####################################################################
 # odor overview
