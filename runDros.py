@@ -97,25 +97,6 @@ for prefix in config['prefixes']:
             raw_resp_overview = runlib.raw_response_overview(out, prefix)
             raw_resp_overview.savefig(plot_name_base + '_raw_overview.' + config['format'])
 
-            # draw unsorted signal overview
-            uresp_overview = vis.VisualizeTimeseries()
-            if prefix == 'mic':
-                uresp_overview.subplot(mean_resp_unsort.samplepoints, dim2=4)
-            else:
-                uresp_overview.subplot(mean_resp_unsort.samplepoints)
-            mean_resp_unsort.strength = []
-            for ind, resp in enumerate(mean_resp_unsort.shaped2D()):
-                max_data = np.max(np.abs(resp))
-                normedresp = resp / max_data
-                uresp_overview.imshow(uresp_overview.axes['base'][ind],
-                                       normedresp,
-                                       title={'label':mean_resp_unsort.label_sample[ind], 'size':10},
-                                       colorbar=False, vmin= -1, vmax=1)
-                uresp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
-                mean_resp_unsort.strength.append(max_data)
-            total_resp.append(mean_resp_unsort)
-            uresp_overview.fig.savefig(savename_ind + '_overview_unsort.' + config['format'])
-
         ####################################################################
         # calc reproducibility and plot
         ####################################################################
