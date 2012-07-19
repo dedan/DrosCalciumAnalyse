@@ -97,28 +97,12 @@ for prefix in config['prefixes']:
             raw_resp_overview = runlib.raw_response_overview(out, prefix)
             raw_resp_overview.savefig(plot_name_base + '_raw_overview.' + config['format'])
 
-        ####################################################################
-        # calc reproducibility and plot
-        ####################################################################
+        # calc reproducibility and plot quality
         if config['stimuli_rep']:
             stimulirep = bf.SampleSimilarityPure()
-            distanceself, distancecross = stimulirep(mean_resp)
-            #draw quality overview
-            qual_view = vis.VisualizeTimeseries()
-            qual_view.oneaxes()
-            data = zip(*distancecross.items())
-            vis.violin_plot(qual_view.axes['time'][0], [i.flatten() for i in data[1]] ,
-                             range(len(distancecross)), 'b')
-            qual_view.axes['time'][0].set_xticks(range(len(distancecross)))
-            qual_view.axes['time'][0].set_xticklabels(data[0])
-            qual_view.axes['time'][0].set_title(ts.name)
-            for pos, stim in enumerate(data[0]):
-                qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]),
-                                                distanceself[stim], 'o', mew=2, mec='k', mfc='None')
-            qual_view.fig.savefig(savename_ind + '_quality.' + config['format'])
-
-
-        plt.close('all')
+            distanceself, distancecross = stimulirep(out['mean_resp'])
+            qual_view = runlib.quality_overview_plot(distanceself, distancecross, ts.name)
+            qual_view.savefig(plot_name_base + '_quality.' + config['format'])
 
     ####################################################################
     # odorset quality overview

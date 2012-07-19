@@ -116,3 +116,24 @@ def raw_response_overview(out, prefix):
                                     title={'label':out['mean_resp'].label_sample[ind], 'size':10})
         resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
     return resp_overview.fig
+
+def quality_overview_plot(distanceself, distancecross, title):
+    '''draw quality overview
+
+       quality is reproducability of responses over odor presentations and especially
+       interesting for stimuli which are not also similar to all others. The violet
+       violin plot shows cross label similarity and the circles are the similarity
+       between repeated odor presentations
+    '''
+    qual_view = vis.VisualizeTimeseries()
+    qual_view.oneaxes()
+    data = zip(*distancecross.items())
+    vis.violin_plot(qual_view.axes['time'][0], [i.flatten() for i in data[1]] ,
+                     range(len(distancecross)), 'b')
+    qual_view.axes['time'][0].set_xticks(range(len(distancecross)))
+    qual_view.axes['time'][0].set_xticklabels(data[0])
+    qual_view.axes['time'][0].set_title(title)
+    for pos, stim in enumerate(data[0]):
+        qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]),
+                                        distanceself[stim], 'o', mew=2, mec='k', mfc='None')
+    return qual_view.fig
