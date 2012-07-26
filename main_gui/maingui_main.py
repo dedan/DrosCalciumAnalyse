@@ -1,4 +1,4 @@
-import os, sys
+import os, sys, glob
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from main_window import Ui_MainGuiWin
@@ -24,17 +24,22 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.connect(self.select_data_folder_button,
                      QtCore.SIGNAL("clicked()"),
                      self.select_data_folder)
-        # self.connect(self.selectFolderButton, QtCore.SIGNAL("clicked()"), self.select_folder)
-        # self.connect(self.filesListBox, QtCore.SIGNAL("currentIndexChanged(int)"), self.load_file)
-        # self.connect(self.nextButton, QtCore.SIGNAL("clicked()"), self.next_button_click)
 
     def select_data_folder(self):
         caption = 'select your data folder'
-        fname = QtGui.QFileDialog.getExistingDirectory(caption=caption)
+        fname = str(QtGui.QFileDialog.getExistingDirectory(caption=caption))
         self.data_folder_label.setText(fname)
-        # TODO: check whether there is really data in the folder
-
-        # TODO: when data found, enable the other boxes
+        json_files = glob.glob(os.path.join(fname, '*.json'))
+        npy_files = glob.glob(os.path.join(fname, '*.npy'))
+        if len(json_files) == 0 or len(npy_files) == 0 or len(json_files) != len(npy_files):
+            self.data_folder_label.setText('no valid data found in: %s' % fname)
+        else:
+            message = '%d files found in %s' % (len(json_files), fname)
+            self.statusbar.showMessage(message, msecs=5000)
+            self.preprocessing_box.setEnabled(True)
+            self.filter_box.setEnabled(True)
+            self.factorize_box.setEnabled(True)
+            self.plots_box.setEnabled(True)
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
