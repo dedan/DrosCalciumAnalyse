@@ -4,5 +4,10 @@
     "median": 5,
     "spatial": 2,
     "similarity": 0.8,
-    "methods": {"nnma": {}, "ica": {}}
+    "methods": {"nnma": {}, "ica": {}},
+    "mf_overview": false,
+    "raw_overview": false,
+    "raw_unsort_overview": true,
+    "quality": false,
+    "signals": false
 }

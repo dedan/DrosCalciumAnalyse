@@ -45,13 +45,18 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             self.plots_box.setEnabled(True)
 
     def init_controls(self):
-        self.normalize_box.setCheckState(self.config['normalize'])
+        self.normalize_box.setChecked(self.config['normalize'])
         self.lowpass_spinner.setValue(self.config['lowpass'])
         self.median_spinner.setValue(self.config['median'])
         self.spatial_spinner.setValue(self.config['spatial'])
         self.similarity_spinner.setValue(self.config['similarity'])
         self.methods_box.clear()
         self.methods_box.insertItems(0, self.config['methods'].keys())
+        self.mf_overview_box.setChecked(self.config['mf_overview'])
+        self.raw_overview_box.setChecked(self.config['raw_overview'])
+        self.raw_unsort_overview_box.setChecked(self.config['raw_unsort_overview'])
+        self.quality_box.setChecked(self.config['quality'])
+        self.signals_box.setChecked(self.config['signals'])
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)

@@ -200,6 +200,43 @@
       <property name="title">
        <string>plots</string>
       </property>
+      <layout class="QVBoxLayout" name="verticalLayout_3">
+       <item>
+        <widget class="QCheckBox" name="mf_overview_box">
+         <property name="text">
+          <string>factorization overview</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="raw_overview_box">
+         <property name="text">
+          <string>raw overview</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="raw_unsort_overview_box">
+         <property name="text">
+          <string>raw unsort overview</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="quality_box">
+         <property name="text">
+          <string>odor quality</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QCheckBox" name="signals_box">
+         <property name="text">
+          <string>signals</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </widget>
     </item>
     <item row="3" column="0" colspan="2">
