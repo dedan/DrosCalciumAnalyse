@@ -68,44 +68,65 @@
        <item row="0" column="0">
         <widget class="QLabel" name="label_2">
          <property name="text">
-          <string>TextLabel</string>
+          <string>normalize:</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QCheckBox" name="checkBox">
+        <widget class="QCheckBox" name="normalize_box">
          <property name="text">
-          <string>CheckBox</string>
+          <string/>
          </property>
         </widget>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_3">
          <property name="text">
-          <string>TextLabel</string>
+          <string>lowpass:</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QSpinBox" name="spinBox"/>
-       </item>
-       <item row="2" column="1">
-        <widget class="QSpinBox" name="spinBox_2"/>
-       </item>
-       <item row="3" column="1">
-        <widget class="QSpinBox" name="spinBox_3"/>
+        <widget class="QSpinBox" name="lowpass_spinner">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10</number>
+         </property>
+        </widget>
        </item>
        <item row="2" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
-          <string>TextLabel</string>
+          <string>median filter:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="1">
+        <widget class="QSpinBox" name="median_spinner">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>10</number>
          </property>
         </widget>
        </item>
        <item row="3" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
-          <string>TextLabel</string>
+          <string>spatial down:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QSpinBox" name="spatial_spinner">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <number>4</number>
          </property>
         </widget>
        </item>
@@ -118,13 +139,20 @@
        <string>Filter</string>
       </property>
       <layout class="QFormLayout" name="formLayout_2">
-       <item row="1" column="1">
-        <widget class="QSpinBox" name="spinBox_4"/>
-       </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_6">
          <property name="text">
-          <string>TextLabel</string>
+          <string>similarity threshold:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="similarity_spinner">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <double>1.000000000000000</double>
          </property>
         </widget>
        </item>
@@ -134,7 +162,7 @@
     <item row="2" column="0">
      <widget class="QGroupBox" name="factorize_box">
       <property name="title">
-       <string>GroupBox</string>
+       <string>factorization</string>
       </property>
       <layout class="QFormLayout" name="formLayout_3">
        <property name="fieldGrowthPolicy">
@@ -143,22 +171,26 @@
        <item row="0" column="0">
         <widget class="QLabel" name="label_8">
          <property name="text">
-          <string>TextLabel</string>
+          <string>n_modes</string>
          </property>
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QSpinBox" name="spinBox_5"/>
+        <widget class="QSpinBox" name="spinBox_5">
+         <property name="minimum">
+          <number>1</number>
+         </property>
+        </widget>
        </item>
        <item row="1" column="0">
         <widget class="QLabel" name="label_7">
          <property name="text">
-          <string>TextLabel</string>
+          <string>method</string>
          </property>
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QComboBox" name="comboBox"/>
+        <widget class="QComboBox" name="methods_box"/>
        </item>
       </layout>
      </widget>
@@ -166,7 +198,7 @@
     <item row="2" column="1">
      <widget class="QGroupBox" name="plots_box">
       <property name="title">
-       <string>GroupBox</string>
+       <string>plots</string>
       </property>
      </widget>
     </item>

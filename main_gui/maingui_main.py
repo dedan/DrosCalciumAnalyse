@@ -1,4 +1,4 @@
-import os, sys, glob
+import os, sys, glob, json
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from main_window import Ui_MainGuiWin
@@ -20,6 +20,9 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.plots_box.setEnabled(False)
         self.run_button.setEnabled(False)
 
+        self.config = json.load(open('gui_config.json'))
+        self.init_controls()
+
         # connect signals to slots
         self.connect(self.select_data_folder_button,
                      QtCore.SIGNAL("clicked()"),
@@ -40,6 +43,15 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             self.filter_box.setEnabled(True)
             self.factorize_box.setEnabled(True)
             self.plots_box.setEnabled(True)
+
+    def init_controls(self):
+        self.normalize_box.setCheckState(self.config['normalize'])
+        self.lowpass_spinner.setValue(self.config['lowpass'])
+        self.median_spinner.setValue(self.config['median'])
+        self.spatial_spinner.setValue(self.config['spatial'])
+        self.similarity_spinner.setValue(self.config['similarity'])
+        self.methods_box.clear()
+        self.methods_box.insertItems(0, self.config['methods'].keys())
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
