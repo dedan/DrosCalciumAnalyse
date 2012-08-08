@@ -1,4 +1,7 @@
-import os, sys, glob, json, time
+import os, sys, glob, json, time, datetime
+from NeuralImageProcessing import basic_functions as bf
+from NeuralImageProcessing import illustrate_decomposition as vis
+from DrosCalciumAnalyse import runlib
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from main_window import Ui_MainGuiWin
@@ -22,6 +25,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                 'ica': [self.alpha_label, self.alpha_spinner]}
 
         # connect signals to slots
+        self.run_button.clicked.connect(self.run)
         for spinner in self.findChildren((QtGui.QSpinBox, QtGui.QDoubleSpinBox)):
             spinner.valueChanged.connect(self.save_controls)
         for check_box in self.findChildren(QtGui.QCheckBox):
@@ -50,9 +54,9 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         config = json.load(open(self.config_file))
         self.normalize_box.setChecked(config['normalize'])
         self.lowpass_spinner.setValue(config['lowpass'])
-        self.median_spinner.setValue(config['median'])
-        self.spatial_spinner.setValue(config['spatial'])
-        self.similarity_spinner.setValue(config['similarity'])
+        self.median_spinner.setValue(config['medianfilter'])
+        self.spatial_spinner.setValue(config['spatial_down'])
+        self.similarity_spinner.setValue(config['similarity_threshold'])
         self.methods_box.clear()
         self.methods_box.insertItems(0, config['methods'].keys())
         self.methods_box.setCurrentIndex(self.methods_box.findText(config['selected_method']))
@@ -75,9 +79,9 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         config = {}
         config['normalize'] = self.normalize_box.isChecked()
         config['lowpass'] = self.lowpass_spinner.value()
-        config['median'] = self.median_spinner.value()
-        config['spatial'] = self.spatial_spinner.value()
-        config['similarity'] = self.similarity_spinner.value()
+        config['medianfilter'] = self.median_spinner.value()
+        config['spatial_down'] = self.spatial_spinner.value()
+        config['similarity_threshold'] = self.similarity_spinner.value()
         config['selected_method'] = str(self.methods_box.currentText())
         config['mf_overview'] = self.mf_overview_box.isChecked()
         config['raw_overview'] = self.raw_overview_box.isChecked()
@@ -93,8 +97,10 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         config['n_modes'] = self.n_modes_spinner.value()
         self.config = config
         json.dump(config, open(self.config_file, 'w'))
-        if isinstance(export_file, str) and os.path.exists(export_file):
+        if isinstance(export_file, str) and os.path.exists(os.path.dirname(export_file)):
             json.dump(config, open(export_file, 'w'))
+
+    # TODO: add load and save settings to the menu
 
     def mf_method_changed(self):
         current_method = str(self.methods_box.currentText())
@@ -103,16 +109,86 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                 ui_elem.setVisible(method == current_method)
         self.save_controls()
 
+    # TODO: maybe start a new thread for this?
     def run(self):
+        baselines = []
+
         # TODO: open a dialog to ask for output folder
+        out_folder = '/Users/dedan/projects/fu/results/simil80n_bestFalsemask_dev/'
+        if not os.path.exists(out_folder):
+            self.statusbar.showMessage('folder does not exist', msecs=3000)
+            return
+
+        timestamp = datetime.datetime.now().strftime('%d%m%y_%H%M%S')
+        out_folder = os.path.join(out_folder, timestamp)
+        data_folder = os.path.join(out_folder, 'data')
+        odor_plots_folder = os.path.join(out_folder, 'odors')
+        os.mkdir(out_folder)
+        os.mkdir(data_folder)
+        os.mkdir(odor_plots_folder)
+        self.save_controls(export_file=os.path.join(out_folder, 'config.json'))
+        crash
+
+        filelist = glob.glob(self.fname + '*.json')
+        # TODO: use only the n_best animals --> most stable odors in common (thresh_res.pckl)
+
+        # filelist = filelist[0:2]
+
+        # TODO: show progress bar
+        for file_ind, filename in enumerate(filelist):
+
+            #TODO: update progress bar with filename
+            meas_path = os.path.splitext(filename)[0]
+            fname = os.path.basename(meas_path)
+            plot_name_base = os.path.join(out_folder, fname)
+
+            # create timeseries, change shape and preprocess
+            ts = bf.TimeSeries()
+            ts.load(meas_path)
+            ts.shape = tuple(ts.shape)
+            out = runlib.preprocess(ts, self.config)
+
+            # # do matrix factorization
+            # if config['individualMF']['do']:
+            #     mf_func = utils.create_mf(config['individualMF'])
+            #     mf = mf_func(out['pp'])
+            #     baselines.append(out['baseline'])
+
+
+            # # save results
+            # if 'save' in config['individualMF']['do']:
+            #     mf.save(os.path.join(data_folder, fname + '_' + config['individualMF']['method']))
+            #     out['sorted_baseline'].save(os.path.join(data_folder, fname + '_baseline'))
+
+            # # plot overview of matrix factorization
+            # if 'plot' in config['individualMF']['do']:
+            #     mf_overview = runlib.mf_overview_plot(mf)
+            #     mf_overview.savefig(plot_name_base + '_' + config['individualMF']['method'] +
+            #                         '_overview.' + config['format'])
+
+            # # overview of raw responses
+            # if config['plot_signals']:
+            #     raw_resp_overview = runlib.raw_response_overview(out, prefix)
+            #     raw_resp_overview.savefig(plot_name_base + '_raw_overview.' + config['format'])
+            #     raw_resp_unsort_overview = runlib.raw_unsort_response_overview(prefix, out)
+            #     raw_resp_unsort_overview.savefig(plot_name_base + '_raw_unsort_overview.' + config['format'])
+
+            # # calc reproducibility and plot quality
+            # if config['stimuli_rep']:
+            #     stimulirep = bf.SampleSimilarityPure()
+            #     distanceself, distancecross = stimulirep(out['mean_resp'])
+            #     qual_view = runlib.quality_overview_plot(distanceself, distancecross, ts.name)
+            #     qual_view.savefig(plot_name_base + '_quality.' + config['format'])
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     my_gui = MainGui()
     my_gui.show()
-    my_gui.save_controls()
     app.setActiveWindow(my_gui)
+    # debuging
     my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_test/')
+    my_gui.run()
     sys.exit(app.exec_())
+
 
     # TODO: set correct increments of all spinners after more info on the params from jan
