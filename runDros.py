@@ -102,7 +102,7 @@ for prefix in config['prefixes']:
         if config['plot_signals']:
             raw_resp_overview = runlib.raw_response_overview(out, prefix)
             raw_resp_overview.savefig(plot_name_base + '_raw_overview.' + config['format'])
-            raw_resp_unsort_overview = runlib.raw_unsort_response_overview(prefix, out)
+            raw_resp_unsort_overview = runlib.raw_unsort_response_overview(out, prefix)
             raw_resp_unsort_overview.savefig(plot_name_base + '_raw_unsort_overview.' + config['format'])
 
         # calc reproducibility and plot quality

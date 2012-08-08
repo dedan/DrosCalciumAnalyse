@@ -100,7 +100,7 @@ def mf_overview_plot(mf):
     [ax.set_title(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
     return mf_overview.fig
 
-def raw_response_overview(out, prefix):
+def raw_response_overview(out, prefix=''):
     '''overview of responses to different odors'''
     resp_overview = vis.VisualizeTimeseries()
     if prefix == 'mic':
@@ -119,7 +119,7 @@ def raw_response_overview(out, prefix):
         resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
     return resp_overview.fig
 
-def raw_unsort_response_overview(prefix, out):
+def raw_unsort_response_overview(out, prefix=''):
     uresp_overview = vis.VisualizeTimeseries()
     if prefix == 'mic':
         uresp_overview.subplot(out['mean_resp_unsort'].samplepoints, dim2=4)
