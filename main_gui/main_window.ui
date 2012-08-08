@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>606</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -179,7 +179,7 @@
         </widget>
        </item>
        <item row="0" column="1">
-        <widget class="QSpinBox" name="spinBox_5">
+        <widget class="QSpinBox" name="n_modes_spinner">
          <property name="minimum">
           <number>1</number>
          </property>
@@ -194,6 +194,56 @@
        </item>
        <item row="1" column="1">
         <widget class="QComboBox" name="methods_box"/>
+       </item>
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="spars_par1_spinner"/>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="spars_par1_label">
+         <property name="text">
+          <string>spars_par1</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="1">
+        <widget class="QDoubleSpinBox" name="spars_par2_spinner"/>
+       </item>
+       <item row="4" column="1">
+        <widget class="QDoubleSpinBox" name="smoothness_spinner"/>
+       </item>
+       <item row="5" column="1">
+        <widget class="QSpinBox" name="maxcount_spinner"/>
+       </item>
+       <item row="6" column="1">
+        <widget class="QDoubleSpinBox" name="alpha_spinner"/>
+       </item>
+       <item row="3" column="0">
+        <widget class="QLabel" name="spars_par2_label">
+         <property name="text">
+          <string>spars_par2</string>
+         </property>
+        </widget>
+       </item>
+       <item row="4" column="0">
+        <widget class="QLabel" name="smoothness_label">
+         <property name="text">
+          <string>smoothness</string>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0">
+        <widget class="QLabel" name="maxcount_label">
+         <property name="text">
+          <string>maxcount</string>
+         </property>
+        </widget>
+       </item>
+       <item row="6" column="0">
+        <widget class="QLabel" name="alpha_label">
+         <property name="text">
+          <string>alpha</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

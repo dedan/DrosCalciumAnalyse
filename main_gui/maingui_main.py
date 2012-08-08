@@ -20,15 +20,27 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         # self.plots_box.setEnabled(False)
         # self.run_button.setEnabled(False)
 
-        self.methods = {"nnma": {}, "ica": {}}
         self.config_file = 'gui_config.json'
 
         self.load_controls()
+
+        self.method_controls = {'nnma': [self.spars_par1_label, self.spars_par1_spinner,
+                                         self.spars_par2_label, self.spars_par2_spinner,
+                                         self.smoothness_label, self.smoothness_spinner,
+                                         self.maxcount_label, self.maxcount_spinner],
+                                'ica': [self.alpha_label, self.alpha_spinner]}
 
         # connect signals to slots
         self.connect(self.select_data_folder_button,
                      QtCore.SIGNAL("clicked()"),
                      self.select_data_folder)
+        # self.spars_par1_spinner.setValue(config['methods']['nnma']['spars_par1'])
+        # self.spars_par2_spinner.setValue(config['methods']['nnma']['spars_par2'])
+        # self.smoothness_spinner.setValue(config['methods']['nnma']['smoothness'])
+        # self.maxcount_spinner.setValue(config['methods']['nnma']['maxcount'])
+        # self.alpha_spinner.setValue(config['methods']['ica']['alpha'])
+        # self.n_modes_spinner.setValue(config['n_modes'])
+
         self.lowpass_spinner.valueChanged.connect(self.save_controls)
         self.similarity_spinner.valueChanged.connect(self.save_controls)
         self.spatial_spinner.valueChanged.connect(self.save_controls)
@@ -40,6 +52,10 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.signals_box.stateChanged.connect(self.save_controls)
         self.normalize_box.stateChanged.connect(self.save_controls)
         self.methods_box.currentIndexChanged.connect(self.save_controls)
+
+        # TODO: add or remove controls depending on the MF method selected
+
+        # TODO: load and save also new mf settings
 
     def select_data_folder(self):
         caption = 'select your data folder'
@@ -65,13 +81,20 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.spatial_spinner.setValue(config['spatial'])
         self.similarity_spinner.setValue(config['similarity'])
         self.methods_box.clear()
-        self.methods_box.insertItems(0, self.methods.keys())
+        self.methods_box.insertItems(0, config['methods'].keys())
         self.methods_box.setCurrentIndex(self.methods_box.findText(config['selected_method']))
         self.mf_overview_box.setChecked(config['mf_overview'])
         self.raw_overview_box.setChecked(config['raw_overview'])
         self.raw_unsort_overview_box.setChecked(config['raw_unsort_overview'])
         self.quality_box.setChecked(config['quality'])
         self.signals_box.setChecked(config['signals'])
+        self.spars_par1_spinner.setValue(config['methods']['nnma']['spars_par1'])
+        self.spars_par2_spinner.setValue(config['methods']['nnma']['spars_par2'])
+        self.smoothness_spinner.setValue(config['methods']['nnma']['smoothness'])
+        self.maxcount_spinner.setValue(config['methods']['nnma']['maxcount'])
+        self.alpha_spinner.setValue(config['methods']['ica']['alpha'])
+        self.n_modes_spinner.setValue(config['n_modes'])
+
 
     # TODO: after each click, save settings to config file
     def save_controls(self, export_file=''):
@@ -88,6 +111,14 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         config['raw_unsort_overview'] = self.raw_unsort_overview_box.isChecked()
         config['quality'] =  self.quality_box.isChecked()
         config['signals'] = self.signals_box.isChecked()
+        config['methods'] = {'nnma': {}, 'ica': {}}
+        config['methods']['nnma']['spars_par1'] = self.spars_par1_spinner.value()
+        config['methods']['nnma']['spars_par2'] = self.spars_par2_spinner.value()
+        config['methods']['nnma']['smoothness'] = self.smoothness_spinner.value()
+        config['methods']['nnma']['maxcount'] = self.maxcount_spinner.value()
+        config['methods']['ica']['alpha'] = self.alpha_spinner.value()
+        config['n_modes'] = self.n_modes_spinner.value()
+
         json.dump(config, open(self.config_file, 'w'))
         if isinstance(export_file, str) and os.path.exists(export_file):
             json.dump(config, open(export_file, 'w'))
