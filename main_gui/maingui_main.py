@@ -14,11 +14,11 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         """initialize the gui, connect signals, add axes objects, etc.."""
         super(MainGui, self).__init__(parent)
         self.setupUi(self)
-        self.preprocessing_box.setEnabled(False)
-        self.filter_box.setEnabled(False)
-        self.factorize_box.setEnabled(False)
-        self.plots_box.setEnabled(False)
-        self.run_button.setEnabled(False)
+        # self.preprocessing_box.setEnabled(False)
+        # self.filter_box.setEnabled(False)
+        # self.factorize_box.setEnabled(False)
+        # self.plots_box.setEnabled(False)
+        # self.run_button.setEnabled(False)
 
         self.methods = {"nnma": {}, "ica": {}}
         self.config_file = 'gui_config.json'
@@ -29,6 +29,17 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.connect(self.select_data_folder_button,
                      QtCore.SIGNAL("clicked()"),
                      self.select_data_folder)
+        self.lowpass_spinner.valueChanged.connect(self.save_controls)
+        self.similarity_spinner.valueChanged.connect(self.save_controls)
+        self.spatial_spinner.valueChanged.connect(self.save_controls)
+        self.median_spinner.valueChanged.connect(self.save_controls)
+        self.mf_overview_box.stateChanged.connect(self.save_controls)
+        self.raw_overview_box.stateChanged.connect(self.save_controls)
+        self.raw_unsort_overview_box.stateChanged.connect(self.save_controls)
+        self.quality_box.stateChanged.connect(self.save_controls)
+        self.signals_box.stateChanged.connect(self.save_controls)
+        self.normalize_box.stateChanged.connect(self.save_controls)
+        self.methods_box.currentIndexChanged.connect(self.save_controls)
 
     def select_data_folder(self):
         caption = 'select your data folder'
@@ -64,6 +75,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
 
     # TODO: after each click, save settings to config file
     def save_controls(self, export_file=''):
+        print 'save_controls called, export file is: %s' % export_file
         config = {}
         config['normalize'] = self.normalize_box.isChecked()
         config['lowpass'] = self.lowpass_spinner.value()
@@ -77,7 +89,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         config['quality'] =  self.quality_box.isChecked()
         config['signals'] = self.signals_box.isChecked()
         json.dump(config, open(self.config_file, 'w'))
-        if export_file:
+        if isinstance(export_file, str) and os.path.exists(export_file):
             json.dump(config, open(export_file, 'w'))
 
 if __name__ == '__main__':
