@@ -6,17 +6,35 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>606</height>
+    <width>361</width>
+    <height>846</height>
    </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
   </property>
   <property name="windowTitle">
    <string>MainWindow</string>
   </property>
   <widget class="QWidget" name="centralwidget">
-   <layout class="QGridLayout" name="gridLayout">
-    <item row="0" column="0" colspan="2">
+   <property name="sizePolicy">
+    <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+     <horstretch>0</horstretch>
+     <verstretch>0</verstretch>
+    </sizepolicy>
+   </property>
+   <layout class="QVBoxLayout" name="verticalLayout">
+    <item>
      <widget class="QGroupBox" name="groupBox">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="title">
        <string>Loading</string>
       </property>
@@ -50,10 +68,51 @@
       </layout>
      </widget>
     </item>
-    <item row="1" column="0">
+    <item>
+     <widget class="QGroupBox" name="filter_box">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
+      <property name="title">
+       <string>Filter</string>
+      </property>
+      <layout class="QFormLayout" name="formLayout_2">
+       <item row="1" column="0">
+        <widget class="QLabel" name="label_6">
+         <property name="text">
+          <string>similarity threshold:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="1">
+        <widget class="QDoubleSpinBox" name="similarity_spinner">
+         <property name="decimals">
+          <number>1</number>
+         </property>
+         <property name="maximum">
+          <double>1.000000000000000</double>
+         </property>
+         <property name="singleStep">
+          <double>0.100000000000000</double>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+    </item>
+    <item>
      <widget class="QGroupBox" name="preprocessing_box">
       <property name="enabled">
        <bool>true</bool>
+      </property>
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
       </property>
       <property name="title">
        <string>Preprocessing</string>
@@ -133,37 +192,14 @@
       </layout>
      </widget>
     </item>
-    <item row="1" column="1">
-     <widget class="QGroupBox" name="filter_box">
-      <property name="title">
-       <string>Filter</string>
-      </property>
-      <layout class="QFormLayout" name="formLayout_2">
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_6">
-         <property name="text">
-          <string>similarity threshold:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QDoubleSpinBox" name="similarity_spinner">
-         <property name="decimals">
-          <number>1</number>
-         </property>
-         <property name="maximum">
-          <double>1.000000000000000</double>
-         </property>
-         <property name="singleStep">
-          <double>0.100000000000000</double>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="2" column="0">
+    <item>
      <widget class="QGroupBox" name="factorize_box">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="title">
        <string>factorization</string>
       </property>
@@ -195,50 +231,50 @@
        <item row="1" column="1">
         <widget class="QComboBox" name="methods_box"/>
        </item>
-       <item row="2" column="1">
+       <item row="3" column="1">
         <widget class="QDoubleSpinBox" name="spars_par1_spinner"/>
        </item>
-       <item row="2" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="spars_par1_label">
          <property name="text">
           <string>spars_par1</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="4" column="1">
         <widget class="QDoubleSpinBox" name="spars_par2_spinner"/>
        </item>
-       <item row="4" column="1">
+       <item row="5" column="1">
         <widget class="QDoubleSpinBox" name="smoothness_spinner"/>
        </item>
-       <item row="5" column="1">
+       <item row="6" column="1">
         <widget class="QSpinBox" name="maxcount_spinner"/>
        </item>
-       <item row="6" column="1">
-        <widget class="QDoubleSpinBox" name="alpha_spinner"/>
-       </item>
-       <item row="3" column="0">
+       <item row="4" column="0">
         <widget class="QLabel" name="spars_par2_label">
          <property name="text">
           <string>spars_par2</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="smoothness_label">
          <property name="text">
           <string>smoothness</string>
          </property>
         </widget>
        </item>
-       <item row="5" column="0">
+       <item row="6" column="0">
         <widget class="QLabel" name="maxcount_label">
          <property name="text">
           <string>maxcount</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="0">
+       <item row="2" column="1">
+        <widget class="QDoubleSpinBox" name="alpha_spinner"/>
+       </item>
+       <item row="2" column="0">
         <widget class="QLabel" name="alpha_label">
          <property name="text">
           <string>alpha</string>
@@ -248,8 +284,14 @@
       </layout>
      </widget>
     </item>
-    <item row="2" column="1">
+    <item>
      <widget class="QGroupBox" name="plots_box">
+      <property name="sizePolicy">
+       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+        <horstretch>0</horstretch>
+        <verstretch>0</verstretch>
+       </sizepolicy>
+      </property>
       <property name="title">
        <string>plots</string>
       </property>
@@ -295,7 +337,7 @@
       </layout>
      </widget>
     </item>
-    <item row="3" column="0" colspan="2">
+    <item>
      <widget class="QPushButton" name="run_button">
       <property name="text">
        <string>Run</string>
@@ -303,6 +345,12 @@
      </widget>
     </item>
    </layout>
+   <zorder>groupBox</zorder>
+   <zorder>run_button</zorder>
+   <zorder>filter_box</zorder>
+   <zorder>preprocessing_box</zorder>
+   <zorder>factorize_box</zorder>
+   <zorder>plots_box</zorder>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QMenuBar" name="menuBar">
@@ -310,7 +358,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>361</width>
      <height>22</height>
     </rect>
    </property>
