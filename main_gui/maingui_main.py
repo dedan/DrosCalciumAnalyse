@@ -1,4 +1,4 @@
-import os, sys, glob, json
+import os, sys, glob, json, time
 from PyQt4 import QtCore
 from PyQt4 import QtGui
 from main_window import Ui_MainGuiWin
@@ -28,9 +28,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                 'ica': [self.alpha_label, self.alpha_spinner]}
 
         # connect signals to slots
-        self.connect(self.select_data_folder_button,
-                     QtCore.SIGNAL("clicked()"),
-                     self.select_data_folder)
         for spinner in self.findChildren((QtGui.QSpinBox, QtGui.QDoubleSpinBox)):
             spinner.valueChanged.connect(self.save_controls)
         for check_box in self.findChildren(QtGui.QCheckBox):
@@ -38,16 +35,21 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.methods_box.currentIndexChanged.connect(self.mf_method_changed)
         self.load_controls()
 
-    def select_data_folder(self):
-        caption = 'select your data folder'
-        fname = str(QtGui.QFileDialog.getExistingDirectory(caption=caption))
-        self.data_folder_label.setText(fname)
-        json_files = glob.glob(os.path.join(fname, '*.json'))
-        npy_files = glob.glob(os.path.join(fname, '*.npy'))
-        if len(json_files) == 0 or len(npy_files) == 0 or len(json_files) != len(npy_files):
-            self.data_folder_label.setText('no valid data found in: %s' % fname)
+    def select_data_folder(self, path=''):
+        if not path:
+            caption = 'select your data folder'
+            self.fname = str(QtGui.QFileDialog.getExistingDirectory(caption=caption))
         else:
-            message = '%d files found in %s' % (len(json_files), fname)
+            self.fname = path
+        json_files = glob.glob(os.path.join(self.fname, '*.json'))
+        npy_files = glob.glob(os.path.join(self.fname, '*.npy'))
+        if len(json_files) == 0 or len(npy_files) == 0 or len(json_files) != len(npy_files):
+            message = 'no valid data found in: %s ==> quitting..' % self.fname
+            reply = QtGui.QMessageBox.warning(self, 'Message',
+                             message)
+            sys.exit(-1)
+        else:
+            message = '%d files found in %s' % (len(json_files), self.fname)
             self.statusbar.showMessage(message, msecs=5000)
             self.preprocessing_box.setEnabled(True)
             self.filter_box.setEnabled(True)
@@ -117,6 +119,7 @@ if __name__ == '__main__':
     my_gui.show()
     my_gui.save_controls()
     app.setActiveWindow(my_gui)
+    my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_test/')
     sys.exit(app.exec_())
 
     # TODO: set correct increments of all spinners
