@@ -34,23 +34,10 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.connect(self.select_data_folder_button,
                      QtCore.SIGNAL("clicked()"),
                      self.select_data_folder)
-        # self.spars_par1_spinner.setValue(config['methods']['nnma']['spars_par1'])
-        # self.spars_par2_spinner.setValue(config['methods']['nnma']['spars_par2'])
-        # self.smoothness_spinner.setValue(config['methods']['nnma']['smoothness'])
-        # self.maxcount_spinner.setValue(config['methods']['nnma']['maxcount'])
-        # self.alpha_spinner.setValue(config['methods']['ica']['alpha'])
-        # self.n_modes_spinner.setValue(config['n_modes'])
-
-        self.lowpass_spinner.valueChanged.connect(self.save_controls)
-        self.similarity_spinner.valueChanged.connect(self.save_controls)
-        self.spatial_spinner.valueChanged.connect(self.save_controls)
-        self.median_spinner.valueChanged.connect(self.save_controls)
-        self.mf_overview_box.stateChanged.connect(self.save_controls)
-        self.raw_overview_box.stateChanged.connect(self.save_controls)
-        self.raw_unsort_overview_box.stateChanged.connect(self.save_controls)
-        self.quality_box.stateChanged.connect(self.save_controls)
-        self.signals_box.stateChanged.connect(self.save_controls)
-        self.normalize_box.stateChanged.connect(self.save_controls)
+        for spinner in self.findChildren((QtGui.QSpinBox, QtGui.QDoubleSpinBox)):
+            spinner.valueChanged.connect(self.save_controls)
+        for check_box in self.findChildren(QtGui.QCheckBox):
+            check_box.stateChanged.connect(self.save_controls)
         self.methods_box.currentIndexChanged.connect(self.save_controls)
 
         # TODO: add or remove controls depending on the MF method selected
