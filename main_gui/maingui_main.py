@@ -14,12 +14,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         """initialize the gui, connect signals, add axes objects, etc.."""
         super(MainGui, self).__init__(parent)
         self.setupUi(self)
-        # self.preprocessing_box.setEnabled(False)
-        # self.filter_box.setEnabled(False)
-        # self.factorize_box.setEnabled(False)
-        # self.plots_box.setEnabled(False)
-        # self.run_button.setEnabled(False)
-
         self.config_file = 'gui_config.json'
         self.method_controls = {'nnma': [self.spars_par1_label, self.spars_par1_spinner,
                                          self.spars_par2_label, self.spars_par2_spinner,
@@ -51,10 +45,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         else:
             message = '%d files found in %s' % (len(json_files), self.fname)
             self.statusbar.showMessage(message, msecs=5000)
-            self.preprocessing_box.setEnabled(True)
-            self.filter_box.setEnabled(True)
-            self.factorize_box.setEnabled(True)
-            self.plots_box.setEnabled(True)
 
     def load_controls(self):
         config = json.load(open(self.config_file))
@@ -113,6 +103,9 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                 ui_elem.setVisible(method == current_method)
         self.save_controls()
 
+    def run(self):
+        # TODO: open a dialog to ask for output folder
+
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     my_gui = MainGui()
@@ -122,4 +115,4 @@ if __name__ == '__main__':
     my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_test/')
     sys.exit(app.exec_())
 
-    # TODO: set correct increments of all spinners
+    # TODO: set correct increments of all spinners after more info on the params from jan
