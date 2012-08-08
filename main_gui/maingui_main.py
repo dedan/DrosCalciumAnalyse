@@ -20,8 +20,10 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.plots_box.setEnabled(False)
         self.run_button.setEnabled(False)
 
-        self.config = json.load(open('gui_config.json'))
-        self.init_controls()
+        self.methods = {"nnma": {}, "ica": {}}
+        self.config_file = 'gui_config.json'
+
+        self.load_controls()
 
         # connect signals to slots
         self.connect(self.select_data_folder_button,
@@ -44,23 +46,44 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             self.factorize_box.setEnabled(True)
             self.plots_box.setEnabled(True)
 
-    def init_controls(self):
-        self.normalize_box.setChecked(self.config['normalize'])
-        self.lowpass_spinner.setValue(self.config['lowpass'])
-        self.median_spinner.setValue(self.config['median'])
-        self.spatial_spinner.setValue(self.config['spatial'])
-        self.similarity_spinner.setValue(self.config['similarity'])
+    def load_controls(self):
+        config = json.load(open(self.config_file))
+        self.normalize_box.setChecked(config['normalize'])
+        self.lowpass_spinner.setValue(config['lowpass'])
+        self.median_spinner.setValue(config['median'])
+        self.spatial_spinner.setValue(config['spatial'])
+        self.similarity_spinner.setValue(config['similarity'])
         self.methods_box.clear()
-        self.methods_box.insertItems(0, self.config['methods'].keys())
-        self.mf_overview_box.setChecked(self.config['mf_overview'])
-        self.raw_overview_box.setChecked(self.config['raw_overview'])
-        self.raw_unsort_overview_box.setChecked(self.config['raw_unsort_overview'])
-        self.quality_box.setChecked(self.config['quality'])
-        self.signals_box.setChecked(self.config['signals'])
+        self.methods_box.insertItems(0, self.methods.keys())
+        self.methods_box.setCurrentIndex(self.methods_box.findText(config['selected_method']))
+        self.mf_overview_box.setChecked(config['mf_overview'])
+        self.raw_overview_box.setChecked(config['raw_overview'])
+        self.raw_unsort_overview_box.setChecked(config['raw_unsort_overview'])
+        self.quality_box.setChecked(config['quality'])
+        self.signals_box.setChecked(config['signals'])
+
+    # TODO: after each click, save settings to config file
+    def save_controls(self, export_file=''):
+        config = {}
+        config['normalize'] = self.normalize_box.isChecked()
+        config['lowpass'] = self.lowpass_spinner.value()
+        config['median'] = self.median_spinner.value()
+        config['spatial'] = self.spatial_spinner.value()
+        config['similarity'] = self.similarity_spinner.value()
+        config['selected_method'] = str(self.methods_box.currentText())
+        config['mf_overview'] = self.mf_overview_box.isChecked()
+        config['raw_overview'] = self.raw_overview_box.isChecked()
+        config['raw_unsort_overview'] = self.raw_unsort_overview_box.isChecked()
+        config['quality'] =  self.quality_box.isChecked()
+        config['signals'] = self.signals_box.isChecked()
+        json.dump(config, open(self.config_file, 'w'))
+        if export_file:
+            json.dump(config, open(export_file, 'w'))
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
     my_gui = MainGui()
     my_gui.show()
+    my_gui.save_controls()
     app.setActiveWindow(my_gui)
     sys.exit(app.exec_())
