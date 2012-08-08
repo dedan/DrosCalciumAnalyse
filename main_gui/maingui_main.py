@@ -21,9 +21,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         # self.run_button.setEnabled(False)
 
         self.config_file = 'gui_config.json'
-
-        self.load_controls()
-
         self.method_controls = {'nnma': [self.spars_par1_label, self.spars_par1_spinner,
                                          self.spars_par2_label, self.spars_par2_spinner,
                                          self.smoothness_label, self.smoothness_spinner,
@@ -38,11 +35,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             spinner.valueChanged.connect(self.save_controls)
         for check_box in self.findChildren(QtGui.QCheckBox):
             check_box.stateChanged.connect(self.save_controls)
-        self.methods_box.currentIndexChanged.connect(self.save_controls)
-
-        # TODO: add or remove controls depending on the MF method selected
-
-        # TODO: load and save also new mf settings
+        self.methods_box.currentIndexChanged.connect(self.mf_method_changed)
+        self.load_controls()
 
     def select_data_folder(self):
         caption = 'select your data folder'
@@ -81,10 +75,10 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.maxcount_spinner.setValue(config['methods']['nnma']['maxcount'])
         self.alpha_spinner.setValue(config['methods']['ica']['alpha'])
         self.n_modes_spinner.setValue(config['n_modes'])
+        self.config = config
 
-
-    # TODO: after each click, save settings to config file
     def save_controls(self, export_file=''):
+        '''after each click, save settings to config file'''
         print 'save_controls called, export file is: %s' % export_file
         config = {}
         config['normalize'] = self.normalize_box.isChecked()
@@ -105,10 +99,17 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         config['methods']['nnma']['maxcount'] = self.maxcount_spinner.value()
         config['methods']['ica']['alpha'] = self.alpha_spinner.value()
         config['n_modes'] = self.n_modes_spinner.value()
-
+        self.config = config
         json.dump(config, open(self.config_file, 'w'))
         if isinstance(export_file, str) and os.path.exists(export_file):
             json.dump(config, open(export_file, 'w'))
+
+    def mf_method_changed(self):
+        current_method = str(self.methods_box.currentText())
+        for method in self.config['methods']:
+            for ui_elem in self.method_controls[method]:
+                ui_elem.setVisible(method == current_method)
+        self.save_controls()
 
 if __name__ == '__main__':
     app = QtGui.QApplication(sys.argv)
@@ -117,3 +118,5 @@ if __name__ == '__main__':
     my_gui.save_controls()
     app.setActiveWindow(my_gui)
     sys.exit(app.exec_())
+
+    # TODO: set correct increments of all spinners
