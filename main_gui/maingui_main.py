@@ -132,9 +132,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         mf_params['param']['variance'] = self.config['n_modes']
         print mf_params
 
-        mf_func = utils.create_mf(mf_params)
-
-
         timestamp = datetime.datetime.now().strftime('%d%m%y_%H%M%S')
         out_folder = os.path.join(out_folder, timestamp)
         data_folder = os.path.join(out_folder, 'data')
@@ -183,6 +180,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             # do matrix factorization
             progdialog.setLabelText('%s: factorization' % disp_name)
             QtCore.QCoreApplication.processEvents()
+            mf_func = utils.create_mf(mf_params)
             mf = mf_func(out['pp'])
 
             baselines.append(out['baseline'])
