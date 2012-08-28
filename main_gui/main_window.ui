@@ -28,47 +28,6 @@
    </property>
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
-     <widget class="QGroupBox" name="groupBox">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="title">
-       <string>Loading</string>
-      </property>
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <item>
-        <widget class="QPushButton" name="select_data_folder_button">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>Select Data Folder</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="data_folder_label">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="text">
-          <string>no data folder selected..</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item>
      <widget class="QGroupBox" name="filter_box">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
@@ -334,6 +293,9 @@
          </property>
         </widget>
        </item>
+       <item>
+        <widget class="QComboBox" name="format_combo"/>
+       </item>
       </layout>
      </widget>
     </item>
@@ -345,7 +307,6 @@
      </widget>
     </item>
    </layout>
-   <zorder>groupBox</zorder>
    <zorder>run_button</zorder>
    <zorder>filter_box</zorder>
    <zorder>preprocessing_box</zorder>

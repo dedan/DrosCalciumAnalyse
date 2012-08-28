@@ -34,6 +34,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.load_controls()
 
     def select_data_folder(self, path=''):
+        """select data folder, either from given path or dialog"""
         if not path:
             caption = 'select your data folder'
             self.fname = str(QtGui.QFileDialog.getExistingDirectory(caption=caption))
@@ -51,6 +52,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             self.statusbar.showMessage(message, msecs=5000)
 
     def load_controls(self):
+        """initialize the control elements (widgets) from config file"""
         config = json.load(open(self.config_file))
         self.normalize_box.setChecked(config['normalize'])
         self.lowpass_spinner.setValue(config['lowpass'])
@@ -103,6 +105,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
     # TODO: add load and save settings to the menu
 
     def mf_method_changed(self):
+        """display the suitable options for the selected method"""
         current_method = str(self.methods_box.currentText())
         for method in self.config['methods']:
             for ui_elem in self.method_controls[method]:
@@ -216,9 +219,14 @@ app = QtGui.QApplication(sys.argv)
 my_gui = MainGui()
 my_gui.show()
 app.setActiveWindow(my_gui)
-# debuging
-my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_test/')
-my_gui.run()
+
+debugging = False
+if debugging:
+    my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_test/')
+    my_gui.run()
+else:
+    my_gui.select_data_folder()
+
 sys.exit(app.exec_())
 
 
