@@ -11,7 +11,7 @@ import numpy as np
 import pylab as plt
 from NeuralImageProcessing.pipeline import TimeSeries
 
-def create(path):
+def create(path, name):
 
     files = os.listdir(path)
     selected_files = [len(i.split('_')) > 2 for i in files]
@@ -21,6 +21,7 @@ def create(path):
             files2.append(files[j])
     files = files2
 
+    frames_per_trial = int(files[0].split('-')[1])
     frame = np.array([int(i.split('-')[0][2:]) for i in files])
     point = np.array([int(i.split(' - ')[1][:2]) for i in files])
     odor = [i.split('_')[1] for i in files]
@@ -39,27 +40,21 @@ def create(path):
         sel_odor = [odor[i] for i in ind]
         sel_conc = [conc[i] for i in ind]
         for file in sel_files:
-            im = plt.imread(dir2analyze + file)
+            im = plt.imread(path + file)
             temp.append(im.flatten())
             names.append(file)
-        print '====', path, str(p) , '===='
-        print len(temp)
         timeseries.append(np.array(temp))
         new_odor += sel_odor
         new_conc += sel_conc
     shape = im.shape
     timeseries = np.vstack(timeseries)
     label = [new_odor[i] + '_' + new_conc[i] for i in range(len(new_odor))]
-    return timeseries, shape, label
-
-
-frames_per_trial = 40
+    label = [i.strip('.png') for i in label[::frames_per_trial]]
+    return TimeSeries(shape=tuple(shape), series=timeseries, name=name, label_sample=label)
 
 measid = '110222a'
 pathr = '/Users/dedan/projects/fu/data/dros_gui_test/110222a/'
-timeseries, shape, label = create(pathr)
-label = [i.strip('.png') for i in label[::frames_per_trial]]
-ts = TimeSeries(shape=tuple(shape), series=timeseries, name=measid, label_sample=label)
+ts = create(pathr, name=measid)
 ts.save('/Users/dedan/Desktop/test')
 
 
