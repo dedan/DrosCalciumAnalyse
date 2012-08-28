@@ -145,7 +145,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
 
         # filelist = filelist[0:2]
 
-        # TODO: show progress bar
         self.statusbar.showMessage('hardcore computation stuff going on..')
         progdialog = QtGui.QProgressDialog('hardcore computation stuff going on..',
                                             'cancel',
@@ -208,6 +207,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                 qual_view = runlib.quality_overview_plot(distanceself, distancecross, ts.name)
                 qual_view.savefig(plot_name_base + '_quality.' + self.config['selected_format'])
         progdialog.setValue(len(filelist))
+        self.statusbar.showMessage('yeah, finished!', msecs=2000)
 
 app = QtGui.QApplication(sys.argv)
 my_gui = MainGui()

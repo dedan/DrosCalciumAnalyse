@@ -11,3 +11,4 @@ region_gui/layout.py
 notebooks
 main_gui/main_window.py
 config/run_dros_sg.ini
+ideas.md
