@@ -66,7 +66,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.raw_overview_box.setChecked(config['raw_overview'])
         self.raw_unsort_overview_box.setChecked(config['raw_unsort_overview'])
         self.quality_box.setChecked(config['quality'])
-        self.signals_box.setChecked(config['signals'])
         self.spars_par1_spinner.setValue(config['methods']['nnma']['spars_par1'])
         self.spars_par2_spinner.setValue(config['methods']['nnma']['spars_par2'])
         self.smoothness_spinner.setValue(config['methods']['nnma']['smoothness'])
@@ -89,7 +88,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         config['raw_overview'] = self.raw_overview_box.isChecked()
         config['raw_unsort_overview'] = self.raw_unsort_overview_box.isChecked()
         config['quality'] =  self.quality_box.isChecked()
-        config['signals'] = self.signals_box.isChecked()
         config['methods'] = {'nnma': {}, 'ica': {}}
         config['methods']['nnma']['spars_par1'] = self.spars_par1_spinner.value()
         config['methods']['nnma']['spars_par2'] = self.spars_par2_spinner.value()
@@ -187,7 +185,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
 
             # save results
             mf.save(os.path.join(data_folder, fname))
-            out['sorted_baseline'].save(os.path.join(data_folder, fname + '_baseline'))
 
             # plot overview of matrix factorization
             if self.config['mf_overview']:
@@ -212,7 +209,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                 qual_view.savefig(plot_name_base + '_quality.' + self.config['selected_format'])
         progdialog.setValue(len(filelist))
 
-# if __name__ == '__main__':
 app = QtGui.QApplication(sys.argv)
 my_gui = MainGui()
 my_gui.show()

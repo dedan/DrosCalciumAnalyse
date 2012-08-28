@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>361</width>
-    <height>846</height>
+    <height>779</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -283,13 +283,6 @@
         <widget class="QCheckBox" name="quality_box">
          <property name="text">
           <string>odor quality</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="signals_box">
-         <property name="text">
-          <string>signals</string>
          </property>
         </widget>
        </item>
