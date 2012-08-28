@@ -22,7 +22,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                          self.spars_par2_label, self.spars_par2_spinner,
                                          self.smoothness_label, self.smoothness_spinner,
                                          self.maxcount_label, self.maxcount_spinner],
-                                'ica': [self.alpha_label, self.alpha_spinner]}
+                                'stica': [self.alpha_label, self.alpha_spinner],
+                                'sica': []}
 
         # connect signals to slots
         self.run_button.clicked.connect(self.run)
@@ -70,7 +71,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.spars_par2_spinner.setValue(config['methods']['nnma']['spars_par2'])
         self.smoothness_spinner.setValue(config['methods']['nnma']['smoothness'])
         self.maxcount_spinner.setValue(config['methods']['nnma']['maxcount'])
-        self.alpha_spinner.setValue(config['methods']['ica']['alpha'])
+        self.alpha_spinner.setValue(config['methods']['stica']['alpha'])
         self.n_modes_spinner.setValue(config['n_modes'])
         self.config = config
 
@@ -88,12 +89,12 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         config['raw_overview'] = self.raw_overview_box.isChecked()
         config['raw_unsort_overview'] = self.raw_unsort_overview_box.isChecked()
         config['quality'] =  self.quality_box.isChecked()
-        config['methods'] = {'nnma': {}, 'ica': {}}
+        config['methods'] = {'nnma': {}, 'stica': {}, 'sica': {}}
         config['methods']['nnma']['spars_par1'] = self.spars_par1_spinner.value()
         config['methods']['nnma']['spars_par2'] = self.spars_par2_spinner.value()
         config['methods']['nnma']['smoothness'] = self.smoothness_spinner.value()
         config['methods']['nnma']['maxcount'] = self.maxcount_spinner.value()
-        config['methods']['ica']['alpha'] = self.alpha_spinner.value()
+        config['methods']['stica']['alpha'] = self.alpha_spinner.value()
         config['n_modes'] = self.n_modes_spinner.value()
         self.config = config
         json.dump(config, open(self.config_file, 'w'))
