@@ -1,4 +1,6 @@
 import os, sys, glob, json, time, datetime
+import numpy as np
+import pylab as plt
 from NeuralImageProcessing import basic_functions as bf
 from NeuralImageProcessing import illustrate_decomposition as vis
 from DrosCalciumAnalyse import runlib, utils
@@ -180,11 +182,19 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             QtCore.QCoreApplication.processEvents()
             mf_func = utils.create_mf(mf_params)
             mf = mf_func(out['pp'])
+            mf.base.shape = tuple(mf.base.shape)
 
             baselines.append(out['baseline'])
 
             # save results
-            mf.save(os.path.join(data_folder, fname))
+            fig = plt.figure()
+            ax = fig.add_subplot(111)
+            ax.axis('off')
+            for i, spatial_mode in enumerate(mf.base.shaped2D()):
+                ax.imshow(spatial_mode, interpolation='nearest')
+                fig.savefig(os.path.join(data_folder, 'spatial_%s_%d.png' % (fname, i+1)))
+            np.savetxt(os.path.join(data_folder, 'temporal_%s.csv' % fname),
+                       mf.timecourses.T, delimiter=',')
 
             # plot overview of matrix factorization
             if self.config['mf_overview']:
