@@ -1,13 +1,1 @@
-{
-    "normalize": false,
-    "lowpass": 2,
-    "median": 5,
-    "spatial": 2,
-    "similarity": 0.8,
-    "selected_method": "nnma",
-    "mf_overview": false,
-    "raw_overview": false,
-    "raw_unsort_overview": true,
-    "quality": false,
-    "signals": false
-}
+{"normalize": false, "signals": true, "spatial_down": 2, "mf_overview": true, "selected_method": "ica", "n_modes": 5, "similarity_threshold": 0.6, "raw_unsort_overview": true, "raw_overview": true, "medianfilter": 5, "lowpass": 2, "quality": true, "methods": {"ica": {"alpha": 1.0}, "nnma": {"spars_par2": 0.01, "spars_par1": 0.0, "smoothness": 0.2, "maxcount": 1}}}
