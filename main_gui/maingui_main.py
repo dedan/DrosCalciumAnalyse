@@ -43,16 +43,37 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             self.fname = str(QtGui.QFileDialog.getExistingDirectory(caption=caption))
         else:
             self.fname = path
-        json_files = glob.glob(os.path.join(self.fname, '*.json'))
-        npy_files = glob.glob(os.path.join(self.fname, '*.npy'))
-        if len(json_files) == 0 or len(npy_files) == 0 or len(json_files) != len(npy_files):
-            message = 'no valid data found in: %s ==> quitting..' % self.fname
-            reply = QtGui.QMessageBox.warning(self, 'Message',
-                             message)
-            sys.exit(-1)
-        else:
-            message = '%d files found in %s' % (len(json_files), self.fname)
-            self.statusbar.showMessage(message, msecs=5000)
+
+        subfolders = [f for f in os.listdir(self.fname)
+                        if os.path.isdir(os.path.join(self.fname, f))]
+        to_convert = []
+        for subfolder in subfolders:
+            if not os.path.exists(os.path.join(self.fname, subfolder, 'timeseries.npy')):
+                to_convert.append(subfolder)
+        if to_convert:
+            message_text = ('%d image files have to be converted to our numpy format\n' +
+                            'this is only done once') % len(to_convert)
+            QtGui.QMessageBox.information(self, 'File conversion', message_text)
+            progdialog = QtGui.QProgressDialog('converting image files..',
+                                        'cancel',
+                                        0, len(to_convert), self)
+            progdialog.setMinimumDuration(0)
+            progdialog.setWindowModality(QtCore.Qt.WindowModal)
+
+            for i, folder in enumerate(to_convert):
+                progdialog.setValue(i)
+                folder_path = os.path.join(self.fname, folder)
+                QtCore.QCoreApplication.processEvents()
+
+                ts = runlib.create_timeseries_from_pngs(folder_path, folder)
+                ts.save(os.path.join(folder_path, 'timeseries'))
+                if progdialog.wasCanceled():
+                    print 'hui ui ui'
+                    break
+
+            progdialog.setValue(len(to_convert))
+        message = '%d files found in %s' % (len(subfolders), self.fname)
+        self.statusbar.showMessage(message, msecs=5000)
 
     def load_controls(self):
         """initialize the control elements (widgets) from config file"""
@@ -143,7 +164,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.save_controls(export_file=os.path.join(out_folder, 'config.json'))
         self.config['selected_format'] = '.png'
 
-        filelist = glob.glob(self.fname + '*.json')
+        filelist = [os.path.join(self.fname, f, 'timeseries') for f in os.listdir(self.fname)]
+        filelist = [f for f in filelist if os.path.exists(f+'.json')]
         # TODO: use only the n_best animals --> most stable odors in common (thresh_res.pckl)
 
         # filelist = filelist[0:2]

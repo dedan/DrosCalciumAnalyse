@@ -26,6 +26,7 @@ trial_mean = bf.TrialMean()
 def create_timeseries_from_pngs(path, name):
     '''convert a folder of pngs (created by imageJ) into timeseries objects'''
 
+    path = os.path.join(path, 'png')
     files = os.listdir(path)
     selected_files = [len(i.split('_')) > 2 for i in files]
     files2 = []
@@ -53,7 +54,7 @@ def create_timeseries_from_pngs(path, name):
         sel_odor = [odor[i] for i in ind]
         sel_conc = [conc[i] for i in ind]
         for file in sel_files:
-            im = plt.imread(path + file)
+            im = plt.imread(os.path.join(path, file))
             temp.append(im.flatten())
             names.append(file)
         timeseries.append(np.array(temp))
