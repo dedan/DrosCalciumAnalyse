@@ -158,13 +158,12 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
 
     def preprocess(self):
 
-        self.statusbar.showMessage('hardcore computation stuff going on..')
-        progdialog = QtGui.QProgressDialog('hardcore computation stuff going on..',
-                                            'cancel',
-                                            0, len(filelist), self)
+        self.results = {}
+        self.statusbar.showMessage('extrem preprocessing stuff going on..')
+        progdialog = QtGui.QProgressDialog('', 'cancel', 0, len(self.filelist), self)
         progdialog.setMinimumDuration(0)
         progdialog.setWindowModality(QtCore.Qt.WindowModal)
-        for file_ind, filename in enumerate(filelist):
+        for file_ind, filename in enumerate(self.filelist):
 
             disp_name = os.path.basename(filename)
             progdialog.setValue(file_ind)
@@ -174,7 +173,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
 
             meas_path = os.path.splitext(filename)[0]
             fname = os.path.basename(meas_path)
-            plot_name_base = os.path.join(out_folder, fname)
 
             # create timeseries, change shape and preprocess
             ts = bf.TimeSeries()
@@ -185,8 +183,11 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             ts.shape = tuple(ts.shape)
             progdialog.setLabelText('%s: preprocessing' % disp_name)
             QtCore.QCoreApplication.processEvents()
-            out = runlib.preprocess(ts, self.config)
+            self.results[disp_name] = runlib.preprocess(ts, self.config)
+        progdialog.setValue(len(self.filelist))
+        self.statusbar.showMessage('juhuuu, finished preprocessing', msecs=3000)
 
+        # TODO: activate other groupboxes and plot the results
 
 
     # TODO: maybe start a new thread for this?
