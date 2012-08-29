@@ -39,7 +39,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.plot_selection_box.insertItems(0, basic_plot_methods)
 
         # connect signals to slots
-        self.filter_box.toggled.connect(self.toggle_similarity_filter)
+        self.filter_box.toggled.connect(self.recalculate_filter)
+        self.similarity_spinner.valueChanged.connect(self.recalculate_filter)
         self.session_box.currentIndexChanged.connect(self.update_plot)
         self.plot_selection_box.currentIndexChanged.connect(self.update_plot)
         self.preprocess_button.clicked.connect(self.preprocess)
@@ -51,8 +52,16 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.methods_box.currentIndexChanged.connect(self.mf_method_changed)
         self.load_controls()
 
-    def toggle_similarity_filter(self):
-        pass
+    def recalculate_filter(self):
+        """ select stimuli such that their mean correlation distance between the mean
+            responses of repeated stimuli presentations is below similarity_threshold
+        """
+        l.debug('filtering with %f' % self.config['similarity_threshold'])
+        stimuli_mask = bf.SampleSimilarity(self.config['similarity_threshold'])
+        stimuli_filter = bf.SelectTrials()
+        for res in self.results.values():
+            res['mask'] = stimuli_mask(res['mean_resp'])
+        self.update_plot()
 
     def select_data_folder(self, path=''):
         """select data folder, either from given path or dialog"""
@@ -238,7 +247,12 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                             0, len(self.filelist), self)
         progdialog.setMinimumDuration(0)
         progdialog.setWindowModality(QtCore.Qt.WindowModal)
+        # TODO: iterate over results here
         for file_ind, filename in enumerate(self.filelist):
+
+            # TODO: apply filter when checkbox set
+                        # pp = stimuli_filter(pp, stimuli_selection)
+
 
             disp_name = os.path.basename(filename)
             progdialog.setValue(file_ind)

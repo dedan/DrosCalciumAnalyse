@@ -113,16 +113,6 @@ def preprocess(ts, config):
     mean_resp = sorted_trials(mean_resp_unsort)
     out['mean_resp_unsort'] = mean_resp_unsort
     out['mean_resp'] = mean_resp
-
-    # select stimuli such that their mean correlation distance between the mean
-    # responses of repeated stimuli presentations is below similarity_threshold
-    if 'similarity_filter' in config and config['similarity_filter']:
-        print 'applying stimulus filter'
-        stimuli_mask = bf.SampleSimilarity(config['similarity_threshold'])
-        stimuli_selection = stimuli_mask(mean_resp)
-        stimuli_filter = bf.SelectTrials()
-        pp = stimuli_filter(pp, stimuli_selection)
-
     out['pp'] = pp
     return out
 
