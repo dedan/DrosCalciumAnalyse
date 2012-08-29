@@ -138,10 +138,7 @@ def mf_overview_plot(out, fig):
 def raw_response_overview(out, fig, prefix=''):
     '''overview of responses to different odors'''
     resp_overview = vis.VisualizeTimeseries(fig)
-    if prefix == 'mic':
-        resp_overview.subplot(out['mean_resp'].samplepoints, dim2=4)
-    else:
-        resp_overview.subplot(out['mean_resp'].samplepoints)
+    resp_overview.subplot(out['mean_resp'].samplepoints)
     for ind, resp in enumerate(out['mean_resp'].shaped2D()):
         max_data = np.max(np.abs(resp))
         resp /= max_data
@@ -156,10 +153,7 @@ def raw_response_overview(out, fig, prefix=''):
 
 def raw_unsort_response_overview(out, fig, prefix=''):
     uresp_overview = vis.VisualizeTimeseries(fig)
-    if prefix == 'mic':
-        uresp_overview.subplot(out['mean_resp_unsort'].samplepoints, dim2=4)
-    else:
-        uresp_overview.subplot(out['mean_resp_unsort'].samplepoints)
+    uresp_overview.subplot(out['mean_resp_unsort'].samplepoints)
     out['mean_resp_unsort'].strength = []
     for ind, resp in enumerate(out['mean_resp_unsort'].shaped2D()):
         max_data = np.max(np.abs(resp))
