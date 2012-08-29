@@ -61,7 +61,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         stimuli_filter = bf.SelectTrials()
         for res in self.results.values():
             if self.filter_box.isChecked():
-                res['mask'] = stimuli_mask(res['mean_resp']).timecourses
+                res['mask'] = stimuli_mask(res['mean_resp'])
                 print res['mask']
             else:
                 res['mask'] = []
