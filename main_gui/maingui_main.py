@@ -28,7 +28,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                          self.maxcount_label, self.maxcount_spinner],
                                 'stica': [self.alpha_label, self.alpha_spinner],
                                 'sica': []}
-        self.plots = self.plot_widget.ax
 
         # connect signals to slots
         self.preprocess_button.clicked.connect(self.preprocess)
@@ -266,11 +265,10 @@ class PlotWidget(QtGui.QWidget):
     def __init__(self, parent=None):
         QtGui.QWidget.__init__(self, parent)
         self.canvas = PlotCanvas()
+        self.fig = self.canvas.fig
         self.vbl = QtGui.QVBoxLayout()
         self.vbl.addWidget(self.canvas)
         self.setLayout(self.vbl)
-        self.ax = self.canvas.fig.add_subplot(111)
-        self.ax.plot(np.random.rand(10))
 
 
 if __name__ == '__main__':

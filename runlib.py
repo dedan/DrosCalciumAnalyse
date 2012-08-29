@@ -126,12 +126,12 @@ def preprocess(ts, config):
     out['pp'] = pp
     return out
 
-def mf_overview_plot(mf):
+def mf_overview_plot(mf, fig):
     '''plot overview of factorization result
 
         spatial bases on the left, temporal on the right
     '''
-    mf_overview = vis.VisualizeTimeseries()
+    mf_overview = vis.VisualizeTimeseries(fig)
     mf_overview.base_and_time(mf.num_objects)
     for ind, resp in enumerate(mf.base.shaped2D()):
         mf_overview.imshow(mf_overview.axes['base'][ind],
@@ -144,9 +144,9 @@ def mf_overview_plot(mf):
     [ax.set_title(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
     return mf_overview.fig
 
-def raw_response_overview(out, prefix=''):
+def raw_response_overview(out, fig, prefix=''):
     '''overview of responses to different odors'''
-    resp_overview = vis.VisualizeTimeseries()
+    resp_overview = vis.VisualizeTimeseries(fig)
     if prefix == 'mic':
         resp_overview.subplot(out['mean_resp'].samplepoints, dim2=4)
     else:
@@ -163,8 +163,8 @@ def raw_response_overview(out, prefix=''):
         resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
     return resp_overview.fig
 
-def raw_unsort_response_overview(out, prefix=''):
-    uresp_overview = vis.VisualizeTimeseries()
+def raw_unsort_response_overview(out, fig, prefix=''):
+    uresp_overview = vis.VisualizeTimeseries(fig)
     if prefix == 'mic':
         uresp_overview.subplot(out['mean_resp_unsort'].samplepoints, dim2=4)
     else:
@@ -181,7 +181,7 @@ def raw_unsort_response_overview(out, prefix=''):
         out['mean_resp_unsort'].strength.append(max_data)
     return uresp_overview.fig
 
-def quality_overview_plot(distanceself, distancecross, title):
+def quality_overview_plot(distanceself, distancecross, title, fig):
     '''draw quality overview
 
        quality is reproducability of responses over odor presentations and especially
@@ -189,7 +189,7 @@ def quality_overview_plot(distanceself, distancecross, title):
        violin plot shows cross label similarity and the circles are the similarity
        between repeated odor presentations
     '''
-    qual_view = vis.VisualizeTimeseries()
+    qual_view = vis.VisualizeTimeseries(fig)
     qual_view.oneaxes()
     data = zip(*distancecross.items())
     vis.violin_plot(qual_view.axes['time'][0], [i.flatten() for i in data[1]] ,
