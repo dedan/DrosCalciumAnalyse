@@ -148,7 +148,7 @@ def raw_response_overview(out, fig, prefix=''):
         resp_overview.overlay_image(resp_overview.axes['base'][ind],
                                     resp, threshold=0.3,
                                     title={'label':out['mean_resp'].label_sample[ind], 'size':10})
-        if len(out['mask']) > 0 and not out['mask'][ind]:
+        if 'mask' in out and len(out['mask']) > 0 and not out['mask'][ind]:
             resp_overview.imshow(resp_overview.axes['base'][ind],
                                  np.ones(resp.shape),
                                  alpha=0.8)

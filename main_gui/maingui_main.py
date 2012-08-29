@@ -40,7 +40,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
 
         # connect signals to slots
         self.filter_box.toggled.connect(self.recalculate_filter)
-        self.similarity_spinner.valueChanged.connect(self.recalculate_filter)
+        self.recompute_filter_button.clicked.connect(self.recalculate_filter)
         self.session_box.currentIndexChanged.connect(self.update_plot)
         self.plot_selection_box.currentIndexChanged.connect(self.update_plot)
         self.preprocess_button.clicked.connect(self.preprocess)
