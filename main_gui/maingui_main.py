@@ -60,7 +60,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             if not os.path.exists(os.path.join(self.fname, subfolder, 'timeseries.npy')):
                 to_convert.append(subfolder)
         if to_convert:
-            message_text = ('%d image files have to be converted to our numpy format\n' +
+            message_text = ('%d data folder has to be converted to our numpy format\n' +
                             'this is only done once') % len(to_convert)
             QtGui.QMessageBox.information(self, 'File conversion', message_text)
             progdialog = QtGui.QProgressDialog('converting image files..',
@@ -220,10 +220,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         elif plot_method == 'unsorted overview':
             runlib.raw_unsort_response_overview(self.results[session]['out'], self.plot_widget.fig)
         elif plot_method == 'quality':
-            print 'in quality plot'
-            stimulirep = bf.SampleSimilarityPure()
-            distanceself, distancecross = stimulirep(self.results[session]['out']['mean_resp'])
-            runlib.quality_overview_plot(distanceself, distancecross, session, self.plot_widget.fig)
+            runlib.quality_overview_plot(self.results[session]['out'], self.plot_widget.fig)
         elif plot_method == 'mf_overview':
             runlib.mf_overview_plot(self.results[session]['mf'], fig)
         self.plot_widget.canvas.draw()
