@@ -6,6 +6,8 @@ from NeuralImageProcessing import illustrate_decomposition as vis
 from DrosCalciumAnalyse import runlib, utils
 from PyQt4 import QtCore
 from PyQt4 import QtGui
+from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 from main_window import Ui_MainGuiWin
 import logging as l
 l.basicConfig(level=l.DEBUG,
@@ -28,7 +30,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                 'sica': []}
 
         # connect signals to slots
-        self.run_button.clicked.connect(self.run)
+        self.factorize_button.clicked.connect(self.factorize)
         for spinner in self.findChildren((QtGui.QSpinBox, QtGui.QDoubleSpinBox)):
             spinner.valueChanged.connect(self.save_controls)
         for check_box in self.findChildren(QtGui.QCheckBox):
@@ -137,7 +139,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.save_controls()
 
     # TODO: maybe start a new thread for this?
-    def run(self):
+    def factorize(self):
 
         # TODO: select this in combobox
     # "formats": ["jpg", "png", "svg"],
@@ -244,19 +246,41 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         progdialog.setValue(len(filelist))
         self.statusbar.showMessage('yeah, finished!', msecs=2000)
 
-app = QtGui.QApplication(sys.argv)
-my_gui = MainGui()
-my_gui.show()
-app.setActiveWindow(my_gui)
 
-debugging = False
-if debugging:
-    my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_test/')
-    my_gui.run()
-else:
-    my_gui.select_data_folder()
-
-sys.exit(app.exec_())
+class PlotCanvas(FigureCanvas):
+    '''a class only containing the figure to manage the qt layout'''
+    def __init__(self):
+        self.fig = Figure()
+        FigureCanvas.__init__(self, self.fig)
+        FigureCanvas.setSizePolicy(self, QtGui.QSizePolicy.Expanding, QtGui.QSizePolicy.Expanding)
+        FigureCanvas.updateGeometry(self)
 
 
-    # TODO: set correct increments of all spinners after more info on the params from jan
+class PlotWidget(QtGui.QWidget):
+    '''all plotting related stuff and also the context menu'''
+    def __init__(self, parent=None):
+        QtGui.QWidget.__init__(self, parent)
+        self.canvas = PlotCanvas()
+        self.vbl = QtGui.QVBoxLayout()
+        self.vbl.addWidget(self.canvas)
+        self.setLayout(self.vbl)
+        ax = self.canvas.fig.add_subplot(111)
+        ax.plot(np.random.rand(10))
+
+
+if __name__ == '__main__':
+    app = QtGui.QApplication(sys.argv)
+    my_gui = MainGui()
+    my_gui.show()
+    app.setActiveWindow(my_gui)
+
+    debugging = False
+    if debugging:
+        my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_gui_test/')
+        my_gui.factorize()
+    else:
+        my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_gui_test/')
+
+    sys.exit(app.exec_())
+
+
