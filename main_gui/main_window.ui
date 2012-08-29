@@ -280,11 +280,11 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <zorder>plots_box</zorder>
+        <zorder>export_box</zorder>
        </widget>
       </item>
       <item>
-       <widget class="QGroupBox" name="plots_box">
+       <widget class="QGroupBox" name="export_box">
         <property name="enabled">
          <bool>false</bool>
         </property>

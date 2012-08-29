@@ -176,6 +176,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         progdialog.setWindowModality(QtCore.Qt.WindowModal)
         for file_ind, filename in enumerate(self.filelist):
 
+            # TODO: currently always the same name
             disp_name = os.path.basename(filename)
             progdialog.setValue(file_ind)
             if progdialog.wasCanceled():
@@ -196,14 +197,21 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             self.results[disp_name] = runlib.preprocess(ts, self.config)
         progdialog.setValue(len(self.filelist))
         self.statusbar.showMessage('juhuuu, finished preprocessing', msecs=3000)
+        self.filter_box.setEnabled(True)
+        self.factorize_box.setEnabled(True)
+        self.export_box.setEnabled(True)
 
-        # TODO: activate other groupboxes and plot the results
-        raw_resp_overview = runlib.raw_response_overview(out)
-        raw_resp_unsort_overview = runlib.raw_unsort_response_overview(out)
-        # calc reproducibility and plot quality
-        stimulirep = bf.SampleSimilarityPure()
-        distanceself, distancecross = stimulirep(out['mean_resp'])
-        qual_view = runlib.quality_overview_plot(distanceself, distancecross, ts.name)
+    def update_plot(self):
+        """this is called when a new session or new kind of plot is selected"""
+
+        l.debug('plotting')
+        bla = runlib.raw_response_overview(self.results[disp_name], self.plot_widget.fig)
+        self.plot_widget.canvas.draw()
+        # raw_resp_unsort_overview = runlib.raw_unsort_response_overview(out)
+        # # calc reproducibility and plot quality
+        # stimulirep = bf.SampleSimilarityPure()
+        # distanceself, distancecross = stimulirep(out['mean_resp'])
+        # qual_view = runlib.quality_overview_plot(distanceself, distancecross, ts.name)
 
 
     # TODO: maybe start a new thread for this?
