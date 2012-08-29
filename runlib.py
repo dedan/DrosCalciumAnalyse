@@ -126,11 +126,12 @@ def preprocess(ts, config):
     out['pp'] = pp
     return out
 
-def mf_overview_plot(mf, fig):
+def mf_overview_plot(out, fig):
     '''plot overview of factorization result
 
         spatial bases on the left, temporal on the right
     '''
+    mf = out['mf']
     mf_overview = vis.VisualizeTimeseries(fig)
     mf_overview.base_and_time(mf.num_objects)
     for ind, resp in enumerate(mf.base.shaped2D()):

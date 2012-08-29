@@ -21,6 +21,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         """initialize the gui, connect signals, add axes objects, etc.."""
         super(MainGui, self).__init__(parent)
         self.setupUi(self)
+        self.results = {}
         self.config_file = 'gui_config.json'
         self.method_controls = {'nnma': [self.spars_par1_label, self.spars_par1_spinner,
                                          self.spars_par2_label, self.spars_par2_spinner,
@@ -28,12 +29,17 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                          self.maxcount_label, self.maxcount_spinner],
                                 'stica': [self.alpha_label, self.alpha_spinner],
                                 'sica': []}
+        self.plot_methods = {'sorted overview': runlib.raw_response_overview,
+                             'unsorted overview': runlib.raw_unsort_response_overview,
+                             'quality': runlib.quality_overview_plot,
+                             'mf_overview': runlib.mf_overview_plot}
 
         # init gui
-        self.plot_methods = ['quality', 'sorted overview', 'unsorted overview']
-        self.plot_selection_box.insertItems(0, self.plot_methods)
+        basic_plot_methods = ['quality', 'sorted overview', 'unsorted overview']
+        self.plot_selection_box.insertItems(0, basic_plot_methods)
 
         # connect signals to slots
+        self.filter_box.toggled.connect(self.toggle_similarity_filter)
         self.session_box.currentIndexChanged.connect(self.update_plot)
         self.plot_selection_box.currentIndexChanged.connect(self.update_plot)
         self.preprocess_button.clicked.connect(self.preprocess)
@@ -44,6 +50,9 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             check_box.stateChanged.connect(self.save_controls)
         self.methods_box.currentIndexChanged.connect(self.mf_method_changed)
         self.load_controls()
+
+    def toggle_similarity_filter(self):
+        pass
 
     def select_data_folder(self, path=''):
         """select data folder, either from given path or dialog"""
@@ -194,8 +203,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             ts.shape = tuple(ts.shape)
             progdialog.setLabelText('%s: preprocessing' % filename)
             QtCore.QCoreApplication.processEvents()
-            self.results[filename] = {}
-            self.results[filename]['out'] = runlib.preprocess(ts, self.config)
+            self.results[filename] = runlib.preprocess(ts, self.config)
         progdialog.setValue(len(self.filelist))
         self.statusbar.showMessage('juhuuu, finished preprocessing', msecs=3000)
         self.filter_box.setEnabled(True)
@@ -208,23 +216,12 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
     def update_plot(self):
         """this is called when a new session or new kind of plot is selected"""
         l.debug('update plot')
-        if not hasattr(self, 'results'):
-            l.debug('no results')
-            return
-        self.plot_widget.fig.clear()
-        session = str(self.session_box.currentText())
-        plot_method = str(self.plot_selection_box.currentText())
-        print "plot_method", plot_method
-        if plot_method == 'sorted overview':
-            runlib.raw_response_overview(self.results[session]['out'], self.plot_widget.fig)
-        elif plot_method == 'unsorted overview':
-            runlib.raw_unsort_response_overview(self.results[session]['out'], self.plot_widget.fig)
-        elif plot_method == 'quality':
-            runlib.quality_overview_plot(self.results[session]['out'], self.plot_widget.fig)
-        elif plot_method == 'mf_overview':
-            runlib.mf_overview_plot(self.results[session]['mf'], fig)
-        self.plot_widget.canvas.draw()
-
+        if self.results:
+            self.plot_widget.fig.clear()
+            session = str(self.session_box.currentText())
+            plot_method = str(self.plot_selection_box.currentText())
+            self.plot_methods[plot_method](self.results[session], self.plot_widget.fig)
+            self.plot_widget.canvas.draw()
 
     # TODO: maybe start a new thread for this?
     def factorize(self):
@@ -259,6 +256,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             mf_func = utils.create_mf(mf_params)
             mf = mf_func(out['pp'])
             mf.base.shape = tuple(mf.base.shape)
+            self.results[filename]['mf'] = mf
         progdialog.setValue(len(self.filelist))
         self.statusbar.showMessage('yeah, finished!', msecs=2000)
 
