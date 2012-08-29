@@ -92,7 +92,8 @@ def preprocess(ts, config):
     pp = rel_change(ts, out['baseline'])
 
     # apply mask if set in config
-    if 'maskfile' in config:
+    if 'maskfile' in config and config['maskfile']:
+        print 'using mask from: %s' % config['maskfile']
         spatial_mask = np.load(config['maskfile']).astype('bool')
         pp.timecourses[:, np.logical_not(spatial_mask.flatten())] = 0
 
@@ -103,13 +104,10 @@ def preprocess(ts, config):
     pp.timecourses[np.isnan(pp.timecourses)] = 0
     pp.timecourses[np.isinf(pp.timecourses)] = 0
 
-    if 'normalize' in config:
+    if 'normalize' in config and config['normalize']:
+        print 'normalizing'
         pp.timecourses = pp.timecourses / np.max(pp.timecourses)
 
-    # select stimuli such that their mean correlation distance between the mean
-    # responses of repeated stimuli presentations is below similarity_threshold
-    # --> use only repeatable stimuli
-    stimuli_mask = bf.SampleSimilarity(config['similarity_threshold'])
     mean_resp_unsort = trial_mean(bf.CutOut((6, 12))(pp))
     pp = sorted_trials(pp)
     mean_resp = sorted_trials(mean_resp_unsort)
