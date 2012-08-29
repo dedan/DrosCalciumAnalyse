@@ -30,6 +30,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                 'sica': []}
 
         # connect signals to slots
+        self.preprocess_button.clicked.connect(self.preprocess)
         self.factorize_button.clicked.connect(self.factorize)
         for spinner in self.findChildren((QtGui.QSpinBox, QtGui.QDoubleSpinBox)):
             spinner.valueChanged.connect(self.save_controls)
@@ -76,6 +77,11 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             progdialog.setValue(len(to_convert))
         message = '%d files found in %s' % (len(subfolders), self.fname)
         self.statusbar.showMessage(message, msecs=5000)
+
+        filelist = [os.path.join(self.fname, f, 'timeseries') for f in os.listdir(self.fname)]
+        self.filelist = [f for f in filelist if os.path.exists(f+'.json')]
+        # TODO: use only the n_best animals --> most stable odors in common (thresh_res.pckl)
+
 
     def load_controls(self):
         """initialize the control elements (widgets) from config file"""
@@ -138,41 +144,19 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                 ui_elem.setVisible(method == current_method)
         self.save_controls()
 
-    # TODO: maybe start a new thread for this?
-    def factorize(self):
+    def export_results(self):
+        pass
+        # timestamp = datetime.datetime.now().strftime('%d%m%y_%H%M%S')
+        # out_folder = os.path.join(out_folder, timestamp)
+        # data_folder = os.path.join(out_folder, 'data')
+        # odor_plots_folder = os.path.join(out_folder, 'odors')
+        # os.mkdir(out_folder)
+        # os.mkdir(data_folder)
+        # os.mkdir(odor_plots_folder)
+        # self.save_controls(export_file=os.path.join(out_folder, 'config.json'))
+        # self.config['selected_format'] = '.png'
 
-        # TODO: select this in combobox
-    # "formats": ["jpg", "png", "svg"],
-    # "selected_format": "png",
-
-        baselines = []
-
-        # TODO: open a dialog to ask for output folder
-        out_folder = '/Users/dedan/projects/fu/results/simil80n_bestFalsemask_dev/'
-        if not os.path.exists(out_folder):
-            self.statusbar.showMessage('folder does not exist', msecs=3000)
-            return
-
-        mf_params = {'method': self.config['selected_method'],
-                     'param': self.config['methods'][self.config['selected_method']]}
-        mf_params['param']['variance'] = self.config['n_modes']
-        print mf_params
-
-        timestamp = datetime.datetime.now().strftime('%d%m%y_%H%M%S')
-        out_folder = os.path.join(out_folder, timestamp)
-        data_folder = os.path.join(out_folder, 'data')
-        odor_plots_folder = os.path.join(out_folder, 'odors')
-        os.mkdir(out_folder)
-        os.mkdir(data_folder)
-        os.mkdir(odor_plots_folder)
-        self.save_controls(export_file=os.path.join(out_folder, 'config.json'))
-        self.config['selected_format'] = '.png'
-
-        filelist = [os.path.join(self.fname, f, 'timeseries') for f in os.listdir(self.fname)]
-        filelist = [f for f in filelist if os.path.exists(f+'.json')]
-        # TODO: use only the n_best animals --> most stable odors in common (thresh_res.pckl)
-
-        # filelist = filelist[0:2]
+    def preprocess(self):
 
         self.statusbar.showMessage('hardcore computation stuff going on..')
         progdialog = QtGui.QProgressDialog('hardcore computation stuff going on..',
@@ -202,6 +186,37 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             progdialog.setLabelText('%s: preprocessing' % disp_name)
             QtCore.QCoreApplication.processEvents()
             out = runlib.preprocess(ts, self.config)
+
+
+
+    # TODO: maybe start a new thread for this?
+    def factorize(self):
+
+        baselines = []
+
+        mf_params = {'method': self.config['selected_method'],
+                     'param': self.config['methods'][self.config['selected_method']]}
+        mf_params['param']['variance'] = self.config['n_modes']
+        l.info(mf_params)
+
+
+        self.statusbar.showMessage('hardcore computation stuff going on..')
+        progdialog = QtGui.QProgressDialog('hardcore computation stuff going on..',
+                                            'cancel',
+                                            0, len(filelist), self)
+        progdialog.setMinimumDuration(0)
+        progdialog.setWindowModality(QtCore.Qt.WindowModal)
+        for file_ind, filename in enumerate(filelist):
+
+            disp_name = os.path.basename(filename)
+            progdialog.setValue(file_ind)
+            if progdialog.wasCanceled():
+                print 'hui ui ui'
+                break
+
+            meas_path = os.path.splitext(filename)[0]
+            fname = os.path.basename(meas_path)
+            plot_name_base = os.path.join(out_folder, fname)
 
             # do matrix factorization
             progdialog.setLabelText('%s: factorization' % disp_name)
