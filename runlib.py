@@ -148,11 +148,10 @@ def raw_response_overview(out, fig, prefix=''):
         resp_overview.overlay_image(resp_overview.axes['base'][ind],
                                     resp, threshold=0.3,
                                     title={'label':out['mean_resp'].label_sample[ind], 'size':10})
-        if 'mask' in out and hasattr(out['mask'], 'timecourses'):
-            if not out['mask'].timecourses[ind]:
-                resp_overview.imshow(resp_overview.axes['base'][ind],
-                                     np.ones(resp.shape),
-                                     alpha=0.8)
+        if hasattr(out['mask'], 'timecourses') and not out['mask'].timecourses[ind]:
+            resp_overview.imshow(resp_overview.axes['base'][ind],
+                                 np.ones(resp.shape),
+                                 alpha=0.8)
         resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
     return resp_overview.fig
 

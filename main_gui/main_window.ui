@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>728</width>
-    <height>698</height>
+    <height>724</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -271,10 +271,20 @@
          <item row="6" column="1">
           <widget class="QSpinBox" name="maxcount_spinner"/>
          </item>
-         <item row="7" column="0" colspan="2">
+         <item row="8" column="0" colspan="2">
           <widget class="QPushButton" name="factorize_button">
            <property name="text">
             <string>Factorize</string>
+           </property>
+          </widget>
+         </item>
+         <item row="7" column="0" colspan="2">
+          <widget class="QLabel" name="factorize_label">
+           <property name="styleSheet">
+            <string notr="true">QLabel {color : red; }</string>
+           </property>
+           <property name="text">
+            <string/>
            </property>
           </widget>
          </item>

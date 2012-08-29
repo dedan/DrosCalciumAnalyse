@@ -20,6 +20,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
     def __init__(self, parent=None):
         """initialize the gui, connect signals, add axes objects, etc.."""
         super(MainGui, self).__init__(parent)
+        self.factorized = False
         self.setupUi(self)
         self.results = {}
         self.config_file = 'gui_config.json'
@@ -66,6 +67,9 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             else:
                 res['mask'] = []
         self.update_plot()
+        if self.factorized:
+            self.factorize_label.setText('filtering changed, factorize again!!!')
+
 
     def select_data_folder(self, path=''):
         """select data folder, either from given path or dialog"""
@@ -215,6 +219,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             progdialog.setLabelText('%s: preprocessing' % filename)
             QtCore.QCoreApplication.processEvents()
             self.results[filename] = runlib.preprocess(ts, self.config)
+            self.results[filename]['mask'] = []
         progdialog.setValue(len(self.filelist))
         self.statusbar.showMessage('juhuuu, finished preprocessing', msecs=3000)
         self.filter_box.setEnabled(True)
@@ -222,6 +227,11 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.export_box.setEnabled(True)
         self.session_box.setEnabled(True)
         self.plot_selection_box.setEnabled(True)
+        if self.factorized:
+            self.factorize_label.setText('preprocessig changed, factorize again!!!')
+        ind = self.plot_selection_box.findText('mf_overview')
+        if ind >= 0:
+            self.plot_selection_box.removeItem(ind)
         self.update_plot()
 
     def update_plot(self):
@@ -237,11 +247,12 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
     # TODO: maybe start a new thread for this?
     def factorize(self):
 
+        stimuli_filter = bf.SelectTrials()
+        self.factorize_label.setText('')
         mf_params = {'method': self.config['selected_method'],
                      'param': self.config['methods'][self.config['selected_method']]}
         mf_params['param']['variance'] = self.config['n_modes']
         l.info(mf_params)
-
 
         self.statusbar.showMessage('hardcore computation stuff going on..')
         progdialog = QtGui.QProgressDialog('hardcore computation stuff going on..',
@@ -249,34 +260,30 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                             0, len(self.filelist), self)
         progdialog.setMinimumDuration(0)
         progdialog.setWindowModality(QtCore.Qt.WindowModal)
-        # TODO: iterate over results here
         for file_ind, filename in enumerate(self.filelist):
 
-            # TODO: apply filter when checkbox set
-                        # pp = stimuli_filter(pp, stimuli_selection)
+            res = self.results[filename]
+            if hasattr(res['mask'], 'timecourses'):
+                pp = stimuli_filter(res['pp'], res['mask'])
+            else:
+                pp = res['pp']
 
-
-            disp_name = os.path.basename(filename)
             progdialog.setValue(file_ind)
             if progdialog.wasCanceled():
-                print 'hui ui ui'
                 break
 
-            meas_path = os.path.splitext(filename)[0]
-            fname = os.path.basename(meas_path)
-            plot_name_base = os.path.join(out_folder, fname)
-
             # do matrix factorization
-            progdialog.setLabelText('%s: factorization' % disp_name)
+            progdialog.setLabelText('%s: factorization' % filename)
             QtCore.QCoreApplication.processEvents()
             mf_func = utils.create_mf(mf_params)
-            mf = mf_func(out['pp'])
+            mf = mf_func(pp)
             mf.base.shape = tuple(mf.base.shape)
             self.results[filename]['mf'] = mf
         progdialog.setValue(len(self.filelist))
         self.statusbar.showMessage('yeah, finished!', msecs=2000)
-
-        # TODO: make the mf overview plot available after execution (add to combobox)
+        self.plot_selection_box.insertItem(0, 'mf_overview')
+        self.plot_selection_box.setCurrentIndex(0)
+        self.factorized = True
 
 
 class PlotCanvas(FigureCanvas):
