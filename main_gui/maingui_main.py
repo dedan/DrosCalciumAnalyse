@@ -78,6 +78,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
     def load_controls(self):
         """initialize the control elements (widgets) from config file"""
         config = json.load(open(self.config_file))
+        self.filter_box.setChecked(config['similarity_filter'])
         self.normalize_box.setChecked(config['normalize'])
         self.lowpass_spinner.setValue(config['lowpass'])
         self.median_spinner.setValue(config['medianfilter'])
@@ -102,6 +103,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         '''after each click, save settings to config file'''
         print 'save_controls called, export file is: %s' % export_file
         config = {}
+        config['similarity_filter'] = self.filter_box.isChecked()
         config['normalize'] = self.normalize_box.isChecked()
         config['lowpass'] = self.lowpass_spinner.value()
         config['medianfilter'] = self.median_spinner.value()
