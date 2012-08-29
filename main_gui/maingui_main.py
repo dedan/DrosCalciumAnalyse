@@ -28,6 +28,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                          self.maxcount_label, self.maxcount_spinner],
                                 'stica': [self.alpha_label, self.alpha_spinner],
                                 'sica': []}
+        self.plots = self.plot_widget.ax
 
         # connect signals to slots
         self.preprocess_button.clicked.connect(self.preprocess)
@@ -156,6 +157,17 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         # self.save_controls(export_file=os.path.join(out_folder, 'config.json'))
         # self.config['selected_format'] = '.png'
 
+        # # save mf results
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # ax.axis('off')
+        # for i, spatial_mode in enumerate(mf.base.shaped2D()):
+        #     ax.imshow(spatial_mode, interpolation='nearest')
+        #     fig.savefig(os.path.join(data_folder, 'spatial_%s_%d.png' % (fname, i+1)))
+        # np.savetxt(os.path.join(data_folder, 'temporal_%s.csv' % fname),
+        #            mf.timecourses.T, delimiter=',')
+
+
     def preprocess(self):
 
         self.results = {}
@@ -179,7 +191,6 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             progdialog.setLabelText('%s: loading' % disp_name)
             QtCore.QCoreApplication.processEvents()
             ts.load(meas_path)
-
             ts.shape = tuple(ts.shape)
             progdialog.setLabelText('%s: preprocessing' % disp_name)
             QtCore.QCoreApplication.processEvents()
@@ -188,12 +199,16 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.statusbar.showMessage('juhuuu, finished preprocessing', msecs=3000)
 
         # TODO: activate other groupboxes and plot the results
+        raw_resp_overview = runlib.raw_response_overview(out)
+        raw_resp_unsort_overview = runlib.raw_unsort_response_overview(out)
+        # calc reproducibility and plot quality
+        stimulirep = bf.SampleSimilarityPure()
+        distanceself, distancecross = stimulirep(out['mean_resp'])
+        qual_view = runlib.quality_overview_plot(distanceself, distancecross, ts.name)
 
 
     # TODO: maybe start a new thread for this?
     def factorize(self):
-
-        baselines = []
 
         mf_params = {'method': self.config['selected_method'],
                      'param': self.config['methods'][self.config['selected_method']]}
@@ -204,10 +219,10 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.statusbar.showMessage('hardcore computation stuff going on..')
         progdialog = QtGui.QProgressDialog('hardcore computation stuff going on..',
                                             'cancel',
-                                            0, len(filelist), self)
+                                            0, len(self.filelist), self)
         progdialog.setMinimumDuration(0)
         progdialog.setWindowModality(QtCore.Qt.WindowModal)
-        for file_ind, filename in enumerate(filelist):
+        for file_ind, filename in enumerate(self.filelist):
 
             disp_name = os.path.basename(filename)
             progdialog.setValue(file_ind)
@@ -225,42 +240,16 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             mf_func = utils.create_mf(mf_params)
             mf = mf_func(out['pp'])
             mf.base.shape = tuple(mf.base.shape)
-
-            baselines.append(out['baseline'])
-
-            # save results
-            fig = plt.figure()
-            ax = fig.add_subplot(111)
-            ax.axis('off')
-            for i, spatial_mode in enumerate(mf.base.shaped2D()):
-                ax.imshow(spatial_mode, interpolation='nearest')
-                fig.savefig(os.path.join(data_folder, 'spatial_%s_%d.png' % (fname, i+1)))
-            np.savetxt(os.path.join(data_folder, 'temporal_%s.csv' % fname),
-                       mf.timecourses.T, delimiter=',')
-
-            # plot overview of matrix factorization
-            if self.config['mf_overview']:
-                mf_overview = runlib.mf_overview_plot(mf)
-                mf_overview.savefig(plot_name_base + '_overview.' + self.config['selected_format'])
-
-            # overview of raw responses
-            if self.config['raw_overview']:
-                raw_resp_overview = runlib.raw_response_overview(out)
-                raw_resp_overview.savefig(plot_name_base + '_raw_overview.' +
-                                          self.config['selected_format'])
-                raw_resp_unsort_overview = runlib.raw_unsort_response_overview(out)
-                raw_resp_unsort_overview.savefig(plot_name_base +
-                                                 '_raw_unsort_overview.' +
-                                                 self.config['selected_format'])
-
-            # calc reproducibility and plot quality
-            if self.config['quality']:
-                stimulirep = bf.SampleSimilarityPure()
-                distanceself, distancecross = stimulirep(out['mean_resp'])
-                qual_view = runlib.quality_overview_plot(distanceself, distancecross, ts.name)
-                qual_view.savefig(plot_name_base + '_quality.' + self.config['selected_format'])
-        progdialog.setValue(len(filelist))
+        progdialog.setValue(len(self.filelist))
         self.statusbar.showMessage('yeah, finished!', msecs=2000)
+
+        # TODO: make this plot available after execution
+        # # plot overview of matrix factorization
+        # if self.config['mf_overview']:
+        #     mf_overview = runlib.mf_overview_plot(mf)
+        #     mf_overview.savefig(plot_name_base + '_overview.' + self.config['selected_format'])
+
+
 
 
 class PlotCanvas(FigureCanvas):
@@ -280,8 +269,8 @@ class PlotWidget(QtGui.QWidget):
         self.vbl = QtGui.QVBoxLayout()
         self.vbl.addWidget(self.canvas)
         self.setLayout(self.vbl)
-        ax = self.canvas.fig.add_subplot(111)
-        ax.plot(np.random.rand(10))
+        self.ax = self.canvas.fig.add_subplot(111)
+        self.ax.plot(np.random.rand(10))
 
 
 if __name__ == '__main__':
