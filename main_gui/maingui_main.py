@@ -29,7 +29,13 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                                 'stica': [self.alpha_label, self.alpha_spinner],
                                 'sica': []}
 
+        # init gui
+        self.plot_methods = ['quality', 'sorted overview', 'unsorted overview']
+        self.plot_selection_box.insertItems(0, self.plot_methods)
+
         # connect signals to slots
+        self.session_box.currentIndexChanged.connect(self.update_plot)
+        self.plot_selection_box.currentIndexChanged.connect(self.update_plot)
         self.preprocess_button.clicked.connect(self.preprocess)
         self.factorize_button.clicked.connect(self.factorize)
         for spinner in self.findChildren((QtGui.QSpinBox, QtGui.QDoubleSpinBox)):
@@ -79,7 +85,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.statusbar.showMessage(message, msecs=5000)
 
         filelist = [os.path.join(self.fname, f, 'timeseries') for f in os.listdir(self.fname)]
-        self.filelist = [f for f in filelist if os.path.exists(f+'.json')]
+        self.filelist = [os.path.basename(os.path.dirname(f)) for f in filelist if os.path.exists(f+'.json')]
+        self.session_box.insertItems(0, self.filelist)
         # TODO: use only the n_best animals --> most stable odors in common (thresh_res.pckl)
 
 
@@ -174,44 +181,52 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         progdialog = QtGui.QProgressDialog('', 'cancel', 0, len(self.filelist), self)
         progdialog.setMinimumDuration(0)
         progdialog.setWindowModality(QtCore.Qt.WindowModal)
-        for file_ind, filename in enumerate(self.filelist):
 
-            # TODO: currently always the same name
-            disp_name = os.path.basename(filename)
+        for file_ind, filename in enumerate(self.filelist):
             progdialog.setValue(file_ind)
             if progdialog.wasCanceled():
-                print 'hui ui ui'
                 break
-
-            meas_path = os.path.splitext(filename)[0]
-            fname = os.path.basename(meas_path)
-
             # create timeseries, change shape and preprocess
             ts = bf.TimeSeries()
-            progdialog.setLabelText('%s: loading' % disp_name)
+            progdialog.setLabelText('%s: loading' % filename)
             QtCore.QCoreApplication.processEvents()
-            ts.load(meas_path)
+            ts.load(os.path.join(self.fname, filename, 'timeseries'))
             ts.shape = tuple(ts.shape)
-            progdialog.setLabelText('%s: preprocessing' % disp_name)
+            progdialog.setLabelText('%s: preprocessing' % filename)
             QtCore.QCoreApplication.processEvents()
-            self.results[disp_name] = runlib.preprocess(ts, self.config)
+            self.results[filename] = {}
+            self.results[filename]['out'] = runlib.preprocess(ts, self.config)
         progdialog.setValue(len(self.filelist))
         self.statusbar.showMessage('juhuuu, finished preprocessing', msecs=3000)
         self.filter_box.setEnabled(True)
         self.factorize_box.setEnabled(True)
         self.export_box.setEnabled(True)
+        self.session_box.setEnabled(True)
+        self.plot_selection_box.setEnabled(True)
+        self.update_plot()
 
     def update_plot(self):
         """this is called when a new session or new kind of plot is selected"""
-
-        l.debug('plotting')
-        bla = runlib.raw_response_overview(self.results[disp_name], self.plot_widget.fig)
+        l.debug('update plot')
+        if not hasattr(self, 'results'):
+            l.debug('no results')
+            return
+        self.plot_widget.fig.clear()
+        session = str(self.session_box.currentText())
+        plot_method = str(self.plot_selection_box.currentText())
+        print "plot_method", plot_method
+        if plot_method == 'sorted overview':
+            runlib.raw_response_overview(self.results[session]['out'], self.plot_widget.fig)
+        elif plot_method == 'unsorted overview':
+            runlib.raw_unsort_response_overview(self.results[session]['out'], self.plot_widget.fig)
+        elif plot_method == 'quality':
+            print 'in quality plot'
+            stimulirep = bf.SampleSimilarityPure()
+            distanceself, distancecross = stimulirep(self.results[session]['out']['mean_resp'])
+            runlib.quality_overview_plot(distanceself, distancecross, session, self.plot_widget.fig)
+        elif plot_method == 'mf_overview':
+            runlib.mf_overview_plot(self.results[session]['mf'], fig)
         self.plot_widget.canvas.draw()
-        # raw_resp_unsort_overview = runlib.raw_unsort_response_overview(out)
-        # # calc reproducibility and plot quality
-        # stimulirep = bf.SampleSimilarityPure()
-        # distanceself, distancecross = stimulirep(out['mean_resp'])
-        # qual_view = runlib.quality_overview_plot(distanceself, distancecross, ts.name)
 
 
     # TODO: maybe start a new thread for this?
@@ -250,13 +265,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         progdialog.setValue(len(self.filelist))
         self.statusbar.showMessage('yeah, finished!', msecs=2000)
 
-        # TODO: make this plot available after execution
-        # # plot overview of matrix factorization
-        # if self.config['mf_overview']:
-        #     mf_overview = runlib.mf_overview_plot(mf)
-        #     mf_overview.savefig(plot_name_base + '_overview.' + self.config['selected_format'])
-
-
+        # TODO: make the mf overview plot available after execution (add to combobox)
 
 
 class PlotCanvas(FigureCanvas):
