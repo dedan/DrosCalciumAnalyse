@@ -38,7 +38,7 @@ output: plots (in all plots activity means the median activity for a certain odo
 @author: stephan.gabler@gmail.com
 """
 
-import os, glob, json, math
+import os, glob, json, math, csv, __builtin__
 import itertools as it
 from collections import defaultdict
 from NeuralImageProcessing.pipeline import TimeSeries
@@ -62,6 +62,8 @@ comparisons = [(u'vlPRCb', u'vlPRCt'),
                (u'iPN', u'blackhole')]
 main_regions = [u'iPN', u'iPNtract', u'vlPRCt']
 to_turn = ['120112b_neu', '111012a', '111017a_neu', '111018a', '110902a']
+lesion_table_path = '/Users/dedan/Dropbox/results/microcuts.csv'
+lesion_data = 'mic'
 
 luts_path = os.path.join(os.path.dirname(__file__), 'colormap_luts')
 filelist = glob.glob(os.path.join(luts_path, '*.lut'))
@@ -74,9 +76,9 @@ for i, fname in enumerate(filelist):
     colormaps[main_regions[i]] = plt.cm.hsv_r
 
 format = 'png'
-integrate = True
+integrate = False
 results_path = '/Users/dedan/projects/fu/results/'
-load_path = os.path.join(results_path, 'simil80n_bestFalse', 'nnma')
+load_path = os.path.join(results_path, 'simil80n_bestFalse', 'sica', lesion_data)
 save_path = os.path.join(load_path, 'plots')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
@@ -109,6 +111,15 @@ filelist = [f for f in filelist if not 'selection' in os.path.basename(f)]
 average_over_stimulus_repetitions = bf.SingleSampleResponse()
 integrator = bf.StimulusIntegrator(threshold= -1000)
 
+# read lesion-tract table into dictionary for easy access
+if lesion_data:
+    les_dict = {}
+    lesion_table = list(csv.reader(open(lesion_table_path, 'rb'), delimiter='\t'))
+    for row in lesion_table[1:]:
+        les_dict[row[0]] = {}
+        les_dict[row[0]]['l'] = row[1]
+        les_dict[row[0]]['r'] = row[2]
+
 # read data (matrix factorization results) to dictionary
 l.info('read files from: %s' % load_path)
 for fname in filelist:
@@ -127,6 +138,16 @@ for fname in filelist:
         l.info('taking %s because found in selection' % name)
     ts = TimeSeries()
     ts.load(os.path.splitext(fname)[0])
+
+    if lesion_data:
+        new_labels = []
+        for label in ts.label_sample:
+            if label[0] == 'm':
+                new_labels.append(label[1:] + '-' + les_dict[fname_base][side])
+            else:
+                new_labels.append(label)
+        ts.label_sample = new_labels
+
     if integrate:
         data[name] = integrator(average_over_stimulus_repetitions(ts))
     else:
@@ -149,6 +170,8 @@ for region_label in all_region_labels:
     for animal, regions in labeled_animals.items():
 
         # load data and extract trial shape
+        if not animal in data:
+            continue
         ts = data[animal]
         trial_shaped = ts.trial_shaped()
         trial_length = trial_shaped.shape[1]
@@ -190,13 +213,29 @@ for region_label in all_region_labels:
         t_modes_ma = [[y for y in row if y] for row in t_modes_ma.T]
         ax.boxplot(t_modes_ma)
     else:
-        l = len(medians[region_label])
-        p25 = scoreatpercentile(t_modes_ma, 25)
-        p75 = scoreatpercentile(t_modes_ma, 75)
-        ax.fill_between(range(l), p25, p75, linewidth=0, color='0.75')
-        ax.plot(medians[region_label], linewidth=0.5, color='0')
-        ax.set_xticks(range(0, l, ts.timepoints))
-    ax.set_xticklabels(list(all_stimuli), rotation='90')
+        if lesion_data:
+            m = medians[region_label]
+            l = len(m)
+            cols = ['r', 'g', 'b']
+            labels = ['intact', 'iPN', 'vlPrc']
+            for i in range(3):
+                idx = __builtin__.sum([range(j, j+20) for j in range(i*20, 660, 60)], [])
+                d = m[idx]
+                p25 = scoreatpercentile(t_modes_ma, 25)
+                p75 = scoreatpercentile(t_modes_ma, 75)
+                ax.fill_between(range(len(d)), p25[idx], p75[idx], linewidth=0, color=cols[i], alpha=0.2)
+                ax.plot(d, linewidth=0.5, color=cols[i], label=labels[i])
+                ax.set_xticks(range(0, len(d), ts.timepoints))
+                ax.set_xticklabels(list(all_stimuli)[::3], rotation='90')
+            plt.legend(labels)
+        else:
+            l = len(medians[region_label])
+            p25 = scoreatpercentile(t_modes_ma, 25)
+            p75 = scoreatpercentile(t_modes_ma, 75)
+            ax.fill_between(range(l), p25, p75, linewidth=0, color='0.75')
+            ax.plot(medians[region_label], linewidth=0.5, color='0')
+            ax.set_xticks(range(0, l, ts.timepoints))
+            ax.set_xticklabels(list(all_stimuli), rotation='90')
     plt.savefig(os.path.join(save_path, region_label + add + '.' + format))
 
     # spatial base plots
@@ -224,7 +263,6 @@ for region_label in all_region_labels:
     fig.fig.savefig(os.path.join(save_path, region_label + add + '_spatial.' + format))
 
     # write the data to csv files
-    assert(len(all_stimuli)==t_modes.shape[1])
     assert(len(t_modes_names)==t_modes.shape[0])
     with open(os.path.join(save_path, region_label + add + '.csv'), 'w') as f:
         f.write(', ' + ', '.join(all_stimuli) + '\n')
@@ -359,149 +397,3 @@ if integrate:
     ax.set_xticklabels(new_order, rotation='90')
     plt.savefig(os.path.join(save_path, 'split_heatmap_valenz.' + format))
 
-
-    # prepare data for 3 d plots
-    tmp_dat = {}
-    for i in range(len(all_stimuli)):
-        odor, concen = all_stimuli[i].split('_')
-        if not odor in tmp_dat:
-            tmp_dat[odor] = {}
-        tmp_dat[odor][concen] = {}
-        c = plt.cm.hsv(float(all_odors.index(odor)) / len(all_odors))
-        tmp_dat[odor][concen]['color'] = c
-
-        # add color to code valenz (if valenz available)
-        if all_stimuli[i] in valenz:
-            c = plt.cm.RdYlGn(valenz[all_stimuli[i]])
-            tmp_dat[odor][concen]['valenz_color'] = c
-            tmp_dat[odor][concen]['valenz'] = valenz[all_stimuli[i]]
-            tmp_dat[odor][concen]['valenz_orig'] = valenz_orig[all_stimuli[i]]
-        tmp_dat[odor][concen]['data'] = hm_data[:, i]
-    symbols = {'-1': 's', '-2': 's', '-3': 'o', '-5': 'o', '0': 'x'}
-
-
-    # 3d plot of the data also shown as heatmap
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    for odor in tmp_dat:
-        for concen in tmp_dat[odor]:
-            ax.scatter(*[[i] for i in tmp_dat[odor][concen]['data']],
-                       edgecolors=tmp_dat[odor][concen]['color'], facecolors='none',
-                       marker=symbols[concen], label=odor)
-        ax.plot([], [], 'o', c=tmp_dat[odor][concen]['color'], label=odor)
-        s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
-        bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
-        ax.plot(*[x for x in bla.T], c=tmp_dat[odor][str(concen)]['color'])
-    ax.set_xlabel(main_regions[0])
-    ax.set_ylabel(main_regions[1])
-    ax.set_zlabel(main_regions[2])
-    plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
-    plt.savefig(os.path.join(save_path, '3dscatter.' + format))
-
-    # concentration matrix plot
-    fig = plt.figure()
-    N = 3
-    for i in range(3):
-        for j in range(3):
-            if i > j:
-                ax = fig.add_subplot(N, N, i*N+j+1)
-                for odor in tmp_dat:
-                    for concen in tmp_dat[odor]:
-                        if int(concen) >= -2:
-                            ax.scatter(tmp_dat[odor][concen]['data'][i], tmp_dat[odor][concen]['data'][j],
-                                       edgecolors=tmp_dat[odor][concen]['color'], facecolors='none',
-                                       marker=symbols[concen], label=odor)
-                    s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
-                    bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
-                    ax.plot(bla[:,i], bla[:,j], c=tmp_dat[odor][str(concen)]['color'])
-                ax.set_xlabel(main_regions[i])
-                ax.set_ylabel(main_regions[j])
-                ax.set_xticks([])
-                ax.set_yticks([])
-            elif i == j:
-                ax = fig.add_subplot(N, N, i*N+j+1)
-                bla = np.array([tmp_dat[o][c]['data'][i]
-                                for o in tmp_dat
-                                for c in tmp_dat[o]])
-                ax.hist(bla, color='k')
-                ax.set_title(main_regions[i])
-                ax.set_xticks([])
-                ax.set_yticks([])
-
-    plt.savefig(os.path.join(save_path, 'matrix.' + format))
-
-    # 3d valenz plot
-    symbols = {'-1': 'o', '-2': 'o', '-3': 'o', '-5': 'o', '0': 'x'}
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    for odor in tmp_dat:
-        for concen in tmp_dat[odor]:
-            if 'valenz_color' in tmp_dat[odor][concen]:
-                ax.scatter(*[[i] for i in tmp_dat[odor][concen]['data']],
-                           edgecolors=tmp_dat[odor][concen]['valenz_color'],
-                           facecolors=tmp_dat[odor][concen]['valenz_color'],
-                           marker=symbols[concen], label=odor)
-                ax.plot([], [], 'o', c=tmp_dat[odor][concen]['valenz_color'], label=odor)
-                s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
-                bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
-                ax.plot(*[x for x in bla.T], c='0.5')
-    ax.set_xlabel(main_regions[0])
-    ax.set_ylabel(main_regions[1])
-    ax.set_zlabel(main_regions[2])
-    #plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
-    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + format))
-
-    regressor = linear_model.LinearRegression(fit_intercept=False)
-    x, y = [], []
-    for odor in tmp_dat:
-        for concen in tmp_dat[odor]:
-            if 'valenz_orig' in tmp_dat[odor][concen]:
-                t = tmp_dat[odor][concen]
-                x.append([t['data'][2], t['data'][0]])
-                y.append(t['valenz_orig'])
-    fit = regressor.fit(x,y)
-    alpha = fit.coef_[1]
-
-    agg = defaultdict(list)
-    for odor in tmp_dat:
-        for concen in tmp_dat[odor]:
-            if 'valenz_orig' in tmp_dat[odor][concen]:
-                t = tmp_dat[odor][concen]
-                agg['val'].append(t['valenz_orig'])
-                for i in range(3):
-                    agg[main_regions[i]].append(t['data'][i])
-                agg['ratio'].append(tmp_dat[odor][concen]['data'][2] /
-                                    tmp_dat[odor][concen]['data'][0])
-                agg['diff'].append(tmp_dat[odor][concen]['data'][2] -
-                                   alpha * tmp_dat[odor][concen]['data'][0])
-    idx = np.argmax(agg['ratio'])
-    agg['ratio'].pop(idx)
-
-
-    # valenz vs. activation plot
-    fig = plt.figure()
-    N = 3
-    for i in range(N):
-        ax = fig.add_subplot(N, 1, i)
-        ax.scatter(agg[main_regions[i]], agg['val'])
-        ax.set_title('%s %.2f' % (main_regions[i], np.corrcoef(agg[main_regions[i]], agg['val'])[0,1]))
-        ax.set_xlabel('activation')
-        ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(save_path, 'activation_vs_valenz.' + format))
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.scatter(agg['diff'], agg['val'])
-    ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(agg['diff'], agg['val'])[0,1])
-    ax.set_xlabel('activation difference')
-    ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(save_path, 'activation(difference)_vs_valenz.' + format))
-
-    agg['val'].pop(idx)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.scatter(agg['ratio'], agg['val'])
-    ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(agg['ratio'], agg['val'])[0,1])
-    ax.set_xlabel('activation ratio')
-    ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(save_path, 'activation(ratio)_vs_valenz.' + format))
