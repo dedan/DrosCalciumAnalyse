@@ -1,3 +1,42 @@
+#!/usr/bin/env python
+# encoding: utf-8
+"""
+This script is used to compare different regions (activation patterns) over data sets
+
+Input to this script is the result of the factorization process (output of runDros
+or created using the new GUI in main_gui). Furthermore a json file is needed which
+associates each spatial mode of the factorization to a certain region. Because
+we could not find an automatic method to cluster these regions this has to be
+done by hand with the help of the region_gui.
+
+input: result of factorization, region labels created by region_gui
+output: plots (in all plots activity means the median activity for a certain odor)
+        * spatial mode overview of each label
+        * boxplot of the temporal modes
+        * csv file containing the same information as the temporal boxplot
+        * a 3D scatter plot relating the activity in the 3 main regions to
+          the valenz of an odor (how applealing an odor is).
+        * a 3D scatter plot relating the activity in the 3 main regions to
+          the concentration of an odor. All concentrations are connected by
+          a line and the highest concentration is marked by a square.
+        * same output as previous 3D scatter plot but as a matrix of 2D plots
+          which shows the distribution of the individual activations on the diagonal
+        * scatter plot to look for a linear relationship between the activity
+          in the regions and the valenz (activation_vs_valenz)
+        * scatter plots of simple linear models that could explain the relationship
+          between a combination of regions and the valenz of an odor
+          (activation(difference)_vs_valenz and activation(ratio)_vs_valenz)
+        * temporal comparisons of different regions (comparisons)
+        * heatmap of temporal activation for the three main regions (heatmap)
+        * plot of only the activity (median activity) for each odor and region (medians)
+        * csv file of the activity (median activity) for each odor and region
+        * odors subfolder contains bar plots of activitation per concentration and region
+        * heatmap of activations split by concentration for the 3 main regions (split_heatmap)
+        * heatmap of valenz (when available) split by concentration for the 3
+          main regions (split_heatmap_valenz)
+
+@author: stephan.gabler@gmail.com
+"""
 
 import os, glob, json, math
 import itertools as it
