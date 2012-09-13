@@ -113,15 +113,17 @@ integrator = bf.StimulusIntegrator(threshold= -1000)
 l.info('read files from: %s' % load_path)
 for fname in filelist:
     name = os.path.splitext(os.path.basename(fname))[0]
+    fname_base = name.split('_')[1]
+    side = name.split('_')[2]
 
-    skip = True
-    for sel in selection:
-        if sel in name:
-            skip = False
-    if skip:
-        l.info('skip %s because not in selection' % name)
-        continue
     if selection:
+        skip = True
+        for sel in selection:
+            if sel in name:
+                skip = False
+        if skip:
+            l.info('skip %s because not in selection' % name)
+            continue
         l.info('taking %s because found in selection' % name)
     ts = TimeSeries()
     ts.load(os.path.splitext(fname)[0])
