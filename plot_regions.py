@@ -89,6 +89,12 @@ fulldatadic = {}
 # load the labels created by GUI
 labeled_animals = json.load(open(os.path.join(load_path, 'regions.json')))
 
+# load list of animals to analyse
+selection = []
+if os.path.exists(os.path.join(load_path, 'selection.json')):
+    l.info('found selection file')
+    selection = json.load(open(os.path.join(load_path, 'selection.json')))
+
 # load valenz information (which odor they like)
 valenz = json.load(open(os.path.join(results_path, 'valenz.json')))
 valenz_orig = json.load(open(os.path.join(results_path, 'valenz.json')))
@@ -97,6 +103,7 @@ valenz_orig = json.load(open(os.path.join(results_path, 'valenz.json')))
 filelist = glob.glob(os.path.join(load_path, '*.json'))
 filelist = [f for f in filelist if not 'base' in os.path.basename(f)]
 filelist = [f for f in filelist if not 'regions' in os.path.basename(f)]
+filelist = [f for f in filelist if not 'selection' in os.path.basename(f)]
 
 # initialize processing (pipeline) components
 average_over_stimulus_repetitions = bf.SingleSampleResponse()
@@ -105,9 +112,19 @@ integrator = bf.StimulusIntegrator(threshold= -1000)
 # read data (matrix factorization results) to dictionary
 l.info('read files from: %s' % load_path)
 for fname in filelist:
+    name = os.path.splitext(os.path.basename(fname))[0]
+
+    skip = True
+    for sel in selection:
+        if sel in name:
+            skip = False
+    if skip:
+        l.info('skip %s because not in selection' % name)
+        continue
+    if selection:
+        l.info('taking %s because found in selection' % name)
     ts = TimeSeries()
     ts.load(os.path.splitext(fname)[0])
-    name = os.path.splitext(os.path.basename(fname))[0]
     if integrate:
         data[name] = integrator(average_over_stimulus_repetitions(ts))
     else:
@@ -186,7 +203,6 @@ for region_label in all_region_labels:
     for i, (name, s_mode) in enumerate(s_modes):
         n = '_'.join(name.split('_')[:-1])
         filelist = glob.glob(os.path.join(load_path, '*' + n + '_baseline.json'))
-        print name, filelist
         base_series = TimeSeries()
         base_series.load(os.path.splitext(filelist[0])[0])
         base_series.shape = tuple(base_series.shape)
@@ -211,7 +227,6 @@ for region_label in all_region_labels:
     with open(os.path.join(save_path, region_label + add + '.csv'), 'w') as f:
         f.write(', ' + ', '.join(all_stimuli) + '\n')
         for i, mode_name in enumerate(t_modes_names):
-            print 'write'
             f.write(mode_name + ', ' + ', '.join(t_modes[i,:].astype('|S16')) + '\n')
 
 if integrate:
