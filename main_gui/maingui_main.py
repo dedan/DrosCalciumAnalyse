@@ -47,8 +47,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.filter_box.toggled.connect(self.recalculate_filter)
         self.recompute_filter_button.clicked.connect(self.recalculate_filter)
         self.session_box.currentIndexChanged.connect(self.update_plot)
-        # TODO: en/disable plot parameter box
         self.plot_selection_box.currentIndexChanged.connect(self.update_plot)
+        self.plot_selection_box.currentIndexChanged.connect(self.change_plot_parameters)
         self.preprocess_button.clicked.connect(self.preprocess)
         self.factorize_button.clicked.connect(self.factorize)
         for spinner in self.findChildren((QtGui.QSpinBox, QtGui.QDoubleSpinBox)):
@@ -65,6 +65,13 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                 self.results = pickle.load(open('cache.pckl'))
                 self.activate_controls()
 
+    def change_plot_parameters(self):
+        """enable or disable the correct plot parameters for a certain plot"""
+        method = str(self.plot_selection_box.currentText())
+        if method == 'sorted overview':
+            self.plot_threshold_box.setEnabled(True)
+        else:
+            self.plot_threshold_box.setEnabled(False)
 
     def recalculate_filter(self):
         """ select stimuli such that their mean correlation distance between the mean
