@@ -39,7 +39,7 @@ output: plots (in all plots activity means the median activity for a certain odo
 @author: stephan.gabler@gmail.com
 """
 
-import os, glob, json, math
+import os, glob, json, math, __builtin__
 import itertools as it
 from collections import defaultdict
 from NeuralImageProcessing.pipeline import TimeSeries
@@ -258,7 +258,8 @@ for region_label in all_region_labels:
     # write the data to csv files
     assert(len(t_modes_names)==t_modes.shape[0])
     with open(os.path.join(save_path, region_label + add + '.csv'), 'w') as f:
-        f.write(', ' + ', '.join(all_stimuli) + '\n')
+        header = __builtin__.sum([[s] * n_frames for s in all_stimuli], [])
+        f.write(', ' + ', '.join(header) + '\n')
         for i, mode_name in enumerate(t_modes_names):
             f.write(mode_name + ', ' + ', '.join(t_modes[i,:].astype('|S16')) + '\n')
 
