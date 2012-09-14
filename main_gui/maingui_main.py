@@ -1,4 +1,4 @@
-import os, sys, glob, json, time, datetime
+import os, sys, glob, json, time, datetime, pickle
 import numpy as np
 import pylab as plt
 from NeuralImageProcessing import basic_functions as bf
@@ -13,6 +13,8 @@ import logging as l
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
+
+debugging = False
 
 class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
     '''gui main class'''
@@ -52,6 +54,16 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             check_box.stateChanged.connect(self.save_controls)
         self.methods_box.currentIndexChanged.connect(self.mf_method_changed)
         self.load_controls()
+
+        # load cached preprocessing results in debugging mode
+        if debugging:
+            if os.path.exists('cache.pckl'):
+                self.results = pickle.load(open('cache.pckl'))
+                self.filter_box.setEnabled(True)
+                self.factorize_box.setEnabled(True)
+                self.export_box.setEnabled(True)
+                self.session_box.setEnabled(True)
+                self.plot_selection_box.setEnabled(True)
 
     def recalculate_filter(self):
         """ select stimuli such that their mean correlation distance between the mean
@@ -234,9 +246,14 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             self.plot_selection_box.removeItem(ind)
         self.update_plot()
 
+        # debugging caching
+        if debugging:
+            pickle.dump(self.results, open('cache.pckl', 'w'))
+
+
     def update_plot(self):
         """this is called when a new session or new kind of plot is selected"""
-        l.debug('update plot')
+        l.debug('update plot called')
         if self.results:
             self.plot_widget.fig.clear()
             session = str(self.session_box.currentText())
@@ -312,12 +329,7 @@ if __name__ == '__main__':
     my_gui.show()
     app.setActiveWindow(my_gui)
 
-    debugging = False
-    if debugging:
-        my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_gui_test/')
-        my_gui.factorize()
-    else:
-        my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_gui_test/')
+    my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_gui_test/')
 
     sys.exit(app.exec_())
 
