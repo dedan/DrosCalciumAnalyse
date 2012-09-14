@@ -97,6 +97,12 @@ if os.path.exists(os.path.join(load_path, 'selection.json')):
     l.info('found selection file')
     selection = json.load(open(os.path.join(load_path, 'selection.json')))
 
+# load stimulus selection list
+stim_selection = []
+if os.path.exists(os.path.join(load_path, 'stim_selection.json')):
+    l.info('found stimulus selection file')
+    stim_selection = json.load(open(os.path.join(load_path, 'stim_selection.json')))
+
 # load valenz information (which odor they like)
 valenz = json.load(open(os.path.join(results_path, 'valenz.json')))
 valenz_orig = json.load(open(os.path.join(results_path, 'valenz.json')))
@@ -136,6 +142,8 @@ for fname in filelist:
 
 # get all stimuli and region labels
 all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
+if not stim_selection:
+    stim_selection = all_stimuli
 all_region_labels = list(set(it.chain.from_iterable([labels for labels in labeled_animals.values()])))
 l.debug('all_stimuli: %s' % all_stimuli)
 l.debug('all_region_labels: %s' % all_region_labels)
@@ -214,7 +222,10 @@ for region_label in all_region_labels:
     fig.suptitle(region_label)
     ax = fig.add_subplot(111)
     # mask it for nans (! True in the mask means exclusion)
-    t_modes_ma = np.ma.array(t_modes, mask=np.isnan(t_modes))
+    stim_selection_idxs = [all_stimuli.index(i) for i in stim_selection]
+    if not integrate:
+        stim_selection_idxs = __builtin__.sum([range(i*20, i*20+20) for i in stim_selection_idxs], [])
+    t_modes_ma = np.ma.array(t_modes[:, stim_selection_idxs], mask=np.isnan(t_modes[:, stim_selection_idxs]))
     fulldatadic[region_label] = t_modes_ma
     medians[region_label] = np.ma.extras.median(t_modes_ma, axis=0)
     if integrate:
@@ -228,7 +239,7 @@ for region_label in all_region_labels:
         ax.fill_between(range(l), p25, p75, linewidth=0, color='0.75')
         ax.plot(medians[region_label], linewidth=0.5, color='0')
         ax.set_xticks(range(0, l, ts.timepoints))
-    ax.set_xticklabels(list(all_stimuli), rotation='90')
+    ax.set_xticklabels(list(stim_selection), rotation='90')
     plt.savefig(os.path.join(save_path, region_label + add + '.' + format))
 
     # spatial base plots
