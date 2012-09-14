@@ -42,8 +42,10 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.plot_selection_box.insertItems(0, basic_plot_methods)
         self.plot_threshold_box.insertItems(0, [str(x/10.) for x in range(11)])
         self.plot_threshold_box.setCurrentIndex(3)
+        self.format_box.insertItems(0, ['png', 'jpg', 'svg', 'pdf'])
 
         # connect signals to slots
+        self.plot_export_button.clicked.connect(self.export_results)
         self.filter_box.toggled.connect(self.recalculate_filter)
         self.recompute_filter_button.clicked.connect(self.recalculate_filter)
         self.session_box.currentIndexChanged.connect(self.update_plot)
@@ -151,6 +153,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.raw_overview_box.setChecked(config['raw_overview'])
         self.raw_unsort_overview_box.setChecked(config['raw_unsort_overview'])
         self.quality_box.setChecked(config['quality'])
+        self.format_box.setCurrentIndex(self.format_box.findText(config['format']))
         self.spars_par1_spinner.setValue(config['methods']['nnma']['spars_par1'])
         self.spars_par2_spinner.setValue(config['methods']['nnma']['spars_par2'])
         self.smoothness_spinner.setValue(config['methods']['nnma']['smoothness'])
@@ -172,7 +175,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         config['mf_overview'] = self.mf_overview_box.isChecked()
         config['raw_overview'] = self.raw_overview_box.isChecked()
         config['raw_unsort_overview'] = self.raw_unsort_overview_box.isChecked()
-        config['quality'] =  self.quality_box.isChecked()
+        config['quality'] = self.quality_box.isChecked()
+        config['format'] = str(self.format_box.currentText())
         config['methods'] = {'nnma': {}, 'stica': {}, 'sica': {}}
         config['methods']['nnma']['spars_par1'] = self.spars_par1_spinner.value()
         config['methods']['nnma']['spars_par2'] = self.spars_par2_spinner.value()
