@@ -34,6 +34,7 @@ output: plots (in all plots activity means the median activity for a certain odo
         * heatmap of activations split by concentration for the 3 main regions (split_heatmap)
         * heatmap of valenz (when available) split by concentration for the 3
           main regions (split_heatmap_valenz)
+        * plot of latencies of the maximum response per stimulus and region
 
 @author: stephan.gabler@gmail.com
 """
@@ -62,6 +63,7 @@ comparisons = [(u'vlPRCb', u'vlPRCt'),
                (u'iPN', u'blackhole')]
 main_regions = [u'iPN', u'iPNtract', u'vlPRCt']
 to_turn = ['120112b_neu', '111012a', '111017a_neu', '111018a', '110902a']
+n_frames = 20
 
 luts_path = os.path.join(os.path.dirname(__file__), 'colormap_luts')
 filelist = glob.glob(os.path.join(luts_path, '*.lut'))
@@ -74,7 +76,7 @@ for i, fname in enumerate(filelist):
     colormaps[main_regions[i]] = plt.cm.hsv_r
 
 format = 'png'
-integrate = True
+integrate = False
 results_path = '/Users/dedan/projects/fu/results/'
 load_path = os.path.join(results_path, 'simil80n_bestFalse', 'nnma')
 save_path = os.path.join(load_path, 'plots')
@@ -176,6 +178,33 @@ for region_label in all_region_labels:
 
 
     add = '_integrated' if integrate else ''
+
+    # latency plots
+    if not integrate:
+
+        n_animals = t_modes.shape[0]
+        n_stimuli = t_modes.shape[1]
+
+        res = np.zeros((n_animals, n_stimuli/n_frames))
+
+        for animal_index in range(n_animals):
+            for i, stim_begin in enumerate(range(0, n_stimuli, n_frames)):
+                stimulus = t_modes[animal_index, stim_begin:stim_begin+n_frames]
+                if np.all(np.isnan(stimulus)):
+                    res[animal_index, i] = np.nan
+                else:
+                    res[animal_index, i] = np.argmax(stimulus)
+
+        res_ma = np.ma.array(res, mask=np.isnan(res))
+        # make it a list because boxplot has a problem with masked arrays
+        res_ma = [[y for y in row if y] for row in res_ma.T]
+        fig = plt.figure()
+        fig.suptitle(region_label)
+        ax = fig.add_subplot(111)
+        ax.boxplot(res_ma)
+        ax.set_xticklabels(list(all_stimuli), rotation='90')
+        plt.savefig(os.path.join(save_path, region_label + '_latencies.' + format))
+
 
     # temporal boxplots
     fig = plt.figure()
