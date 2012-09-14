@@ -192,27 +192,27 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.save_controls()
 
     def export_results(self):
-        pass
-        # timestamp = datetime.datetime.now().strftime('%d%m%y_%H%M%S')
-        # out_folder = os.path.join(out_folder, timestamp)
-        # data_folder = os.path.join(out_folder, 'data')
-        # odor_plots_folder = os.path.join(out_folder, 'odors')
-        # os.mkdir(out_folder)
-        # os.mkdir(data_folder)
-        # os.mkdir(odor_plots_folder)
-        # self.save_controls(export_file=os.path.join(out_folder, 'config.json'))
-        # self.config['selected_format'] = '.png'
+        """save all selected plots"""
+        caption = 'select output folder'
+        out_folder = str(QtGui.QFileDialog.getExistingDirectory(caption=caption))
+        sel_methods = {}
+        sel_methods['mf_overview'] = self.mf_overview_box.isChecked()
+        sel_methods['sorted overview'] = self.raw_overview_box.isChecked()
+        sel_methods['unsorted overview'] = self.raw_unsort_overview_box.isChecked()
+        sel_methods['quality'] = self.quality_box.isChecked()
+        params = {'threshold': float(self.plot_threshold_box.currentText())}
 
-        # # save mf results
-        # fig = plt.figure()
-        # ax = fig.add_subplot(111)
-        # ax.axis('off')
-        # for i, spatial_mode in enumerate(mf.base.shaped2D()):
-        #     ax.imshow(spatial_mode, interpolation='nearest')
-        #     fig.savefig(os.path.join(data_folder, 'spatial_%s_%d.png' % (fname, i+1)))
-        # np.savetxt(os.path.join(data_folder, 'temporal_%s.csv' % fname),
-        #            mf.timecourses.T, delimiter=',')
-
+        fig = plt.figure()
+        for session in self.filelist:
+            for plot_method in self.plot_methods:
+                # fig.clear()
+                if sel_methods[plot_method]:
+                    self.plot_methods[plot_method](self.results[session],
+                                                   fig,
+                                                   params)
+                    plot_name = session + '_' + plot_method.replace(' ', '_')
+                    plot_name += '.' + self.config['format']
+                    fig.savefig(os.path.join(out_folder, plot_name))
 
     def preprocess(self):
 
