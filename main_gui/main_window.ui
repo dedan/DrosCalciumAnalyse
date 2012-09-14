@@ -441,7 +441,7 @@
          <item row="5" column="0" colspan="2">
           <widget class="QPushButton" name="plot_export_button">
            <property name="text">
-            <string>Export Plots</string>
+            <string>Export Plots and Factorization</string>
            </property>
           </widget>
          </item>

@@ -145,7 +145,7 @@ def raw_response_overview(out, fig, params):
         resp_overview.imshow(resp_overview.axes['base'][ind],
                              out['sorted_baseline'].shaped2D()[ind],
                              cmap=plt.cm.bone)
-        threshold = params['threshold'] if 'threshold' in params else 0.3
+        threshold = params.get('threshold', 0.3)
         resp_overview.overlay_image(resp_overview.axes['base'][ind],
                                     resp, threshold=threshold,
                                     title={'label':out['mean_resp'].label_sample[ind], 'size':10})

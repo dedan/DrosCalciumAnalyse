@@ -203,18 +203,28 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         sel_methods['unsorted overview'] = self.raw_unsort_overview_box.isChecked()
         sel_methods['quality'] = self.quality_box.isChecked()
         params = {'threshold': float(self.plot_threshold_box.currentText())}
+        json.dumps(self.config, open(os.path.join(out_folder, 'config.json'), 'w'))
+        if not os.path.exists(os.path.join(out_folder, 'timeseries')):
+            os.mkdir(os.path.join(out_folder, 'timeseries'))
 
         fig = plt.figure()
         for session in self.filelist:
             for plot_method in self.plot_methods:
                 fig.clear()
                 if sel_methods[plot_method]:
+
+                    if not os.path.exists(os.path.join(out_folder, plot_method)):
+                        os.mkdir(os.path.join(out_folder, plot_method))
+
                     self.plot_methods[plot_method](self.results[session],
                                                    fig,
                                                    params)
                     plot_name = session + '_' + plot_method.replace(' ', '_')
                     plot_name += '.' + self.config['format']
-                    fig.savefig(os.path.join(out_folder, plot_name))
+                    fig.savefig(os.path.join(out_folder, plot_method, plot_name))
+
+            self.results[session]['mf'].save(os.path.join(out_folder, 'timeseries', session))
+
 
     def preprocess(self):
 
