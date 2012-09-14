@@ -187,7 +187,7 @@ def quality_overview_plot(out, fig, params):
     vis.violin_plot(qual_view.axes['time'][0], [i.flatten() for i in data[1]] ,
                      range(len(distancecross)), 'b')
     qual_view.axes['time'][0].set_xticks(range(len(distancecross)))
-    qual_view.axes['time'][0].set_xticklabels(data[0])
+    qual_view.axes['time'][0].set_xticklabels(data[0], rotation=45)
     for pos, stim in enumerate(data[0]):
         qual_view.axes['time'][0].plot([pos] * len(distanceself[stim]),
                                         distanceself[stim], 'o', mew=2, mec='k', mfc='None')
