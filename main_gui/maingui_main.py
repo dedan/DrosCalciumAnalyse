@@ -245,6 +245,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         if ind >= 0:
             self.plot_selection_box.removeItem(ind)
         self.update_plot()
+        self.raw_unsort_overview_box.setEnabled(True)
+        self.raw_overview_box.setEnabled(True)
 
         # debugging caching
         if debugging:
@@ -257,7 +259,10 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.export_box.setEnabled(True)
         self.session_box.setEnabled(True)
         self.plot_selection_box.setEnabled(True)
-
+        self.mf_overview_box.setEnabled(False)
+        self.raw_overview_box.setEnabled(False)
+        self.raw_unsort_overview_box.setEnabled(False)
+        self.quality_box.setEnabled(True)
 
     def update_plot(self):
         """this is called when a new session or new kind of plot is selected"""
@@ -309,6 +314,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.statusbar.showMessage('yeah, finished!', msecs=2000)
         self.plot_selection_box.insertItem(0, 'mf_overview')
         self.plot_selection_box.setCurrentIndex(0)
+        self.mf_overview_box.setEnabled(True)
         self.factorized = True
 
 
