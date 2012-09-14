@@ -365,40 +365,85 @@
         <property name="title">
          <string>export</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_3">
-         <item>
+        <layout class="QFormLayout" name="formLayout_4">
+         <property name="fieldGrowthPolicy">
+          <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+         </property>
+         <item row="0" column="1">
           <widget class="QCheckBox" name="mf_overview_box">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="0" column="0">
+          <widget class="QLabel" name="label">
            <property name="text">
             <string>factorization overview</string>
            </property>
           </widget>
          </item>
-         <item>
+         <item row="1" column="1">
           <widget class="QCheckBox" name="raw_overview_box">
            <property name="text">
-            <string>raw overview</string>
+            <string/>
            </property>
            <property name="tristate">
             <bool>false</bool>
            </property>
           </widget>
          </item>
-         <item>
+         <item row="2" column="1">
           <widget class="QCheckBox" name="raw_unsort_overview_box">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="3" column="1">
+          <widget class="QCheckBox" name="quality_box">
+           <property name="text">
+            <string/>
+           </property>
+          </widget>
+         </item>
+         <item row="4" column="1">
+          <widget class="QComboBox" name="format_box"/>
+         </item>
+         <item row="1" column="0">
+          <widget class="QLabel" name="label_9">
+           <property name="text">
+            <string>raw overview</string>
+           </property>
+          </widget>
+         </item>
+         <item row="2" column="0">
+          <widget class="QLabel" name="label_10">
            <property name="text">
             <string>raw unsort overview</string>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QCheckBox" name="quality_box">
+         <item row="3" column="0">
+          <widget class="QLabel" name="label_11">
            <property name="text">
             <string>odor quality</string>
            </property>
           </widget>
          </item>
-         <item>
-          <widget class="QComboBox" name="format_combo"/>
+         <item row="4" column="0">
+          <widget class="QLabel" name="label_12">
+           <property name="text">
+            <string>format</string>
+           </property>
+          </widget>
+         </item>
+         <item row="5" column="0" colspan="2">
+          <widget class="QPushButton" name="plot_export_button">
+           <property name="text">
+            <string>Export Plots</string>
+           </property>
+          </widget>
          </item>
         </layout>
        </widget>
