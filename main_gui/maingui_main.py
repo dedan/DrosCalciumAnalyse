@@ -89,6 +89,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             else:
                 res['mask'] = []
         self.update_plot()
+        self.mf_overview_box.setChecked(False)
+        self.mf_overview_box.setEnabled(False)
         if self.factorized:
             self.factorize_label.setText('filtering changed, factorize again!!!')
 
@@ -205,7 +207,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         fig = plt.figure()
         for session in self.filelist:
             for plot_method in self.plot_methods:
-                # fig.clear()
+                fig.clear()
                 if sel_methods[plot_method]:
                     self.plot_methods[plot_method](self.results[session],
                                                    fig,
@@ -247,6 +249,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.update_plot()
         self.raw_unsort_overview_box.setEnabled(True)
         self.raw_overview_box.setEnabled(True)
+        self.quality_box.setEnabled(True)
 
         # debugging caching
         if debugging:
@@ -259,10 +262,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.export_box.setEnabled(True)
         self.session_box.setEnabled(True)
         self.plot_selection_box.setEnabled(True)
+        self.mf_overview_box.setChecked(False)
         self.mf_overview_box.setEnabled(False)
-        self.raw_overview_box.setEnabled(False)
-        self.raw_unsort_overview_box.setEnabled(False)
-        self.quality_box.setEnabled(True)
 
     def update_plot(self):
         """this is called when a new session or new kind of plot is selected"""
