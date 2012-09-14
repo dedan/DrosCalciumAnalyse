@@ -116,7 +116,7 @@ def preprocess(ts, config):
     out['pp'] = pp
     return out
 
-def mf_overview_plot(out, fig):
+def mf_overview_plot(out, fig, params):
     '''plot overview of factorization result
 
         spatial bases on the left, temporal on the right
@@ -135,7 +135,7 @@ def mf_overview_plot(out, fig):
     [ax.set_title(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
     return mf_overview.fig
 
-def raw_response_overview(out, fig, prefix=''):
+def raw_response_overview(out, fig, params):
     '''overview of responses to different odors'''
     resp_overview = vis.VisualizeTimeseries(fig)
     resp_overview.subplot(out['mean_resp'].samplepoints)
@@ -145,8 +145,9 @@ def raw_response_overview(out, fig, prefix=''):
         resp_overview.imshow(resp_overview.axes['base'][ind],
                              out['sorted_baseline'].shaped2D()[ind],
                              cmap=plt.cm.bone)
+        threshold = params['threshold'] if 'threshold' in params else 0.3
         resp_overview.overlay_image(resp_overview.axes['base'][ind],
-                                    resp, threshold=0.3,
+                                    resp, threshold=threshold,
                                     title={'label':out['mean_resp'].label_sample[ind], 'size':10})
         if hasattr(out['mask'], 'timecourses') and not out['mask'].timecourses[ind]:
             resp_overview.imshow(resp_overview.axes['base'][ind],
@@ -155,7 +156,7 @@ def raw_response_overview(out, fig, prefix=''):
         resp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
     return resp_overview.fig
 
-def raw_unsort_response_overview(out, fig, prefix=''):
+def raw_unsort_response_overview(out, fig, params):
     uresp_overview = vis.VisualizeTimeseries(fig)
     uresp_overview.subplot(out['mean_resp_unsort'].samplepoints)
     out['mean_resp_unsort'].strength = []
@@ -170,7 +171,7 @@ def raw_unsort_response_overview(out, fig, prefix=''):
         out['mean_resp_unsort'].strength.append(max_data)
     return uresp_overview.fig
 
-def quality_overview_plot(out, fig):
+def quality_overview_plot(out, fig, params):
     '''draw quality overview
 
        quality is reproducability of responses over odor presentations and especially

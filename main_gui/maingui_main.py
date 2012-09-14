@@ -14,7 +14,7 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-debugging = False
+debugging = True
 
 class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
     '''gui main class'''
@@ -40,11 +40,14 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         # init gui
         basic_plot_methods = ['quality', 'sorted overview', 'unsorted overview']
         self.plot_selection_box.insertItems(0, basic_plot_methods)
+        self.plot_threshold_box.insertItems(0, [str(x/10.) for x in range(11)])
+        self.plot_threshold_box.setCurrentIndex(3)
 
         # connect signals to slots
         self.filter_box.toggled.connect(self.recalculate_filter)
         self.recompute_filter_button.clicked.connect(self.recalculate_filter)
         self.session_box.currentIndexChanged.connect(self.update_plot)
+        # TODO: en/disable plot parameter box
         self.plot_selection_box.currentIndexChanged.connect(self.update_plot)
         self.preprocess_button.clicked.connect(self.preprocess)
         self.factorize_button.clicked.connect(self.factorize)
@@ -52,6 +55,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             spinner.valueChanged.connect(self.save_controls)
         for check_box in self.findChildren(QtGui.QCheckBox):
             check_box.stateChanged.connect(self.save_controls)
+        self.plot_threshold_box.currentIndexChanged.connect(self.update_plot)
         self.methods_box.currentIndexChanged.connect(self.mf_method_changed)
         self.load_controls()
 
@@ -259,7 +263,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             self.plot_widget.fig.clear()
             session = str(self.session_box.currentText())
             plot_method = str(self.plot_selection_box.currentText())
-            self.plot_methods[plot_method](self.results[session], self.plot_widget.fig)
+            params = {'threshold': float(self.plot_threshold_box.currentText())}
+            self.plot_methods[plot_method](self.results[session], self.plot_widget.fig, params)
             self.plot_widget.canvas.draw()
 
     # TODO: maybe start a new thread for this?

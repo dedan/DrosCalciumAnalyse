@@ -296,20 +296,44 @@
     <item>
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="1" column="0">
          <widget class="QComboBox" name="session_box">
           <property name="enabled">
            <bool>false</bool>
           </property>
          </widget>
         </item>
-        <item>
+        <item row="1" column="1">
          <widget class="QComboBox" name="plot_selection_box">
           <property name="enabled">
            <bool>false</bool>
           </property>
          </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="session_label">
+          <property name="text">
+           <string>session</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="QLabel" name="plot_selection_label">
+          <property name="text">
+           <string>plot</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="QLabel" name="plot_threshold_label">
+          <property name="text">
+           <string>threshold</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="QComboBox" name="plot_threshold_box"/>
         </item>
        </layout>
       </item>
@@ -321,7 +345,6 @@
           <verstretch>0</verstretch>
          </sizepolicy>
         </property>
-        <zorder>export_box</zorder>
        </widget>
       </item>
       <item>
