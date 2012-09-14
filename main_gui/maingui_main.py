@@ -59,11 +59,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         if debugging:
             if os.path.exists('cache.pckl'):
                 self.results = pickle.load(open('cache.pckl'))
-                self.filter_box.setEnabled(True)
-                self.factorize_box.setEnabled(True)
-                self.export_box.setEnabled(True)
-                self.session_box.setEnabled(True)
-                self.plot_selection_box.setEnabled(True)
+                self.activate_controls()
+
 
     def recalculate_filter(self):
         """ select stimuli such that their mean correlation distance between the mean
@@ -234,11 +231,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             self.results[filename]['mask'] = []
         progdialog.setValue(len(self.filelist))
         self.statusbar.showMessage('juhuuu, finished preprocessing', msecs=3000)
-        self.filter_box.setEnabled(True)
-        self.factorize_box.setEnabled(True)
-        self.export_box.setEnabled(True)
-        self.session_box.setEnabled(True)
-        self.plot_selection_box.setEnabled(True)
+        self.activate_controls()
         if self.factorized:
             self.factorize_label.setText('preprocessig changed, factorize again!!!')
         ind = self.plot_selection_box.findText('mf_overview')
@@ -249,6 +242,14 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         # debugging caching
         if debugging:
             pickle.dump(self.results, open('cache.pckl', 'w'))
+
+    def activate_controls(self):
+        """activate the widgets after preprocessing"""
+        self.filter_box.setEnabled(True)
+        self.factorize_box.setEnabled(True)
+        self.export_box.setEnabled(True)
+        self.session_box.setEnabled(True)
+        self.plot_selection_box.setEnabled(True)
 
 
     def update_plot(self):
