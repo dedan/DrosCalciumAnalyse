@@ -156,14 +156,10 @@ for region_label in all_region_labels:
             base = base[:, ::-1, :]
             s_mode = s_mode[::-1, :]
 
-        fig.imshow(fig.axes['base'][i],
-                   np.mean(base, axis=0),
-                   cmap=plt.cm.bone)
-        fig.overlay_image(fig.axes['base'][i],
-                          s_mode, threshold=0.2,
-                          title={"label": n},
-                          colormap=colormaps[region_label])
-
+        fig.overlay_workaround(fig.axes['base'][i],
+                           np.mean(base, axis=0), {'cmap':plt.cm.bone},
+                           s_mode, {'threshold':0.2, 'colormap':colormaps[region_label]},
+                           {'title':{"label": n}})
     fig.fig.savefig(os.path.join(save_path, region_label + add + '_spatial.' + format))
 
     # write the data to csv files
