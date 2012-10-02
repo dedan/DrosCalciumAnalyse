@@ -53,6 +53,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.format_box.insertItems(0, ['png', 'jpg', 'svg', 'pdf'])
 
         # connect signals to slots
+        self.format_box.currentIndexChanged.connect(self.save_controls)
         self.plot_export_button.clicked.connect(self.export_results)
         self.filter_box.toggled.connect(self.recalculate_filter)
         self.recompute_filter_button.clicked.connect(self.recalculate_filter)
