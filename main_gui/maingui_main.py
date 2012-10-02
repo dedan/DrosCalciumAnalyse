@@ -222,8 +222,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                     plot_name = session + '_' + plot_method.replace(' ', '_')
                     plot_name += '.' + self.config['format']
                     fig.savefig(os.path.join(out_folder, plot_method, plot_name))
-
-            self.results[session]['mf'].save(os.path.join(out_folder, 'timeseries', session))
+            if 'mf' in self.results[session]:
+                self.results[session]['mf'].save(os.path.join(out_folder, 'timeseries', session))
 
 
     def preprocess(self):
