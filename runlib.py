@@ -142,13 +142,12 @@ def raw_response_overview(out, fig, params):
     for ind, resp in enumerate(out['mean_resp'].shaped2D()):
         max_data = np.max(np.abs(resp))
         resp /= max_data
-        resp_overview.imshow(resp_overview.axes['base'][ind],
-                             out['sorted_baseline'].shaped2D()[ind],
-                             cmap=plt.cm.bone)
         threshold = params.get('threshold', 0.3)
-        resp_overview.overlay_image(resp_overview.axes['base'][ind],
-                                    resp, threshold=threshold,
-                                    title={'label':out['mean_resp'].label_sample[ind], 'size':10})
+        resp_overview.overlay_workaround(resp_overview.axes['base'][ind],
+                                          out['sorted_baseline'].shaped2D()[ind],
+                                          {'cmap':plt.cm.bone},
+                                          resp, {'threshold':threshold},
+                                        {'title':{'label':out['mean_resp'].label_sample[ind], 'size':10}})
         if hasattr(out['mask'], 'timecourses') and not out['mask'].timecourses[ind]:
             resp_overview.imshow(resp_overview.axes['base'][ind],
                                  np.ones(resp.shape),
