@@ -39,7 +39,7 @@ output: plots (in all plots activity means the median activity for a certain odo
 @author: stephan.gabler@gmail.com
 """
 
-import os, glob, json, math, __builtin__
+import os, glob, json, math, csv, __builtin__
 import itertools as it
 from collections import defaultdict
 from NeuralImageProcessing.pipeline import TimeSeries
@@ -63,6 +63,8 @@ comparisons = [(u'vlPRCb', u'vlPRCt'),
                (u'iPN', u'blackhole')]
 main_regions = [u'iPN', u'iPNtract', u'vlPRCt']
 to_turn = ['120112b_neu', '111012a', '111017a_neu', '111018a', '110902a']
+lesion_table_path = '/Users/dedan/Dropbox/results/microcuts.csv'
+lesion_data = 'mic'
 n_frames = 20
 
 luts_path = os.path.join(os.path.dirname(__file__), 'colormap_luts')
@@ -78,7 +80,7 @@ for i, fname in enumerate(filelist):
 format = 'png'
 integrate = False
 results_path = '/Users/dedan/projects/fu/results/'
-load_path = os.path.join(results_path, 'simil80n_bestFalse', 'nnma')
+load_path = os.path.join(results_path, 'simil80n_bestFalse', 'sica', lesion_data)
 save_path = os.path.join(load_path, 'plots')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
@@ -117,6 +119,15 @@ filelist = [f for f in filelist if not 'selection' in os.path.basename(f)]
 average_over_stimulus_repetitions = bf.SingleSampleResponse()
 integrator = bf.StimulusIntegrator(threshold= -1000)
 
+# read lesion-tract table into dictionary for easy access
+if lesion_data:
+    les_dict = {}
+    lesion_table = list(csv.reader(open(lesion_table_path, 'rb'), delimiter='\t'))
+    for row in lesion_table[1:]:
+        les_dict[row[0]] = {}
+        les_dict[row[0]]['l'] = row[1]
+        les_dict[row[0]]['r'] = row[2]
+
 # read data (matrix factorization results) to dictionary
 l.info('read files from: %s' % load_path)
 for fname in filelist:
@@ -135,6 +146,16 @@ for fname in filelist:
         l.info('taking %s because found in selection' % name)
     ts = TimeSeries()
     ts.load(os.path.splitext(fname)[0])
+
+    if lesion_data:
+        new_labels = []
+        for label in ts.label_sample:
+            if label[0] == 'm':
+                new_labels.append(label[1:] + '-' + les_dict[fname_base][side])
+            else:
+                new_labels.append(label)
+        ts.label_sample = new_labels
+
     if integrate:
         data[name] = integrator(average_over_stimulus_repetitions(ts))
     else:
@@ -159,6 +180,8 @@ for region_label in all_region_labels:
     for animal, regions in labeled_animals.items():
 
         # load data and extract trial shape
+        if not animal in data:
+            continue
         ts = data[animal]
         trial_shaped = ts.trial_shaped()
         trial_length = trial_shaped.shape[1]
@@ -233,13 +256,29 @@ for region_label in all_region_labels:
         t_modes_ma = [[y for y in row if y] for row in t_modes_ma.T]
         ax.boxplot(t_modes_ma)
     else:
-        l = len(medians[region_label])
-        p25 = scoreatpercentile(t_modes_ma, 25)
-        p75 = scoreatpercentile(t_modes_ma, 75)
-        ax.fill_between(range(l), p25, p75, linewidth=0, color='0.75')
-        ax.plot(medians[region_label], linewidth=0.5, color='0')
-        ax.set_xticks(range(0, l, ts.timepoints))
-    ax.set_xticklabels(list(stim_selection), rotation='90')
+        if lesion_data:
+            m = medians[region_label]
+            l = len(m)
+            cols = ['r', 'g', 'b']
+            labels = ['intact', 'iPN', 'vlPrc']
+            for i in range(3):
+                idx = __builtin__.sum([range(j, j+20) for j in range(i*20, 660, 60)], [])
+                d = m[idx]
+                p25 = scoreatpercentile(t_modes_ma, 25)
+                p75 = scoreatpercentile(t_modes_ma, 75)
+                ax.fill_between(range(len(d)), p25[idx], p75[idx], linewidth=0, color=cols[i], alpha=0.2)
+                ax.plot(d, linewidth=0.5, color=cols[i], label=labels[i])
+                ax.set_xticks(range(0, len(d), ts.timepoints))
+                ax.set_xticklabels(list(stim_selection)[::3], rotation='90')
+            plt.legend(labels)
+        else:
+            l = len(medians[region_label])
+            p25 = scoreatpercentile(t_modes_ma, 25)
+            p75 = scoreatpercentile(t_modes_ma, 75)
+            ax.fill_between(range(l), p25, p75, linewidth=0, color='0.75')
+            ax.plot(medians[region_label], linewidth=0.5, color='0')
+            ax.set_xticks(range(0, l, ts.timepoints))
+            ax.set_xticklabels(list(stim_selection), rotation='90')
     plt.savefig(os.path.join(save_path, region_label + add + '.' + format))
 
     # spatial base plots
