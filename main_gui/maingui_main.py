@@ -1,3 +1,11 @@
+#!/usr/bin/env python
+# encoding: utf-8
+"""
+Created by Stephan Gabler (stephan.gabler@gmail.com)
+and Jan Sölter (jan_soelter@yahoo.com) at FU-Berlin.
+
+Copyright (c) 2012. All rights reserved.
+"""
 import os, sys, glob, json, time, datetime, pickle
 import numpy as np
 import pylab as plt
