@@ -33,6 +33,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.factorized = False
         self.setupUi(self)
         self.results = {}
+        self.export_methods = {}
         self.config_file = 'gui_config.json'
         self.method_controls = {'nnma': [self.spars_par1_label, self.spars_par1_spinner,
                                          self.spars_par2_label, self.spars_par2_spinner,
@@ -51,6 +52,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.plot_threshold_box.insertItems(0, [str(x/10.) for x in range(11)])
         self.plot_threshold_box.setCurrentIndex(3)
         self.format_box.insertItems(0, ['png', 'jpg', 'svg', 'pdf'])
+        self.export_method_clicked()
 
         # connect signals to slots
         self.format_box.currentIndexChanged.connect(self.save_controls)
@@ -66,6 +68,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             spinner.valueChanged.connect(self.save_controls)
         for check_box in self.findChildren(QtGui.QCheckBox):
             check_box.stateChanged.connect(self.save_controls)
+        for check_box in self.export_box.findChildren(QtGui.QCheckBox):
+            check_box.stateChanged.connect(self.export_method_clicked)
         self.plot_threshold_box.currentIndexChanged.connect(self.update_plot)
         self.methods_box.currentIndexChanged.connect(self.mf_method_changed)
         self.load_controls()
@@ -204,15 +208,23 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                 ui_elem.setVisible(method == current_method)
         self.save_controls()
 
+    def export_method_clicked(self):
+        '''register which export (plot) methods are selected and enable button'''
+        self.export_methods['mf_overview'] = self.mf_overview_box.isChecked()
+        self.export_methods['sorted overview'] = self.raw_overview_box.isChecked()
+        self.export_methods['unsorted overview'] = self.raw_unsort_overview_box.isChecked()
+        self.export_methods['quality'] = self.quality_box.isChecked()
+        self.export_methods['mf_matrices'] = self.mf_save_box.isChecked()
+        print self.export_methods.values()
+        if any(self.export_methods.values()):
+            self.plot_export_button.setEnabled(True)
+        else:
+            self.plot_export_button.setEnabled(False)
+
     def export_results(self):
         """save all selected plots"""
         caption = 'select output folder'
         out_folder = str(QtGui.QFileDialog.getExistingDirectory(caption=caption))
-        sel_methods = {}
-        sel_methods['mf_overview'] = self.mf_overview_box.isChecked()
-        sel_methods['sorted overview'] = self.raw_overview_box.isChecked()
-        sel_methods['unsorted overview'] = self.raw_unsort_overview_box.isChecked()
-        sel_methods['quality'] = self.quality_box.isChecked()
         params = {'threshold': float(self.plot_threshold_box.currentText())}
         json.dump(self.config, open(os.path.join(out_folder, 'config.json'), 'w'))
         if not os.path.exists(os.path.join(out_folder, 'timeseries')):
@@ -239,7 +251,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                     plot_name = session + '_' + plot_method.replace(' ', '_')
                     plot_name += '.' + self.config['format']
                     fig.savefig(os.path.join(out_folder, plot_method, plot_name))
-            if self.mf_save_box.isChecked() and 'mf' in self.results[session]:
+            if  self.export_methods['mf_matrices'] and 'mf' in self.results[session]:
                 self.results[session]['mf'].save(os.path.join(out_folder, 'timeseries', session))
                 self.results[session]['baseline'].save(os.path.join(out_folder, 'timeseries', session + '_baseline'))
 
@@ -296,6 +308,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.mf_overview_box.setEnabled(False)
         self.mf_save_box.setChecked(False)
         self.mf_save_box.setEnabled(False)
+        self.plot_export_button.setEnabled(False)
 
     def update_plot(self):
         """this is called when a new session or new kind of plot is selected"""
