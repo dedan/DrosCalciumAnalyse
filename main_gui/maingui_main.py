@@ -240,8 +240,9 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                     fig.savefig(os.path.join(out_folder, plot_method, plot_name))
             if self.mf_save_box.isChecked() and 'mf' in self.results[session]:
                 self.results[session]['mf'].save(os.path.join(out_folder, 'timeseries', session))
-        progdialog.setValue(len(self.filelist))
+                self.results[session]['baseline'].save(os.path.join(out_folder, 'timeseries', session + '_baseline'))
 
+        progdialog.setValue(len(self.filelist))
 
 
     def preprocess(self):

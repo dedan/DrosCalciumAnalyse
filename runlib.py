@@ -69,12 +69,11 @@ def create_timeseries_from_pngs(path, name):
 
 def preprocess(ts, config):
     # TODO: does not work with mic yet
-
     out = {}
 
     # cut baseline signal (odor starts at frame 8)
     # TODO: set this as parameter
-    out['baseline'] = trial_mean(bf.CutOut((0, 6))(ts))
+    baseline = trial_mean(bf.CutOut((0, 6))(ts))
 
     # TODO: what is this sorted baseline for?
     sorted_baseline = sorted_trials(bf.CutOut((0, 1))(ts))
@@ -89,7 +88,7 @@ def preprocess(ts, config):
     ts = bf.TrialMean(20)(ts)
 
     # compute relative change (w.r.t. baseline)
-    pp = rel_change(ts, out['baseline'])
+    pp = rel_change(ts, baseline)
 
     # apply mask if set in config
     if 'maskfile' in config and config['maskfile']:
@@ -114,6 +113,8 @@ def preprocess(ts, config):
     out['mean_resp_unsort'] = mean_resp_unsort
     out['mean_resp'] = mean_resp
     out['pp'] = pp
+    downsampling_filter = bf.Filter('gauss', 1, downscale=config['spatial_down'])
+    out['baseline'] = downsampling_filter(baseline)
     return out
 
 def mf_overview_plot(out, fig, params):
