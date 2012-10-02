@@ -1,0 +1,1 @@
+{"normalize": false, "spatial_down": 2, "methods": {"sica": {}, "nnma": {"spars_par2": 0.0, "spars_par1": 0.0, "smoothness": 0.0, "maxcount": 0}, "stica": {"alpha": 0.0}}, "format": "png", "selected_method": "nnma", "n_modes": 1, "similarity_threshold": 2.0, "medianfilter": 5, "lowpass": 2}
