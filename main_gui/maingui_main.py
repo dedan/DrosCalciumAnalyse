@@ -91,6 +91,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.update_plot()
         self.mf_overview_box.setChecked(False)
         self.mf_overview_box.setEnabled(False)
+        self.mf_save_box.setChecked(False)
+        self.mf_save_box.setEnabled(False)
         if self.factorized:
             self.factorize_label.setText('filtering changed, factorize again!!!')
 
@@ -222,7 +224,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                     plot_name = session + '_' + plot_method.replace(' ', '_')
                     plot_name += '.' + self.config['format']
                     fig.savefig(os.path.join(out_folder, plot_method, plot_name))
-            if 'mf' in self.results[session]:
+            if self.mf_save_box.isChecked() and 'mf' in self.results[session]:
                 self.results[session]['mf'].save(os.path.join(out_folder, 'timeseries', session))
 
 
@@ -274,6 +276,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.plot_selection_box.setEnabled(True)
         self.mf_overview_box.setChecked(False)
         self.mf_overview_box.setEnabled(False)
+        self.mf_save_box.setChecked(False)
+        self.mf_save_box.setEnabled(False)
 
     def update_plot(self):
         """this is called when a new session or new kind of plot is selected"""
@@ -326,6 +330,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.plot_selection_box.insertItem(0, 'mf_overview')
         self.plot_selection_box.setCurrentIndex(0)
         self.mf_overview_box.setEnabled(True)
+        self.mf_save_box.setEnabled(True)
         self.factorized = True
 
 
