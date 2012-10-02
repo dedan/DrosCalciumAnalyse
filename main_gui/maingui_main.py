@@ -378,7 +378,10 @@ if __name__ == '__main__':
     my_gui.show()
     app.setActiveWindow(my_gui)
 
-    my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_gui_test/')
+    if debugging:
+        my_gui.select_data_folder('/Users/dedan/projects/fu/data/dros_gui_test/')
+    else:
+        my_gui.select_data_folder()
 
     sys.exit(app.exec_())
 
