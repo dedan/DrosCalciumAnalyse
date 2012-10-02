@@ -79,8 +79,8 @@ for i, fname in enumerate(filelist):
 
 format = 'png'
 integrate = False
-results_path = '/Users/dedan/projects/fu/results/'
-load_path = os.path.join(results_path, 'simil80n_bestFalse', 'sica', lesion_data)
+results_path = '/Users/dedan/projects/fu/results/superneu'
+load_path = os.path.join(results_path, 'timeseries')
 save_path = os.path.join(load_path, 'plots')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
@@ -91,7 +91,7 @@ data = {}
 fulldatadic = {}
 
 # load the labels created by GUI
-labeled_animals = json.load(open(os.path.join(load_path, 'regions.json')))
+labeled_animals = json.load(open(os.path.join(results_path, 'regions.json')))
 
 # load list of animals to analyse
 selection = []
@@ -211,7 +211,6 @@ for region_label in all_region_labels:
             s_modes.append((animal, ts.base.trial_shaped2D()[mode, :, :, :].squeeze()))
     t_modes = np.array(t_modes)
 
-
     add = '_integrated' if integrate else ''
 
     # latency plots
@@ -266,7 +265,7 @@ for region_label in all_region_labels:
             cols = ['r', 'g', 'b']
             labels = ['intact', 'iPN', 'vlPrc']
             for i in range(3):
-                idx = __builtin__.sum([range(j, j+20) for j in range(i*20, 660, 60)], [])
+                idx = __builtin__.sum([range(j, j+20) for j in range(i*20, l, 60)], [])
                 d = m[idx]
                 p25 = scoreatpercentile(t_modes_ma, 25)
                 p75 = scoreatpercentile(t_modes_ma, 75)
