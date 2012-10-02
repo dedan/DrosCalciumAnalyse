@@ -167,8 +167,7 @@ for region_label in all_region_labels:
     fig.fig.savefig(os.path.join(save_path, region_label + add + '_spatial.' + format))
 
     # write the data to csv files
-    assert(len(all_stimuli)==t_modes.shape[1])
-    assert(len(t_modes_names)==t_modes.shape[0])
+    assert(len(t_modes_names) == t_modes.shape[0])
     with open(os.path.join(save_path, region_label + add + '.csv'), 'w') as f:
         f.write(', ' + ', '.join(all_stimuli) + '\n')
         for i, mode_name in enumerate(t_modes_names):
