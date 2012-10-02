@@ -203,7 +203,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         sel_methods['unsorted overview'] = self.raw_unsort_overview_box.isChecked()
         sel_methods['quality'] = self.quality_box.isChecked()
         params = {'threshold': float(self.plot_threshold_box.currentText())}
-        json.dumps(self.config, open(os.path.join(out_folder, 'config.json'), 'w'))
+        json.dump(self.config, open(os.path.join(out_folder, 'config.json'), 'w'))
         if not os.path.exists(os.path.join(out_folder, 'timeseries')):
             os.mkdir(os.path.join(out_folder, 'timeseries'))
 
