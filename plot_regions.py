@@ -132,8 +132,12 @@ if lesion_data:
 l.info('read files from: %s' % load_path)
 for fname in filelist:
     name = os.path.splitext(os.path.basename(fname))[0]
-    fname_base = name.split('_')[1]
-    side = name.split('_')[2]
+    if '_' in name:
+        fname_base = name.split('_')[1]
+        side = name.split('_')[2]
+    else:
+        fname_base = name
+        side = 'x'
 
     if selection:
         skip = True

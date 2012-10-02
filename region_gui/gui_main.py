@@ -137,7 +137,7 @@ class MyGui(QtGui.QMainWindow, Ui_RegionGui):
         self.data.shape = tuple(self.data.shape)
         self.data.base.shape = tuple(self.data.base.shape)
         self.data.name = os.path.basename(fname)
-        self.baseline.load('_'.join(fname.split('_')[:-1]) + '_baseline')
+        self.baseline.load(fname + '_baseline')
         self.baseline.shape = tuple(self.baseline.shape)
 
         n_modes = self.data.num_objects
