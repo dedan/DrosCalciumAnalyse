@@ -216,9 +216,15 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         json.dump(self.config, open(os.path.join(out_folder, 'config.json'), 'w'))
         if not os.path.exists(os.path.join(out_folder, 'timeseries')):
             os.mkdir(os.path.join(out_folder, 'timeseries'))
+        progdialog = QtGui.QProgressDialog('export results..',
+                                    'cancel',
+                                    0, len(self.filelist), self)
+        progdialog.setMinimumDuration(0)
+        progdialog.setWindowModality(QtCore.Qt.WindowModal)
 
         fig = plt.figure()
-        for session in self.filelist:
+        for i, session in enumerate(self.filelist):
+            progdialog.setValue(i)
             for plot_method in self.plot_methods:
                 fig.clear()
                 if sel_methods[plot_method]:
@@ -234,6 +240,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                     fig.savefig(os.path.join(out_folder, plot_method, plot_name))
             if self.mf_save_box.isChecked() and 'mf' in self.results[session]:
                 self.results[session]['mf'].save(os.path.join(out_folder, 'timeseries', session))
+        progdialog.setValue(len(self.filelist))
+
 
 
     def preprocess(self):
