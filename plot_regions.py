@@ -39,7 +39,8 @@ output: plots (in all plots activity means the median activity for a certain odo
 @author: stephan.gabler@gmail.com
 """
 
-import os, glob, json, math, csv, __builtin__
+import os, glob, json, math, csv, __builtin__, sys
+from configobj import ConfigObj
 import itertools as it
 from collections import defaultdict
 from NeuralImageProcessing.pipeline import TimeSeries
@@ -55,18 +56,12 @@ import logging as l
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
+reload(utils)
 
 config = ConfigObj(sys.argv[1], unrepr=True)
 
-luts_path = os.path.join(os.path.dirname(__file__), 'colormap_luts')
-filelist = glob.glob(os.path.join(luts_path, '*.lut'))
-first_map = utils.colormap_from_lut(filelist.pop())
-first_map = plt.cm.hsv_r
-colormaps = defaultdict(lambda: first_map)
-assert len(main_regions) == len(filelist)
-for i, fname in enumerate(filelist):
-    #colormaps[main_regions[i]] = utils.colormap_from_lut(fname)
-    colormaps[main_regions[i]] = plt.cm.hsv_r
+lut_colormaps = utils.get_all_lut_colormaps(config['main_regions'])
+crash
 
 load_path = os.path.join(results_path, 'timeseries')
 save_path = os.path.join(results_path, 'region_plots')

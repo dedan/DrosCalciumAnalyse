@@ -1,6 +1,8 @@
-
+import os, glob
 import itertools as it
+from collections import defaultdict
 import numpy as np
+import pylab as plt
 from NeuralImageProcessing import basic_functions as bf
 from matplotlib.colors import LinearSegmentedColormap, ListedColormap
 import array
@@ -20,6 +22,21 @@ def colormap_from_lut(filename):
         data.fromstring(bytes)
         data = np.reshape(data, (3, -1)) / 255.
     return ListedColormap(zip(data[0,:], data[1,:], data[2,:]))
+
+def get_all_lut_colormaps(regions):
+    """creates a mapping from a region name to a colormap (from luts folder)
+       the first map is returned for unknown regions
+    """
+    luts_path = os.path.join(os.path.dirname(__file__), 'colormap_luts')
+    filelist = glob.glob(os.path.join(luts_path, '*.lut'))
+    first_map = colormap_from_lut(filelist.pop())
+    first_map = plt.cm.hsv_r
+    colormaps = defaultdict(lambda: first_map)
+    assert len(regions) == len(filelist)
+    for i, fname in enumerate(filelist):
+        colormaps[regions[i]] = colormap_from_lut(fname)
+    return colormaps
+
 
 def force_aspect(ax, aspect=1):
     im = ax.get_images()
