@@ -66,7 +66,6 @@ to_turn = ['120112b_neu', '111012a', '111017a_neu', '111018a', '110902a']
 lesion_table_path = '/Users/dedan/Dropbox/results/microcuts.csv'
 lesion_data = 'mic'
 n_frames = 20
-integrator_window = (6, 10)
 
 luts_path = os.path.join(os.path.dirname(__file__), 'colormap_luts')
 filelist = glob.glob(os.path.join(luts_path, '*.lut'))
@@ -79,7 +78,11 @@ for i, fname in enumerate(filelist):
     colormaps[main_regions[i]] = plt.cm.hsv_r
 
 format = 'png'
-integrate = False
+
+# temporary solution, can either be False (off), 'mean' (integrate in integrator_window if set)
+# or 'max', which takes the maximum instead of averaging
+integrate = 'mean'
+integrator_window = (6, 10)
 results_path = '/Users/dedan/projects/fu/results/superneu'
 load_path = os.path.join(results_path, 'timeseries')
 save_path = os.path.join(results_path, 'region_plots')
@@ -118,7 +121,7 @@ filelist = [f for f in filelist if not 'selection' in os.path.basename(f)]
 
 # initialize processing (pipeline) components
 average_over_stimulus_repetitions = bf.SingleSampleResponse()
-integrator = bf.StimulusIntegrator(threshold= -1000, window=integrator_window)
+integrator = bf.StimulusIntegrator(method=integrate, threshold= -1000, window=integrator_window)
 
 # read lesion-tract table into dictionary for easy access
 if lesion_data:
