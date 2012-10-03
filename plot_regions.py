@@ -121,7 +121,8 @@ filelist = [f for f in filelist if not 'selection' in os.path.basename(f)]
 
 # initialize processing (pipeline) components
 average_over_stimulus_repetitions = bf.SingleSampleResponse()
-integrator = bf.StimulusIntegrator(method=integrate, threshold= -1000, window=integrator_window)
+if integrate:
+    integrator = bf.StimulusIntegrator(method=integrate, threshold= -1000, window=integrator_window)
 
 # read lesion-tract table into dictionary for easy access
 if lesion_data:
