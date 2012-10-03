@@ -52,29 +52,29 @@ from mpl_toolkits.mplot3d import Axes3D
 from scipy.stats.mstats_basic import scoreatpercentile
 from sklearn import linear_model
 import utils
+import regions_runlib as rl
 import logging as l
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 reload(utils)
+reload(rl)
 
 config = ConfigObj(sys.argv[1], unrepr=True)
 
+# load the dictionary with mapping from a region to a colormap
 lut_colormaps = utils.get_all_lut_colormaps(config['main_regions'])
-crash
 
-load_path = os.path.join(results_path, 'timeseries')
-save_path = os.path.join(results_path, 'region_plots')
+# set paths and create folders
+load_path = os.path.join(config['results_path'], 'timeseries')
+save_path = os.path.join(config['results_path'], 'region_plots')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 if not os.path.exists(os.path.join(save_path, 'odors')):
     os.mkdir(os.path.join(save_path, 'odors'))
 
-data = {}
-fulldatadic = {}
-
 # load the labels created by GUI
-labeled_animals = json.load(open(os.path.join(results_path, 'regions.json')))
+labeled_animals = json.load(open(os.path.join(config['results_path'], 'regions.json')))
 
 # load list of animals to analyse
 selection = []
@@ -89,65 +89,22 @@ if os.path.exists(os.path.join(load_path, 'stim_selection.json')):
     stim_selection = json.load(open(os.path.join(load_path, 'stim_selection.json')))
 
 # load valenz information (which odor they like)
-valenz = json.load(open(os.path.join(results_path, 'valenz.json')))
-valenz_orig = json.load(open(os.path.join(results_path, 'valenz.json')))
-
-# load and filter filelist
-filelist = glob.glob(os.path.join(load_path, '*.json'))
-filelist = [f for f in filelist if not 'base' in os.path.basename(f)]
-filelist = [f for f in filelist if not 'regions' in os.path.basename(f)]
-filelist = [f for f in filelist if not 'selection' in os.path.basename(f)]
-
-# initialize processing (pipeline) components
-average_over_stimulus_repetitions = bf.SingleSampleResponse()
-if integrate:
-    integrator = bf.StimulusIntegrator(method=integrate, threshold= -1000, window=integrator_window)
+valenz = json.load(open(os.path.join(config['results_path'], 'valenz.json')))
+valenz_orig = json.load(open(os.path.join(config['results_path'], 'valenz.json')))
 
 # read lesion-tract table into dictionary for easy access
-if lesion_data:
+if config['lesion_data']:
     les_dict = {}
-    lesion_table = list(csv.reader(open(lesion_table_path, 'rb'), delimiter='\t'))
+    lesion_table = list(csv.reader(open(config['lesion_table_path'], 'rb'), delimiter='\t'))
     for row in lesion_table[1:]:
         les_dict[row[0]] = {}
         les_dict[row[0]]['l'] = row[1]
         les_dict[row[0]]['r'] = row[2]
 
-# read data (matrix factorization results) to dictionary
 l.info('read files from: %s' % load_path)
-for fname in filelist:
-    name = os.path.splitext(os.path.basename(fname))[0]
-    if '_' in name:
-        fname_base = name.split('_')[1]
-        side = name.split('_')[2]
-    else:
-        fname_base = name
-        side = 'x'
-
-    if selection:
-        skip = True
-        for sel in selection:
-            if sel in name:
-                skip = False
-        if skip:
-            l.info('skip %s because not in selection' % name)
-            continue
-        l.info('taking %s because found in selection' % name)
-    ts = TimeSeries()
-    ts.load(os.path.splitext(fname)[0])
-
-    if lesion_data:
-        new_labels = []
-        for label in ts.label_sample:
-            if label[0] == 'm':
-                new_labels.append(label[1:] + '-' + les_dict[fname_base][side])
-            else:
-                new_labels.append(label)
-        ts.label_sample = new_labels
-
-    if integrate:
-        data[name] = integrator(average_over_stimulus_repetitions(ts))
-    else:
-        data[name] = average_over_stimulus_repetitions(ts)
+data = rl.load_mf_results(load_path, selection, config['lesion_data'], config['integrate'])
+print data
+crash
 
 # get all stimuli and region labels
 all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
