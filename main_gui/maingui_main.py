@@ -23,7 +23,7 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-debugging = True
+debugging = False
 
 class ConversionDialog(QtGui.QDialog, Ui_conversion_dialog):
     """docstring for ConversionDialog"""
@@ -66,7 +66,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.plot_methods = {'sorted overview': runlib.raw_response_overview,
                              'unsorted overview': runlib.raw_unsort_response_overview,
                              'quality': runlib.quality_overview_plot,
-                             'mf_overview': runlib.mf_overview_plot,
+                             'mf_overview': runlib.mf_overview_plot_single,
                              'reconstruction': runlib.reconstruction_error_plot}
 
         # init gui
