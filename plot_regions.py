@@ -56,16 +56,7 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-comparisons = [(u'vlPRCb', u'vlPRCt'),
-               (u'iPN', u'iPNsecond'),
-               (u'iPNtract', u'betweenTract'),
-               (u'betweenTract', u'vlPRCb'),
-               (u'iPN', u'blackhole')]
-main_regions = [u'iPN', u'iPNtract', u'vlPRCt']
-to_turn = ['120112b_neu', '111012a', '111017a_neu', '111018a', '110902a']
-lesion_table_path = '/Users/dedan/Dropbox/results/microcuts.csv'
-lesion_data = 'mic'
-n_frames = 20
+config = ConfigObj(sys.argv[1], unrepr=True)
 
 luts_path = os.path.join(os.path.dirname(__file__), 'colormap_luts')
 filelist = glob.glob(os.path.join(luts_path, '*.lut'))
@@ -77,13 +68,6 @@ for i, fname in enumerate(filelist):
     #colormaps[main_regions[i]] = utils.colormap_from_lut(fname)
     colormaps[main_regions[i]] = plt.cm.hsv_r
 
-format = 'png'
-
-# temporary solution, can either be False (off), 'mean' (integrate in integrator_window if set)
-# or 'max', which takes the maximum instead of averaging
-integrate = 'mean'
-integrator_window = (6, 10)
-results_path = '/Users/dedan/projects/fu/results/superneu'
 load_path = os.path.join(results_path, 'timeseries')
 save_path = os.path.join(results_path, 'region_plots')
 if not os.path.exists(save_path):
