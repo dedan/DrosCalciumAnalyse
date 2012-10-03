@@ -84,6 +84,9 @@ def preprocess(ts, config):
     ds_baseline = sorted_baseline.shaped2D()[:, ::ds, ::ds]
     sorted_baseline.shape = tuple(ds_baseline.shape[1:])
     sorted_baseline.set_timecourses(ds_baseline)
+    sorted_baseline.framerate /= ds
+    sorted_baseline.stim_window = (np.floor(1.*sorted_baseline.stim_window[0] / ds),
+                                   np.ceil(1.*sorted_baseline.stim_window[1] / ds))
     out['sorted_baseline'] = sorted_baseline
 
     # temporal downsampling by factor 2 (originally 40 frames)
