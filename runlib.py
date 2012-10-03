@@ -84,13 +84,13 @@ def preprocess(ts, config):
     ds_baseline = sorted_baseline.shaped2D()[:, ::ds, ::ds]
     sorted_baseline.shape = tuple(ds_baseline.shape[1:])
     sorted_baseline.set_timecourses(ds_baseline)
-    sorted_baseline.framerate /= ds
-    sorted_baseline.stim_window = (np.floor(1.*sorted_baseline.stim_window[0] / ds),
-                                   np.ceil(1.*sorted_baseline.stim_window[1] / ds))
     out['sorted_baseline'] = sorted_baseline
 
     # temporal downsampling by factor 2 (originally 40 frames)
     ts = bf.TrialMean(20)(ts)
+    ts.framerate /= ds
+    ts.stim_window = (np.floor(1.*ts.stim_window[0] / ds),
+                      np.ceil(1.*ts.stim_window[1] / ds))
 
     # compute relative change (w.r.t. baseline)
     pp = rel_change(ts, baseline)
@@ -194,7 +194,7 @@ def mf_overview_plot_single(out, fig, params):
                 current_ax.set_xticks(range(0, mf.timepoints, 8))
                 current_ax.set_xticks(range(0, mf.timepoints), minor=True)
                 if mode_ix == mf.num_objects - 1:
-                    current_ax.set_xticklabels(np.arange(0, mf.timepoints, 8) * mf.framerate, fontsize=10, rotation='45')
+                    current_ax.set_xticklabels(np.arange(0, mf.timepoints, 8) / mf.framerate, fontsize=10, rotation='45')
                 else:
                     current_ax.set_xticklabels([])
                 if mode_ix == 0:
