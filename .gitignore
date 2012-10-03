@@ -13,3 +13,4 @@ main_gui/main_window.py
 config/run_dros_sg.ini
 ideas.md
 *.pckl
+main_gui/conversion_dialog.py

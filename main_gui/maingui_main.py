@@ -17,12 +17,24 @@ from PyQt4 import QtGui
 from matplotlib.backends.backend_qt4agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from main_window import Ui_MainGuiWin
+from conversion_dialog import Ui_conversion_dialog
 import logging as l
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
 debugging = True
+
+class ConversionDialog(QtGui.QDialog, Ui_conversion_dialog):
+    """docstring for ConversionDialog"""
+    def __init__(self, arg):
+            # message_text = ('%d data folder has to be converted to our numpy format\n' +
+            #                 'this is only done once') % len(to_convert)
+
+        print arg
+        super(ConversionDialog, self).__init__()
+        self.setupUi(self)
+        self.label.setText(str(arg))
 
 class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
     '''gui main class'''
@@ -126,9 +138,16 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             if not os.path.exists(os.path.join(self.fname, subfolder, 'timeseries.npy')):
                 to_convert.append(subfolder)
         if to_convert:
-            message_text = ('%d data folder has to be converted to our numpy format\n' +
-                            'this is only done once') % len(to_convert)
-            QtGui.QMessageBox.information(self, 'File conversion', message_text)
+
+            diag = ConversionDialog(len(to_convert))
+            if diag.exec_() == QtGui.QDialog.Accepted:
+                l.debug('read values from dialog')
+                framerate = diag.framerate_box.value()
+                stim_window = (diag.stimulus_on_box.value(), diag.stimulus_end_box.value())
+            else:
+                l.info('conversion cancelled')
+                sys.exit()
+
             progdialog = QtGui.QProgressDialog('converting image files..',
                                         'cancel',
                                         0, len(to_convert), self)
@@ -141,6 +160,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                 QtCore.QCoreApplication.processEvents()
 
                 ts = runlib.create_timeseries_from_pngs(folder_path, folder)
+                ts.framerate = framerate
+                ts.stim_window = stim_window
                 ts.save(os.path.join(folder_path, 'timeseries'))
                 if progdialog.wasCanceled():
                     print 'hui ui ui'
