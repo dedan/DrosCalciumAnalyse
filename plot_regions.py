@@ -372,16 +372,6 @@ if integrate:
     ax.set_yticklabels(main_regions)
     plt.savefig(os.path.join(save_path, 'heatmap.' + format))
 
-
-    # filter out the strange CO2 labels
-    co2strange = [u'CO2_1', u'CO2_5']
-    co2rename = {u'CO2_10': u'CO2_-1', u'CO2_-1': u'CO2_-3'}
-    idx = np.array([True if not all_stimuli[i] in co2strange else False for i in range(len(all_stimuli))])
-    hm_data = hm_data[:, idx]
-    all_stimuli = [s for i, s in enumerate(all_stimuli) if idx[i]]
-    for i in range(len(all_stimuli)):
-        if all_stimuli[i] in co2rename:
-            all_stimuli[i] = co2rename[all_stimuli[i]]
     conc = ['-1', '-3', '-5']
     fig = plt.figure()
     dats = []
