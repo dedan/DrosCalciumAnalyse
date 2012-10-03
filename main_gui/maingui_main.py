@@ -240,7 +240,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             progdialog.setValue(i)
             for plot_method in self.plot_methods:
                 fig.clear()
-                if sel_methods[plot_method]:
+                if self.export_methods[plot_method]:
 
                     if not os.path.exists(os.path.join(out_folder, plot_method)):
                         os.mkdir(os.path.join(out_folder, plot_method))
