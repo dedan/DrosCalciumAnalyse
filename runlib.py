@@ -8,6 +8,7 @@ Created by  on 2012-01-27.
 Copyright (c) 2012. All rights reserved.
 """
 import os
+from collections import defaultdict
 from NeuralImageProcessing import basic_functions as bf
 from NeuralImageProcessing import illustrate_decomposition as vis
 from NeuralImageProcessing.pipeline import TimeSeries
@@ -135,6 +136,70 @@ def mf_overview_plot(out, fig, params):
         mf_overview.add_labelshade(mf_overview.axes['time'][ind], mf)
     mf_overview.add_samplelabel(mf_overview.axes['time'][-1], mf, rotation='45', toppos=True)
     [ax.set_title(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
+    return mf_overview.fig
+
+def mf_overview_plot_single(out, fig, params):
+    '''plot overview of factorization result
+
+        spatial bases on the left, temporal in split axes on the right
+    '''
+    mf = out['mf']
+    stimset = list(set(mf.label_sample))
+    stimset.sort()
+
+    mf_overview = vis.VisualizeTimeseries(fig)
+    mf_overview.base_and_singlestimtime(mf.num_objects, stimset)
+    for mode_ix, resp in enumerate(mf.base.shaped2D()):
+        mf_overview.overlay_workaround(mf_overview.axes['base'][mode_ix],
+                               out['sorted_baseline'].shaped2D()[0],
+                               {'cmap':plt.cm.bone, 'extent':[0, mf.base.shape[1], mf.base.shape[0], 0]},
+                               resp, {}, {})
+        # set timeplot parameter
+        max_y = np.max(mf.timecourses) + 0.05
+        min_y = np.min(mf.timecourses) - 0.05
+        max_ylabel = np.floor(max_y * 10) / 10
+        stimrep = defaultdict(lambda: 0)
+
+        # define plotparam
+        plotparam = {0:{'linewidth':2, 'color':'k'},
+                     1:{'linewidth':2, 'color':'k', 'alpha':0.8},
+                     2:{'linewidth':2, 'color':'k', 'alpha':0.6},
+                     3:{'linewidth':2, 'color':'k', 'alpha':0.4}}
+
+        # draw stimuli plots
+        for trial_idx, stim_trial in enumerate(mf.trial_shaped()):
+            trial_name = mf.label_sample[trial_idx]
+            current_ax = vis.axes['time'][mode_ix][trial_name]
+            current_ax.hold(True)
+
+            # generate axes layout
+            if stimrep[trial_name] == 0:
+                # create stimulus bar
+                current_ax.fill_between(np.array(mf.stim_window), max_y, min_y, color='k', alpha=0.2)
+                # set axes layout
+                current_ax.spines['top'].set_color('none')
+                current_ax.spines['right'].set_color('none')
+                current_ax.xaxis.set_ticks_position('bottom')
+                current_ax.yaxis.set_ticks_position('left')
+                current_ax.set_ylim([min_y, max_y])
+                current_ax.set_yticks([0, max_ylabel])
+                current_ax.set_yticks(np.arange(min_y, max_y, 0.1), minor=True)
+                if mf.label_sample[trial_idx] == stimset[0]:
+                    current_ax.set_yticklabels([0, max_ylabel])
+                else:
+                    current_ax.set_yticklabels([])
+                current_ax.set_xticks(range(0, mf.timepoints, 8))
+                current_ax.set_xticks(range(0, mf.timepoints), minor=True)
+                if mode_ix == mf.num_objects - 1:
+                    current_ax.set_xticklabels(np.arange(0, mf.timepoints, 8) * mf.framerate, fontsize=10, rotation='45')
+                else:
+                    current_ax.set_xticklabels([])
+                if mode_ix == 0:
+                    current_ax.set_title(trial_name, fontsize=10)
+
+            vis.plot(current_ax, stim_trial[:, mode_ix], **plotparam[stimrep[trial_name]])
+            stimrep[trial_name] += 1
+    [ax.set_ylabel(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
     return mf_overview.fig
 
 def raw_response_overview(out, fig, params):
