@@ -172,7 +172,7 @@ def mf_overview_plot_single(out, fig, params):
         # draw stimuli plots
         for trial_idx, stim_trial in enumerate(mf.trial_shaped()):
             trial_name = mf.label_sample[trial_idx]
-            current_ax = vis.axes['time'][mode_ix][trial_name]
+            current_ax = mf_overview.axes['time'][mode_ix][trial_name]
             current_ax.hold(True)
 
             # generate axes layout
@@ -200,7 +200,7 @@ def mf_overview_plot_single(out, fig, params):
                 if mode_ix == 0:
                     current_ax.set_title(trial_name, fontsize=10)
 
-            vis.plot(current_ax, stim_trial[:, mode_ix], **plotparam[stimrep[trial_name]])
+            mf_overview.plot(current_ax, stim_trial[:, mode_ix], **plotparam[stimrep[trial_name]])
             stimrep[trial_name] += 1
     [ax.set_ylabel(mf.label_objects[i]) for i, ax in enumerate(mf_overview.axes['base'])]
     return mf_overview.fig
