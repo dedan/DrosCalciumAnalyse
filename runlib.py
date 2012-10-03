@@ -76,6 +76,7 @@ def preprocess(ts, config):
     baseline = trial_mean(bf.CutOut((0, 6))(ts))
 
     # TODO: what is this sorted baseline for?
+    # only used for plotting
     sorted_baseline = sorted_trials(bf.CutOut((0, 1))(ts))
     #downscale sorted baseline
     ds = config['spatial_down']
@@ -159,6 +160,7 @@ def raw_response_overview(out, fig, params):
 def raw_unsort_response_overview(out, fig, params):
     uresp_overview = vis.VisualizeTimeseries(fig)
     uresp_overview.subplot(out['mean_resp_unsort'].samplepoints)
+    # TODO: what is this strength used for?
     out['mean_resp_unsort'].strength = []
     for ind, resp in enumerate(out['mean_resp_unsort'].shaped2D()):
         max_data = np.max(np.abs(resp))
@@ -170,6 +172,28 @@ def raw_unsort_response_overview(out, fig, params):
         uresp_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
         out['mean_resp_unsort'].strength.append(max_data)
     return uresp_overview.fig
+
+def reconstruction_error_plot(out, fig, params):
+    '''plot the responses with the reconstructed response subtracted'''
+    tmp_reconstruction = np.dot(out['mf'].timecourses, out['mf'].base.timecourses)
+    reconstruction = out['mf'].copy()
+    reconstruction.shape = out['mf'].base.shape
+    reconstruction.set_timecourses(tmp_reconstruction)
+    ts_difference = bf.Combine(np.subtract)
+    recon_error = ts_difference(out['mean_resp'],
+                                trial_mean(bf.CutOut((6, 12))(reconstruction)))
+
+    recon_overview = vis.VisualizeTimeseries(fig)
+    recon_overview.subplot(recon_error.samplepoints)
+    for ind, resp in enumerate(recon_error.shaped2D()):
+        max_data = np.max(np.abs(resp))
+        normedresp = resp / max_data
+        recon_overview.imshow(recon_overview.axes['base'][ind],
+                               normedresp,
+                               title={'label': recon_error.label_sample[ind], 'size':10},
+                               colorbar=False, vmin= -1, vmax=1)
+        recon_overview.axes['base'][ind].set_ylabel('%.2f' % max_data)
+    return recon_overview.fig
 
 def quality_overview_plot(out, fig, params):
     '''draw quality overview

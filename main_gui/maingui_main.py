@@ -44,7 +44,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.plot_methods = {'sorted overview': runlib.raw_response_overview,
                              'unsorted overview': runlib.raw_unsort_response_overview,
                              'quality': runlib.quality_overview_plot,
-                             'mf_overview': runlib.mf_overview_plot}
+                             'mf_overview': runlib.mf_overview_plot,
+                             'reconstruction': runlib.reconstruction_error_plot}
 
         # init gui
         basic_plot_methods = ['quality', 'sorted overview', 'unsorted overview']
@@ -215,7 +216,7 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.export_methods['unsorted overview'] = self.raw_unsort_overview_box.isChecked()
         self.export_methods['quality'] = self.quality_box.isChecked()
         self.export_methods['mf_matrices'] = self.mf_save_box.isChecked()
-        print self.export_methods.values()
+        self.export_methods['reconstruction'] = self.recon_error_box.isChecked()
         if any(self.export_methods.values()):
             self.plot_export_button.setEnabled(True)
         else:
@@ -285,9 +286,10 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.activate_controls()
         if self.factorized:
             self.factorize_label.setText('preprocessig changed, factorize again!!!')
-        ind = self.plot_selection_box.findText('mf_overview')
-        if ind >= 0:
-            self.plot_selection_box.removeItem(ind)
+        for plot_method in ['mf_overview', 'reconstruction']:
+            ind = self.plot_selection_box.findText(plot_method)
+            if ind >= 0:
+                self.plot_selection_box.removeItem(ind)
         self.update_plot()
         self.raw_unsort_overview_box.setEnabled(True)
         self.raw_overview_box.setEnabled(True)
@@ -308,6 +310,8 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
         self.mf_overview_box.setEnabled(False)
         self.mf_save_box.setChecked(False)
         self.mf_save_box.setEnabled(False)
+        self.recon_error_box.setChecked(False)
+        self.recon_error_box.setEnabled(False)
         self.plot_export_button.setEnabled(False)
 
     def update_plot(self):
@@ -358,10 +362,11 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
             self.results[filename]['mf'] = mf
         progdialog.setValue(len(self.filelist))
         self.statusbar.showMessage('yeah, finished!', msecs=2000)
-        self.plot_selection_box.insertItem(0, 'mf_overview')
+        self.plot_selection_box.insertItems(0, ['mf_overview', 'reconstruction'])
         self.plot_selection_box.setCurrentIndex(0)
         self.mf_overview_box.setEnabled(True)
         self.mf_save_box.setEnabled(True)
+        self.recon_error_box.setEnabled(True)
         self.factorized = True
 
 
