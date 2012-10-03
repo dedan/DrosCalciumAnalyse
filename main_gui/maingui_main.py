@@ -27,14 +27,24 @@ debugging = True
 
 class ConversionDialog(QtGui.QDialog, Ui_conversion_dialog):
     """docstring for ConversionDialog"""
-    def __init__(self, arg):
-            # message_text = ('%d data folder has to be converted to our numpy format\n' +
-            #                 'this is only done once') % len(to_convert)
-
-        print arg
+    def __init__(self, n_files):
         super(ConversionDialog, self).__init__()
         self.setupUi(self)
-        self.label.setText(str(arg))
+        message_text = ('%d data folder has to be converted to our numpy format\n' +
+                        'this is only done once..\n\n' +
+                        'please enter the following values:') % n_files
+        self.label.setText(message_text)
+        self.stimulus_on_box.valueChanged.connect(self.validate_on_box)
+        self.stimulus_end_box.valueChanged.connect(self.validate_end_box)
+
+    def validate_on_box(self):
+        if self.stimulus_on_box.value() >= self.stimulus_end_box.value():
+            self.stimulus_on_box.setValue(self.stimulus_end_box.value() - 1)
+
+    def validate_end_box(self):
+        if self.stimulus_end_box.value() <= self.stimulus_on_box.value():
+            self.stimulus_end_box.setValue(self.stimulus_on_box.value() + 1)
+
 
 class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
     '''gui main class'''
