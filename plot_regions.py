@@ -81,7 +81,7 @@ format = 'png'
 integrate = False
 results_path = '/Users/dedan/projects/fu/results/superneu'
 load_path = os.path.join(results_path, 'timeseries')
-save_path = os.path.join(load_path, 'plots')
+save_path = os.path.join(results_path, 'region_plots')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 if not os.path.exists(os.path.join(save_path, 'odors')):
