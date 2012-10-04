@@ -115,34 +115,16 @@ for region_label in all_region_labels:
     collected_modes = rl.collect_modes_for(region_label, regions_file_path, data)
 
     # latency plots
-    if not integrate:
+    if not config['integrate']:
+        latency_matrix = rl.compute_latencies(collected_modes, config['n_frames'])
+        fig = rl.plot_latencies(latency_matrix, region_label, all_stimuli)
+        fig.savefig(os.path.join(save_path, region_label + '_latencies.' + config['format']))
 
-        n_animals = collected_modes['t_modes'].shape[0]
-        n_stimuli = collected_modes['t_modes'].shape[1]
-
-        res = np.zeros((n_animals, n_stimuli/n_frames))
-
-        for animal_index in range(n_animals):
-            for i, stim_begin in enumerate(range(0, n_stimuli, n_frames)):
-                stimulus = collected_modes['t_modes'][animal_index, stim_begin:stim_begin+n_frames]
-                if np.all(np.isnan(stimulus)):
-                    res[animal_index, i] = np.nan
-                else:
-                    res[animal_index, i] = np.argmax(stimulus)
-
-        res_ma = np.ma.array(res, mask=np.isnan(res))
-        # make it a list because boxplot has a problem with masked arrays
-        res_ma = [[y for y in row if y] for row in res_ma.T]
-        fig = plt.figure()
-        fig.suptitle(region_label)
-        ax = fig.add_subplot(111)
-        ax.boxplot(res_ma)
-        ax.set_xticklabels(list(all_stimuli), rotation='90')
-        plt.savefig(os.path.join(save_path, region_label + '_latencies.' + format))
+        # TODO: write generic function to write CSVs with headers
         with open(os.path.join(save_path, region_label + '_latencies.csv'), 'w') as f:
             f.write(', ' + ', '.join(all_stimuli) + '\n')
-            for i, mode_name in enumerate(t_modes_names):
-                f.write(mode_name + ', ' + ', '.join(res[i,:].astype('|S16')) + '\n')
+            for i, mode_name in enumerate(collected_modes['t_modes_names']):
+                f.write(mode_name + ', ' + ', '.join(latency_matrix[i,:].astype('|S16')) + '\n')
 
     # temporal boxplots
     fig = plt.figure()

@@ -16,6 +16,37 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
+def compute_latencies(collected_modes, n_frames):
+    """latency: time (in frames) of the maximum response (peak)"""
+    n_animals = collected_modes['t_modes'].shape[0]
+    n_stimuli = collected_modes['t_modes'].shape[1]
+
+    res = np.zeros((n_animals, n_stimuli/n_frames))
+
+    for animal_index in range(n_animals):
+        for i, stim_begin in enumerate(range(0, n_stimuli, n_frames)):
+            stimulus = collected_modes['t_modes'][animal_index, stim_begin:stim_begin+n_frames]
+            if np.all(np.isnan(stimulus)):
+                res[animal_index, i] = np.nan
+            else:
+                res[animal_index, i] = np.argmax(stimulus)
+    return res
+
+def plot_latencies(latency_matrix, region_label, all_stimuli):
+    """boxplot for the distribution of latencies
+
+       latency: time (in frames) of the maximum response (peak)
+    """
+    res_ma = np.ma.array(latency_matrix, mask=np.isnan(latency_matrix))
+    # make it a list because boxplot has a problem with masked arrays
+    res_ma = [[y for y in row if y] for row in res_ma.T]
+    fig = plt.figure()
+    fig.suptitle(region_label)
+    ax = fig.add_subplot(111)
+    ax.boxplot(res_ma)
+    ax.set_xticklabels(list(all_stimuli), rotation='90')
+    return fig
+
 def collect_modes_for(region_label, regions_json_path, data):
     """collect all spatial and temporal modes for a given region_label
 
