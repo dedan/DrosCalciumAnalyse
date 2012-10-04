@@ -169,26 +169,10 @@ if config['integrate']:
     fig = rl.median_comparison_plot(medians, config['comparisons'], all_stimuli)
     fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
 
-    # odor-region comparison plots
     all_odors = sorted(set([s.split('_')[0] for s in all_stimuli]))
-    all_concentrations = sorted(set([s.split('_')[1] for s in all_stimuli]))
     for odor in all_odors:
-
-        fig = plt.figure()
-        rel_concentrations = ['_'.join([odor, c]) for c in all_concentrations
-                                if '_'.join([odor, c]) in all_stimuli]
-        for i, conc in enumerate(rel_concentrations):
-            ax = fig.add_subplot(len(rel_concentrations), 1, i + 1)
-            idx = all_stimuli.index(conc)
-            plot_data = [medians[key].data[idx] for key in sorted(medians.keys())]
-            plot_data[plot_data == 0.0] = 0.01
-            ax.bar(range(len(medians)), plot_data)
-            ax.set_yticks(range(int(np.max(np.array(medians.values()).flatten()))))
-            ax.set_xticks([])
-            ax.set_ylabel(conc, rotation='0')
-        ax.set_xticks(range(len(all_region_labels)))
-        ax.set_xticklabels(sorted(medians.keys()), rotation='90')
-        plt.savefig(os.path.join(save_path, 'odors', odor + '.' + format))
+        fig = rl.region_comparison_for(odor, medians, all_stimuli, all_region_labels)
+        plt.savefig(os.path.join(save_path, 'odors', odor + '.' + config['format']))
 
     # median heatmaps
     hm_data = np.array([medians[region] for region in main_regions])

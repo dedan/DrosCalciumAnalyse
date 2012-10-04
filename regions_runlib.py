@@ -18,6 +18,25 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
+def region_comparison_for(odor, medians, all_stimuli, all_region_labels):
+    """group of bar plots - all concentrations for one odor - for all regions"""
+    all_concentrations = sorted(set([s.split('_')[1] for s in all_stimuli]))
+    rel_concentrations = ['_'.join([odor, c]) for c in all_concentrations
+                            if '_'.join([odor, c]) in all_stimuli]
+    fig = plt.figure()
+    for i, conc in enumerate(rel_concentrations):
+        ax = fig.add_subplot(len(rel_concentrations), 1, i + 1)
+        idx = all_stimuli.index(conc)
+        plot_data = [medians[key].data[idx] for key in sorted(medians.keys())]
+        plot_data[plot_data == 0.0] = 0.01
+        ax.bar(range(len(medians)), plot_data)
+        ax.set_yticks(range(int(np.max(np.array(medians.values()).flatten()))))
+        ax.set_xticks([])
+        ax.set_ylabel(conc, rotation='0')
+    ax.set_xticks(range(len(all_region_labels)))
+    ax.set_xticklabels(sorted(medians.keys()), rotation='90')
+    return fig
+
 def median_comparison_plot(medians, comparisons, all_stimuli):
     """medians comparison plot"""
     fig = plt.figure()
