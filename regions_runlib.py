@@ -18,7 +18,7 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-def region_comparison_for(odor, medians, all_stimuli, all_region_labels):
+def plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels):
     """group of bar plots - all concentrations for one odor - for all regions"""
     all_concentrations = sorted(set([s.split('_')[1] for s in all_stimuli]))
     rel_concentrations = ['_'.join([odor, c]) for c in all_concentrations
@@ -37,7 +37,7 @@ def region_comparison_for(odor, medians, all_stimuli, all_region_labels):
     ax.set_xticklabels(sorted(medians.keys()), rotation='90')
     return fig
 
-def median_comparison_plot(medians, comparisons, all_stimuli):
+def plot_median_comparison(medians, comparisons, all_stimuli):
     """medians comparison plot"""
     fig = plt.figure()
     for i, comparison in enumerate(comparisons):
@@ -52,7 +52,7 @@ def median_comparison_plot(medians, comparisons, all_stimuli):
     ax.set_xticklabels(list(all_stimuli), rotation='90')
     return fig
 
-def median_overview_plot(region_label, medians, all_stimuli):
+def plot_median_overview(region_label, medians, all_stimuli):
     """overview of the medians plot"""
     fig = plt.figure()
     for i, region_label in enumerate(medians.keys()):

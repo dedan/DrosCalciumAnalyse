@@ -162,16 +162,16 @@ for region_label in all_region_labels:
 
 if config['integrate']:
 
-    fig = rl.median_overview_plot(region_label, medians, all_stimuli)
+    fig = rl.plot_median_overview(region_label, medians, all_stimuli)
     fig.savefig(os.path.join(save_path, 'medians.' + config['format']))
     np.savetxt(os.path.join(save_path, 'medians.csv'), medians.values(), delimiter=',')
 
-    fig = rl.median_comparison_plot(medians, config['comparisons'], all_stimuli)
+    fig = rl.plot_median_comparison(medians, config['comparisons'], all_stimuli)
     fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
 
     all_odors = sorted(set([s.split('_')[0] for s in all_stimuli]))
     for odor in all_odors:
-        fig = rl.region_comparison_for(odor, medians, all_stimuli, all_region_labels)
+        fig = rl.plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels)
         plt.savefig(os.path.join(save_path, 'odors', odor + '.' + config['format']))
 
     # median heatmaps
