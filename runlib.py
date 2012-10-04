@@ -147,16 +147,25 @@ def mf_overview_plot_single(out, fig, params):
         spatial bases on the left, temporal in split axes on the right
     '''
     mf = out['mf']
-    stimset = list(set(mf.label_sample))
-    stimset.sort()
+
+    # get parameter
+    overlay = params.get('overlay', True)
+    if 'stimset' in params:
+        stimset = params['stimset']
+    else:
+        stimset = list(set(mf.label_sample))
+        stimset.sort()
 
     mf_overview = vis.VisualizeTimeseries(fig)
     mf_overview.base_and_singlestimtime(mf.num_objects, stimset)
     for mode_ix, resp in enumerate(mf.base.shaped2D()):
-        mf_overview.overlay_workaround(mf_overview.axes['base'][mode_ix],
+        if overlay:
+            mf_overview.overlay_workaround(mf_overview.axes['base'][mode_ix],
                                out['sorted_baseline'].shaped2D()[0],
                                {'cmap':plt.cm.bone, 'extent':[0, mf.base.shape[1], mf.base.shape[0], 0]},
-                               resp, {}, {})
+                               resp, params.get('overlay', {}), {})
+        else:
+            mf_overview.imshow(mf_overview.axes['base'][mode_ix], resp, cmap=plt.cm.jet)
         # set timeplot parameter
         max_y = np.max(mf.timecourses) + 0.05
         min_y = np.min(mf.timecourses) - 0.05
