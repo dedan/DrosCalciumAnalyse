@@ -5,13 +5,60 @@
 Created by  on 2012-01-27.
 Copyright (c) 2012. All rights reserved.
 """
-import sys, os, glob, csv
+import sys, os, glob, csv, json
+import itertools as it
+import numpy as np
+import pylab as plt
 from NeuralImageProcessing.pipeline import TimeSeries
 import NeuralImageProcessing.basic_functions as bf
 import logging as l
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
+
+def collect_modes_for(region_label, regions_json_path, data):
+    """collect all spatial and temporal modes for a given region_label
+
+        * several modes from one animal can belong to one region
+        * the information for this comes from the regions.json created by
+          using the regions_gui
+    """
+    t_modes, t_modes_names, s_modes = [], [], []
+    labeled_animals = json.load(open(regions_json_path))
+    all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
+
+    # iterate over region labels for each animal
+    for animal, regions in labeled_animals.items():
+
+        # load data and extract trial shape
+        if not animal in data:
+            continue
+        ts = data[animal]
+        trial_shaped = ts.trial_shaped()
+        trial_length = trial_shaped.shape[1]
+        n_modes = trial_shaped.shape[2]
+
+        # extract modes for region_label (several modes can belong to one region)
+        modes = [i for i in range(n_modes) if regions[i] == region_label]
+        for mode in modes:
+
+            # initialize to nan (not all stimuli are found for all animals)
+            pdat = np.zeros(len(all_stimuli) * trial_length)
+            pdat[:] = np.nan
+
+            # fill the results vector for the current animal
+            for i, stimulus in enumerate(all_stimuli):
+                if stimulus in ts.label_sample:
+                    index = ts.label_sample.index(stimulus)
+                    pdat[i * trial_length:i * trial_length + trial_length] = trial_shaped[index, :, mode]
+
+            # add to results list
+            t_modes.append(pdat)
+            t_modes_names.append("%s_%d" % (animal, mode))
+            s_modes.append((animal, ts.base.trial_shaped2D()[mode, :, :, :].squeeze()))
+    t_modes = np.array(t_modes)
+    return {'t_modes': t_modes, 't_modes_names': t_modes_names, 's_modes': s_modes}
+
 
 def load_lesion_data(lesion_data_path):
     """read the table of which lesion was applied into a dictionary"""

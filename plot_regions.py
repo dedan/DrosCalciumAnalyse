@@ -73,9 +73,6 @@ if not os.path.exists(save_path):
 if not os.path.exists(os.path.join(save_path, 'odors')):
     os.mkdir(os.path.join(save_path, 'odors'))
 
-# load the labels created by GUI
-labeled_animals = json.load(open(os.path.join(config['results_path'], 'regions.json')))
-
 # load list of animals to analyse
 selection = []
 if os.path.exists(os.path.join(load_path, 'selection.json')):
@@ -104,7 +101,10 @@ data = rl.load_mf_results(load_path, selection, config['lesion_data'], config['i
 all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
 if not stim_selection:
     stim_selection = all_stimuli
-all_region_labels = list(set(it.chain.from_iterable([labels for labels in labeled_animals.values()])))
+regions_file_path = os.path.join(config['results_path'], 'regions.json')
+with open(regions_file_path) as f:
+    all_labels_list = [labels for labels in json.load(f).values()]
+    all_region_labels = list(set(it.chain.from_iterable(all_labels_list)))
 l.debug('all_stimuli: %s' % all_stimuli)
 l.debug('all_region_labels: %s' % all_region_labels)
 
@@ -112,53 +112,19 @@ l.debug('all_region_labels: %s' % all_region_labels)
 medians = {}
 for region_label in all_region_labels:
 
-    t_modes, t_modes_names = [], []
-    s_modes = []
-
-    # iterate over region labels for each animal
-    for animal, regions in labeled_animals.items():
-
-        # load data and extract trial shape
-        if not animal in data:
-            continue
-        ts = data[animal]
-        trial_shaped = ts.trial_shaped()
-        trial_length = trial_shaped.shape[1]
-        n_modes = trial_shaped.shape[2]
-
-        # extract modes for region_label (several modes can belong to one region)
-        modes = [i for i in range(n_modes) if regions[i] == region_label]
-        for mode in modes:
-
-            # initialize to nan (not all stimuli are found for all animals)
-            pdat = np.zeros(len(all_stimuli) * trial_length)
-            pdat[:] = np.nan
-
-            # fill the results vector for the current animal
-            for i, stimulus in enumerate(all_stimuli):
-                if stimulus in ts.label_sample:
-                    index = ts.label_sample.index(stimulus)
-                    pdat[i * trial_length:i * trial_length + trial_length] = trial_shaped[index, :, mode]
-
-            # add to results list
-            t_modes.append(pdat)
-            t_modes_names.append("%s_%d" % (animal, mode))
-            s_modes.append((animal, ts.base.trial_shaped2D()[mode, :, :, :].squeeze()))
-    t_modes = np.array(t_modes)
-
-    add = '_integrated' if integrate else ''
+    collected_modes = rl.collect_modes_for(region_label, regions_file_path, data)
 
     # latency plots
     if not integrate:
 
-        n_animals = t_modes.shape[0]
-        n_stimuli = t_modes.shape[1]
+        n_animals = collected_modes['t_modes'].shape[0]
+        n_stimuli = collected_modes['t_modes'].shape[1]
 
         res = np.zeros((n_animals, n_stimuli/n_frames))
 
         for animal_index in range(n_animals):
             for i, stim_begin in enumerate(range(0, n_stimuli, n_frames)):
-                stimulus = t_modes[animal_index, stim_begin:stim_begin+n_frames]
+                stimulus = collected_modes['t_modes'][animal_index, stim_begin:stim_begin+n_frames]
                 if np.all(np.isnan(stimulus)):
                     res[animal_index, i] = np.nan
                 else:
