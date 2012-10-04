@@ -18,6 +18,67 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
+def plot_valenz_3d(data_dict, config):
+    """3d valenz plot"""
+    symbols = lambda x: 'x' if x == '0' else 'o'
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for odor in data_dict:
+        for concen in data_dict[odor]:
+            if 'valenz_color' in data_dict[odor][concen]:
+                ax.scatter(*[[i] for i in data_dict[odor][concen]['data']],
+                           edgecolors=data_dict[odor][concen]['valenz_color'],
+                           facecolors=data_dict[odor][concen]['valenz_color'],
+                           marker=symbols(concen), label=odor)
+                ax.plot([], [], 'o', c=data_dict[odor][concen]['valenz_color'], label=odor)
+                s_concen = sorted([int(concen) for concen in data_dict[odor]])
+                bla = np.array([data_dict[odor][str(concen)]['data'] for concen in s_concen])
+                ax.plot(*[x for x in bla.T], c='0.5')
+    ax.set_xlabel(config['main_regions'][0])
+    ax.set_ylabel(config['main_regions'][1])
+    ax.set_zlabel(config['main_regions'][2])
+    plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
+    return fig
+
+def plot_medians_3d(data_dict, config):
+    """3d plot of the data also shown as heatmap"""
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    for odor in data_dict:
+        for concen in data_dict[odor]:
+            ax.scatter(*[[i] for i in data_dict[odor][concen]['data']],
+                       edgecolors=data_dict[odor][concen]['color'], facecolors='none',
+                       marker=config['symbols'][concen], label=odor)
+        ax.plot([], [], 'o', c=data_dict[odor][concen]['color'], label=odor)
+        s_concen = sorted([int(concen) for concen in data_dict[odor]])
+        bla = np.array([data_dict[odor][str(concen)]['data'] for concen in s_concen])
+        ax.plot(*[x for x in bla.T], c=data_dict[odor][str(concen)]['color'])
+    ax.set_xlabel(config['main_regions'][0])
+    ax.set_ylabel(config['main_regions'][1])
+    ax.set_zlabel(config['main_regions'][2])
+    plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
+    return fig
+
+def organize_data_in_dict(medians, all_stimuli, all_odors, valenz, config):
+    """prepare data for 3 d plots"""
+    data_dict = {}
+    hm_data = np.array([medians[region] for region in config['main_regions']])
+    for i in range(len(all_stimuli)):
+        odor, concen = all_stimuli[i].split('_')
+        if not odor in data_dict:
+            data_dict[odor] = {}
+        data_dict[odor][concen] = {}
+        c = plt.cm.hsv(float(all_odors.index(odor)) / len(all_odors))
+        data_dict[odor][concen]['color'] = c
+
+        # add color to code valenz (if valenz available)
+        if all_stimuli[i] in valenz:
+            c = plt.cm.RdYlGn(valenz[all_stimuli[i]])
+            data_dict[odor][concen]['valenz_color'] = c
+            data_dict[odor][concen]['valenz'] = valenz[all_stimuli[i]]
+        data_dict[odor][concen]['data'] = hm_data[:, i]
+    return data_dict
+
 def plot_split_valenz_heatmap(valenz, config):
     # normalize valenz for colormap
     norm_val = {}
@@ -75,7 +136,7 @@ def plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config):
     ax.set_xticklabels(config['new_stimuli_order'], rotation='90')
     return fig
 
-def plot_heatmap(medians, main_regions):
+def plot_medians_heatmap(medians, main_regions):
     fig = plt.figure()
     hm_data = np.array([medians[region] for region in main_regions])
     ax = fig.add_subplot(111)

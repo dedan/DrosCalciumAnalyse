@@ -87,7 +87,6 @@ if os.path.exists(os.path.join(load_path, 'stim_selection.json')):
 
 # load valenz information (which odor they like)
 valenz = json.load(open(os.path.join(config['results_path'], 'valenz.json')))
-valenz_orig = json.load(open(os.path.join(config['results_path'], 'valenz.json')))
 
 # read lesion-tract table into dictionary for easy access
 if config['lesion_data']:
@@ -174,7 +173,7 @@ if config['integrate']:
         fig = rl.plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels)
         plt.savefig(os.path.join(save_path, 'odors', odor + '.' + config['format']))
 
-    fig = rl.plot_heatmap(medians, config['main_regions'])
+    fig = rl.plot_medians_heatmap(medians, config['main_regions'])
     fig.savefig(os.path.join(save_path, 'heatmap.' + config['format']))
 
     fig = rl.plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config)
@@ -183,97 +182,12 @@ if config['integrate']:
     fig = rl.plot_split_valenz_heatmap(valenz, config)
     fig.savefig(os.path.join(save_path, 'split_heatmap_valenz.' + config['format']))
 
+    data_dict = rl.organize_data_in_dict(medians, all_stimuli, all_odors, valenz, config)
+    fig = rl.plot_medians_3d(data_dict, config)
+    plt.savefig(os.path.join(save_path, '3dscatter.' + config['format']))
 
-    # prepare data for 3 d plots
-    tmp_dat = {}
-    for i in range(len(all_stimuli)):
-        odor, concen = all_stimuli[i].split('_')
-        if not odor in tmp_dat:
-            tmp_dat[odor] = {}
-        tmp_dat[odor][concen] = {}
-        c = plt.cm.hsv(float(all_odors.index(odor)) / len(all_odors))
-        tmp_dat[odor][concen]['color'] = c
-
-        # add color to code valenz (if valenz available)
-        if all_stimuli[i] in valenz:
-            c = plt.cm.RdYlGn(valenz[all_stimuli[i]])
-            tmp_dat[odor][concen]['valenz_color'] = c
-            tmp_dat[odor][concen]['valenz'] = valenz[all_stimuli[i]]
-            tmp_dat[odor][concen]['valenz_orig'] = valenz_orig[all_stimuli[i]]
-        tmp_dat[odor][concen]['data'] = hm_data[:, i]
-    symbols = {'-1': 's', '-2': 's', '-3': 'o', '-5': 'o', '0': 'x'}
-
-
-    # 3d plot of the data also shown as heatmap
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    for odor in tmp_dat:
-        for concen in tmp_dat[odor]:
-            ax.scatter(*[[i] for i in tmp_dat[odor][concen]['data']],
-                       edgecolors=tmp_dat[odor][concen]['color'], facecolors='none',
-                       marker=symbols[concen], label=odor)
-        ax.plot([], [], 'o', c=tmp_dat[odor][concen]['color'], label=odor)
-        s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
-        bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
-        ax.plot(*[x for x in bla.T], c=tmp_dat[odor][str(concen)]['color'])
-    ax.set_xlabel(main_regions[0])
-    ax.set_ylabel(main_regions[1])
-    ax.set_zlabel(main_regions[2])
-    plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
-    plt.savefig(os.path.join(save_path, '3dscatter.' + format))
-
-    # concentration matrix plot
-    fig = plt.figure()
-    N = 3
-    for i in range(3):
-        for j in range(3):
-            if i > j:
-                ax = fig.add_subplot(N, N, i*N+j+1)
-                for odor in tmp_dat:
-                    for concen in tmp_dat[odor]:
-                        if int(concen) >= -2:
-                            ax.scatter(tmp_dat[odor][concen]['data'][i], tmp_dat[odor][concen]['data'][j],
-                                       edgecolors=tmp_dat[odor][concen]['color'], facecolors='none',
-                                       marker=symbols[concen], label=odor)
-                    s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
-                    bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
-                    ax.plot(bla[:,i], bla[:,j], c=tmp_dat[odor][str(concen)]['color'])
-                ax.set_xlabel(main_regions[i])
-                ax.set_ylabel(main_regions[j])
-                ax.set_xticks([])
-                ax.set_yticks([])
-            elif i == j:
-                ax = fig.add_subplot(N, N, i*N+j+1)
-                bla = np.array([tmp_dat[o][c]['data'][i]
-                                for o in tmp_dat
-                                for c in tmp_dat[o]])
-                ax.hist(bla, color='k')
-                ax.set_title(main_regions[i])
-                ax.set_xticks([])
-                ax.set_yticks([])
-
-    plt.savefig(os.path.join(save_path, 'matrix.' + format))
-
-    # 3d valenz plot
-    symbols = {'-1': 'o', '-2': 'o', '-3': 'o', '-5': 'o', '0': 'x'}
-    fig = plt.figure()
-    ax = fig.add_subplot(111, projection='3d')
-    for odor in tmp_dat:
-        for concen in tmp_dat[odor]:
-            if 'valenz_color' in tmp_dat[odor][concen]:
-                ax.scatter(*[[i] for i in tmp_dat[odor][concen]['data']],
-                           edgecolors=tmp_dat[odor][concen]['valenz_color'],
-                           facecolors=tmp_dat[odor][concen]['valenz_color'],
-                           marker=symbols[concen], label=odor)
-                ax.plot([], [], 'o', c=tmp_dat[odor][concen]['valenz_color'], label=odor)
-                s_concen = sorted([int(concen) for concen in tmp_dat[odor]])
-                bla = np.array([tmp_dat[odor][str(concen)]['data'] for concen in s_concen])
-                ax.plot(*[x for x in bla.T], c='0.5')
-    ax.set_xlabel(main_regions[0])
-    ax.set_ylabel(main_regions[1])
-    ax.set_zlabel(main_regions[2])
-    #plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
-    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + format))
+    fig = rl.plot_valenz_3d(data_dict, config)
+    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + config['format']))
 
     regressor = linear_model.LinearRegression(fit_intercept=False)
     x, y = [], []
