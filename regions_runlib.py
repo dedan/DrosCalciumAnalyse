@@ -5,7 +5,7 @@
 Created by  on 2012-01-27.
 Copyright (c) 2012. All rights reserved.
 """
-import sys, os, glob
+import sys, os, glob, csv
 from NeuralImageProcessing.pipeline import TimeSeries
 import NeuralImageProcessing.basic_functions as bf
 import logging as l
@@ -13,6 +13,15 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
+def load_lesion_data(lesion_data_path):
+    """read the table of which lesion was applied into a dictionary"""
+    les_dict = {}
+    lesion_table = list(csv.reader(open(lesion_data_path, 'rb'), delimiter='\t'))
+    for row in lesion_table[1:]:
+        les_dict[row[0]] = {}
+        les_dict[row[0]]['l'] = row[1]
+        les_dict[row[0]]['r'] = row[2]
+    return les_dict
 
 def load_mf_results(load_path, selection, lesion_data, integrate):
     """read data (matrix factorization results) to dictionary"""

@@ -94,17 +94,11 @@ valenz_orig = json.load(open(os.path.join(config['results_path'], 'valenz.json')
 
 # read lesion-tract table into dictionary for easy access
 if config['lesion_data']:
-    les_dict = {}
-    lesion_table = list(csv.reader(open(config['lesion_table_path'], 'rb'), delimiter='\t'))
-    for row in lesion_table[1:]:
-        les_dict[row[0]] = {}
-        les_dict[row[0]]['l'] = row[1]
-        les_dict[row[0]]['r'] = row[2]
+    lesion_dict = rl.load_lesion_data(config['lesion_table_path'])
 
+# read mf results
 l.info('read files from: %s' % load_path)
 data = rl.load_mf_results(load_path, selection, config['lesion_data'], config['integrate'])
-print data
-crash
 
 # get all stimuli and region labels
 all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
