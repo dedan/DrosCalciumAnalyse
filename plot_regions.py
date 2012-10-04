@@ -133,60 +133,60 @@ for region_label in all_region_labels:
                                          config['integrate'])
     fulldatadic[region_label] = t_modes_ma
     medians[region_label] = np.ma.extras.median(t_modes_ma, axis=0)
-    # if config['integrate']:
-    #     fig = rl.plot_temporal_integrated(region_label, t_modes_ma)
-    #     fig.savefig(region_savepath + '_temp_integrated.' + config['format'])
-    # elif config['lesion_data']:
-    #     fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians,
-    #                                   stim_selection, config['n_frames'])
-    #     fig.savefig(region_savepath + '_temp_lesion.' + config['format'])
-    # else:
-    #     fig = rl.plot_temporal(region_label, t_modes_ma, medians,
-    #                            stim_selection, config['n_frames'])
-    #     fig.savefig(region_savepath + '_temp.' + config['format'])
+    if config['integrate']:
+        fig = rl.plot_temporal_integrated(region_label, t_modes_ma)
+        fig.savefig(region_savepath + '_temp_integrated.' + config['format'])
+    elif config['lesion_data']:
+        fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians,
+                                      stim_selection, config['n_frames'])
+        fig.savefig(region_savepath + '_temp_lesion.' + config['format'])
+    else:
+        fig = rl.plot_temporal(region_label, t_modes_ma, medians,
+                               stim_selection, config['n_frames'])
+        fig.savefig(region_savepath + '_temp.' + config['format'])
 
-    # # write the temporal modes to csv files
-    # with open(region_savepath  + '_tmodes.csv', 'w') as f:
-    #     header = __builtin__.sum([[s] * config['n_frames'] for s in all_stimuli], [])
-    #     f.write(', ' + ', '.join(header) + '\n')
-    #     for i, mode_name in enumerate(collected_modes['t_modes_names']):
-    #         f.write(mode_name + ', ' + ', '.join(collected_modes['t_modes'][i,:].astype('|S16')) + '\n')
+    # write the temporal modes to csv files
+    with open(region_savepath  + '_tmodes.csv', 'w') as f:
+        header = __builtin__.sum([[s] * config['n_frames'] for s in all_stimuli], [])
+        f.write(', ' + ', '.join(header) + '\n')
+        for i, mode_name in enumerate(collected_modes['t_modes_names']):
+            f.write(mode_name + ', ' + ', '.join(collected_modes['t_modes'][i,:].astype('|S16')) + '\n')
 
-    # # spatial base plots
-    # fig = rl.plot_spatial_base(region_label, collected_modes['s_modes'],
-    #                            config['to_turn'], load_path, lut_colormaps)
-    # fig.savefig(region_savepath + '_spatial.' + config['format'])
+    # spatial base plots
+    fig = rl.plot_spatial_base(region_label, collected_modes['s_modes'],
+                               config['to_turn'], load_path, lut_colormaps)
+    fig.savefig(region_savepath + '_spatial.' + config['format'])
 
 
 if config['integrate']:
 
-    # fig = rl.plot_median_overview(region_label, medians, all_stimuli)
-    # fig.savefig(os.path.join(save_path, 'medians.' + config['format']))
-    # np.savetxt(os.path.join(save_path, 'medians.csv'), medians.values(), delimiter=',')
+    fig = rl.plot_median_overview(region_label, medians, all_stimuli)
+    fig.savefig(os.path.join(save_path, 'medians.' + config['format']))
+    np.savetxt(os.path.join(save_path, 'medians.csv'), medians.values(), delimiter=',')
 
-    # fig = rl.plot_median_comparison(medians, config['comparisons'], all_stimuli)
-    # fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
+    fig = rl.plot_median_comparison(medians, config['comparisons'], all_stimuli)
+    fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
 
     all_odors = sorted(set([s.split('_')[0] for s in all_stimuli]))
-    # for odor in all_odors:
-    #     fig = rl.plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels)
-    #     plt.savefig(os.path.join(save_path, 'odors', odor + '.' + config['format']))
+    for odor in all_odors:
+        fig = rl.plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels)
+        plt.savefig(os.path.join(save_path, 'odors', odor + '.' + config['format']))
 
-    # fig = rl.plot_medians_heatmap(medians, config['main_regions'])
-    # fig.savefig(os.path.join(save_path, 'heatmap.' + config['format']))
+    fig = rl.plot_medians_heatmap(medians, config['main_regions'])
+    fig.savefig(os.path.join(save_path, 'heatmap.' + config['format']))
 
-    # fig = rl.plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config)
-    # plt.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
+    fig = rl.plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config)
+    plt.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
 
-    # fig = rl.plot_split_valenz_heatmap(valenz, config)
-    # fig.savefig(os.path.join(save_path, 'split_heatmap_valenz.' + config['format']))
+    fig = rl.plot_split_valenz_heatmap(valenz, config)
+    fig.savefig(os.path.join(save_path, 'split_heatmap_valenz.' + config['format']))
 
     data_dict = rl.organize_data_in_dict(medians, all_stimuli, all_odors, valenz, config)
-    # fig = rl.plot_medians_3d(data_dict, config)
-    # plt.savefig(os.path.join(save_path, '3dscatter.' + config['format']))
+    fig = rl.plot_medians_3d(data_dict, config)
+    plt.savefig(os.path.join(save_path, '3dscatter.' + config['format']))
 
-    # fig = rl.plot_valenz_3d(data_dict, config)
-    # plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + config['format']))
+    fig = rl.plot_valenz_3d(data_dict, config)
+    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + config['format']))
 
     models = rl.fit_models(data_dict, config)
 
