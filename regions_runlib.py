@@ -7,16 +7,47 @@ Copyright (c) 2012. All rights reserved.
 """
 import sys, os, glob, csv, json, __builtin__
 import itertools as it
+from collections import defaultdict
 import numpy as np
 import pylab as plt
 from scipy.stats.mstats_basic import scoreatpercentile
 from NeuralImageProcessing.pipeline import TimeSeries
 from NeuralImageProcessing import illustrate_decomposition as vis
 import NeuralImageProcessing.basic_functions as bf
+from sklearn import linear_model
 import logging as l
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
+
+def fit_models(data_dict, config):
+    """fit different models to our data"""
+    regressor = linear_model.LinearRegression(fit_intercept=False)
+    x, y = [], []
+    for odor in data_dict:
+        for concen in data_dict[odor]:
+            if 'valenz' in data_dict[odor][concen]:
+                t = data_dict[odor][concen]
+                x.append([t['data'][2], t['data'][0]])
+                y.append(t['valenz'])
+    fit = regressor.fit(x,y)
+    alpha = fit.coef_[1]
+
+    agg = defaultdict(list)
+    for odor in data_dict:
+        for concen in data_dict[odor]:
+            if 'valenz' in data_dict[odor][concen]:
+                t = data_dict[odor][concen]
+                agg['val'].append(t['valenz'])
+                for i in range(3):
+                    agg[config['main_regions'][i]].append(t['data'][i])
+                agg['ratio'].append(data_dict[odor][concen]['data'][2] /
+                                    data_dict[odor][concen]['data'][0])
+                agg['diff'].append(data_dict[odor][concen]['data'][2] -
+                                   alpha * data_dict[odor][concen]['data'][0])
+    idx = np.argmax(agg['ratio'])
+    agg['ratio'].pop(idx)
+    return agg
 
 def plot_valenz_3d(data_dict, config):
     """3d valenz plot"""
