@@ -95,7 +95,8 @@ if config['lesion_data']:
 
 # read mf results
 l.info('read files from: %s' % load_path)
-data = rl.load_mf_results(load_path, selection, config['lesion_data'], config['integrate'])
+data = rl.load_mf_results(load_path, selection, config['lesion_data'],
+                          config['integrate'], config['integrator_window'])
 
 # get all stimuli and region labels
 all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
@@ -109,63 +110,42 @@ l.debug('all_stimuli: %s' % all_stimuli)
 l.debug('all_region_labels: %s' % all_region_labels)
 
 # produce a figure for each region_label
-medians = {}
+medians, fulldatadic = {}, {}
 for region_label in all_region_labels:
 
+    region_savepath = os.path.join(save_path, region_label + '_latencies.')
     collected_modes = rl.collect_modes_for(region_label, regions_file_path, data)
 
     # latency plots
     if not config['integrate']:
         latency_matrix = rl.compute_latencies(collected_modes, config['n_frames'])
         fig = rl.plot_latencies(latency_matrix, region_label, all_stimuli)
-        fig.savefig(os.path.join(save_path, region_label + '_latencies.' + config['format']))
+        fig.savefig(region_savepath + '_latencies.' + config['format'])
 
         # TODO: write generic function to write CSVs with headers
-        with open(os.path.join(save_path, region_label + '_latencies.csv'), 'w') as f:
+        with open(region_savepath + '_latencies.csv', 'w') as f:
             f.write(', ' + ', '.join(all_stimuli) + '\n')
             for i, mode_name in enumerate(collected_modes['t_modes_names']):
                 f.write(mode_name + ', ' + ', '.join(latency_matrix[i,:].astype('|S16')) + '\n')
 
-    # temporal boxplots
-    fig = plt.figure()
-    fig.suptitle(region_label)
-    ax = fig.add_subplot(111)
-    # mask it for nans (! True in the mask means exclusion)
-    stim_selection_idxs = [all_stimuli.index(i) for i in stim_selection]
-    if not integrate:
-        stim_selection_idxs = __builtin__.sum([range(i*20, i*20+20) for i in stim_selection_idxs], [])
-    t_modes_ma = np.ma.array(t_modes[:, stim_selection_idxs], mask=np.isnan(t_modes[:, stim_selection_idxs]))
+    # temporal mode plots
+    t_modes_ma = rl.get_masked_selection(collected_modes['t_modes'],
+                                         all_stimuli,
+                                         stim_selection,
+                                         config['integrate'])
     fulldatadic[region_label] = t_modes_ma
     medians[region_label] = np.ma.extras.median(t_modes_ma, axis=0)
-    if integrate:
-        # make it a list because boxplot has a problem with masked arrays
-        t_modes_ma = [[y for y in row if y] for row in t_modes_ma.T]
-        ax.boxplot(t_modes_ma)
+
+    if config['integrate']:
+        fig = rl.plot_temporal_integrated(region_label, t_modes_ma)
+        fig.savefig(region_savepath + '_temp_integrated.' + config['format'])
+    elif config['lesion_data']:
+        fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians, stim_selection, config['n_frames'])
+        fig.savefig(region_savepath + '_temp_lesion.' + config['format'])
     else:
-        if lesion_data:
-            m = medians[region_label]
-            l = len(m)
-            cols = ['r', 'g', 'b']
-            labels = ['intact', 'iPN', 'vlPrc']
-            for i in range(3):
-                idx = __builtin__.sum([range(j, j+20) for j in range(i*20, l, 60)], [])
-                d = m[idx]
-                p25 = scoreatpercentile(t_modes_ma, 25)
-                p75 = scoreatpercentile(t_modes_ma, 75)
-                ax.fill_between(range(len(d)), p25[idx], p75[idx], linewidth=0, color=cols[i], alpha=0.2)
-                ax.plot(d, linewidth=0.5, color=cols[i], label=labels[i])
-                ax.set_xticks(range(0, len(d), ts.timepoints))
-                ax.set_xticklabels(list(stim_selection)[::3], rotation='90')
-            plt.legend(labels)
-        else:
-            l = len(medians[region_label])
-            p25 = scoreatpercentile(t_modes_ma, 25)
-            p75 = scoreatpercentile(t_modes_ma, 75)
-            ax.fill_between(range(l), p25, p75, linewidth=0, color='0.75')
-            ax.plot(medians[region_label], linewidth=0.5, color='0')
-            ax.set_xticks(range(0, l, ts.timepoints))
-            ax.set_xticklabels(list(stim_selection), rotation='90')
-    plt.savefig(os.path.join(save_path, region_label + add + '.' + format))
+        fig = rl.plot_temporal(region_label, t_modes_ma, medians, stim_selection, config['n_frames'])
+        fig.savefig(region_savepath + '_temp.' + config['format'])
+
 
     # spatial base plots
     fig = vis.VisualizeTimeseries()
