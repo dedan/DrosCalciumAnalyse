@@ -160,34 +160,14 @@ for region_label in all_region_labels:
     fig.savefig(region_savepath + '_spatial.' + config['format'])
 
 
-if integrate:
+if config['integrate']:
 
-    # overview of the medians plot
-    fig = plt.figure()
-    for i, region_label in enumerate(medians.keys()):
-        ax = fig.add_subplot(len(medians), 1, i + 1)
-        ax.bar(range(len(medians[region_label])), medians[region_label])
-        ax.set_yticks([])
-        ax.set_xticks([])
-        ax.set_ylabel(region_label, rotation='0')
-    ax.set_xticks(range(len(medians[region_label])))
-    ax.set_xticklabels(list(all_stimuli), rotation='90')
-    plt.savefig(os.path.join(save_path, 'medians.' + format))
+    fig = rl.median_overview_plot(region_label, medians, all_stimuli)
+    fig.savefig(os.path.join(save_path, 'medians.' + config['format']))
     np.savetxt(os.path.join(save_path, 'medians.csv'), medians.values(), delimiter=',')
 
-    # medians comparison plot
-    fig = plt.figure()
-    for i, comparison in enumerate(comparisons):
-        ax = fig.add_subplot(len(comparisons), 1, i + 1)
-        l = len(medians[comparison[0]])
-        ax.bar(range(l), medians[comparison[0]], color='r')
-        ax.bar(range(l), medians[comparison[1]] * -1, color='b')
-        ax.set_yticks([])
-        ax.set_xticks([])
-        ax.set_ylabel(', '.join(comparison), rotation='0')
-    ax.set_xticks(range(l))
-    ax.set_xticklabels(list(all_stimuli), rotation='90')
-    plt.savefig(os.path.join(save_path, 'comparisons.' + format))
+    fig = rl.median_comparison_plot(medians, config['comparisons'], all_stimuli)
+    fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
 
     # odor-region comparison plots
     all_odors = sorted(set([s.split('_')[0] for s in all_stimuli]))

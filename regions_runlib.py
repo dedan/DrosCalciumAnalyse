@@ -18,6 +18,34 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
+def median_comparison_plot(medians, comparisons, all_stimuli):
+    """medians comparison plot"""
+    fig = plt.figure()
+    for i, comparison in enumerate(comparisons):
+        ax = fig.add_subplot(len(comparisons), 1, i + 1)
+        l = len(medians[comparison[0]])
+        ax.bar(range(l), medians[comparison[0]], color='r')
+        ax.bar(range(l), medians[comparison[1]] * -1, color='b')
+        ax.set_yticks([])
+        ax.set_xticks([])
+        ax.set_ylabel(', '.join(comparison), rotation='0')
+    ax.set_xticks(range(l))
+    ax.set_xticklabels(list(all_stimuli), rotation='90')
+    return fig
+
+def median_overview_plot(region_label, medians, all_stimuli):
+    """overview of the medians plot"""
+    fig = plt.figure()
+    for i, region_label in enumerate(medians.keys()):
+        ax = fig.add_subplot(len(medians), 1, i + 1)
+        ax.bar(range(len(medians[region_label])), medians[region_label])
+        ax.set_yticks([])
+        ax.set_xticks([])
+        ax.set_ylabel(region_label, rotation='0')
+    ax.set_xticks(range(len(medians[region_label])))
+    ax.set_xticklabels(list(all_stimuli), rotation='90')
+    return fig
+
 def plot_spatial_base(region_label, s_modes, to_turn, load_path, colormaps):
     fig = vis.VisualizeTimeseries()
     fig.subplot(len(s_modes))
