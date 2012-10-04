@@ -18,6 +18,73 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
+def plot_split_valenz_heatmap(valenz, config):
+    # normalize valenz for colormap
+    norm_val = {}
+    all_vals = np.array(valenz.values())
+    for val in valenz:
+        norm_val[val] = (valenz[val] / (2 * np.abs(np.max(all_vals))) + 0.5)
+
+    # splitted heatmap for valenz information
+    fig = vis.VisualizeTimeseries()
+    fig.subplot(1)
+    ax = fig.axes['base'][0]
+    plotti = np.ones((3, len(config['new_stimuli_order']))) * 0.5
+    for y, odor in enumerate(config['new_stimuli_order']):
+        for x, co in enumerate(config['concentrations']):
+            if odor == 'MOL':
+                stim = 'MOL_0'
+            else:
+                stim = '%s_%s' % (odor, co)
+            if stim in norm_val:
+                plotti[x, y] = norm_val[stim]
+    fig.imshow(ax, plotti, cmap=plt.cm.RdYlGn)
+    fig.overlay_image(ax, plotti == 0.5, threshold=0.1,
+                      title={"label": "valenz - max: %f" % np.max(all_vals)},
+                      colormap=plt.cm.gray)
+    ax.set_yticks(range(len(config['concentrations'])))
+    ax.set_yticklabels(config['concentrations'])
+    ax.set_xticks(range(len(config['new_stimuli_order'])))
+    ax.set_xticklabels(config['new_stimuli_order'], rotation='90')
+    return fig.fig
+
+def plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config):
+    """split and sort heatmap of medians"""
+    dats = []
+    hm_data = np.array([medians[region] for region in config['main_regions']])
+    fig = plt.figure()
+    for i in range(len(config['concentrations'])):
+        plotti = np.zeros((3, len(config['new_stimuli_order'])))
+        for y, odor in enumerate(config['new_stimuli_order']):
+            for x, co in enumerate(config['concentrations']):
+                if odor == 'MOL':
+                    stim = 'MOL_0'
+                else:
+                    stim = '%s_%s' % (odor, co)
+                if stim in all_stimuli:
+                    plotti[x, y] = hm_data[i, all_stimuli.index(stim)]
+        dats.append(plotti)
+    for i in range(len(config['concentrations'])):
+        ax = fig.add_subplot(len(config['concentrations']), 1, i + 1)
+        ax.set_title("region: %s - max: %f" % (config['main_regions'][i], np.max(dats[i])))
+        ax.imshow(dats[i], interpolation='nearest')
+        ax.set_yticks(range(len(config['concentrations'])))
+        ax.set_yticklabels(config['concentrations'])
+        ax.set_xticks([])
+    ax.set_xticks(range(len(all_odors)))
+    ax.set_xticklabels(config['new_stimuli_order'], rotation='90')
+    return fig
+
+def plot_heatmap(medians, main_regions):
+    fig = plt.figure()
+    hm_data = np.array([medians[region] for region in main_regions])
+    ax = fig.add_subplot(111)
+    ax.imshow(hm_data, interpolation='nearest')
+    ax.set_xticks([])
+    ax.set_yticks(range(len(main_regions)))
+    ax.set_yticklabels(main_regions)
+    return fig
+
 def plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels):
     """group of bar plots - all concentrations for one odor - for all regions"""
     all_concentrations = sorted(set([s.split('_')[1] for s in all_stimuli]))

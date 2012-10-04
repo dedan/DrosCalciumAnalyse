@@ -174,73 +174,14 @@ if config['integrate']:
         fig = rl.plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels)
         plt.savefig(os.path.join(save_path, 'odors', odor + '.' + config['format']))
 
-    # median heatmaps
-    hm_data = np.array([medians[region] for region in main_regions])
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.imshow(hm_data, interpolation='nearest')
-    ax.set_xticks([])
-    ax.set_yticks(range(len(main_regions)))
-    ax.set_yticklabels(main_regions)
-    plt.savefig(os.path.join(save_path, 'heatmap.' + format))
+    fig = rl.plot_heatmap(medians, config['main_regions'])
+    fig.savefig(os.path.join(save_path, 'heatmap.' + config['format']))
 
-    conc = ['-1', '-3', '-5']
-    fig = plt.figure()
-    dats = []
+    fig = rl.plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config)
+    plt.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
 
-    # splitted and sorted heatmaps
-    new_order = [u'MSH', u'LIN', u'BEA', u'OCO', u'ISO', u'ACP', u'BUT',
-                 u'2PA', u'PAC', u'CO2', u'AAC', u'ACA', u'ABA', u'BUD',
-                 u'PAA', u'GEO', u'CVA', u'MOL']
-    for i in range(len(conc)):
-        plotti = np.zeros((3, len(new_order)))
-        for y, odor in enumerate(new_order):
-            for x, co in enumerate(conc):
-                if odor == 'MOL':
-                    stim = 'MOL_0'
-                else:
-                    stim = '%s_%s' % (odor, co)
-                if stim in all_stimuli:
-                    plotti[x, y] = hm_data[i, all_stimuli.index(stim)]
-        dats.append(plotti)
-    for i in range(len(conc)):
-        ax = fig.add_subplot(len(conc), 1, i + 1)
-        ax.set_title("region: %s - max: %f" % (main_regions[i], np.max(dats[i])))
-        ax.imshow(dats[i], interpolation='nearest')
-        ax.set_yticks(range(len(conc)))
-        ax.set_yticklabels(conc)
-        ax.set_xticks([])
-    ax.set_xticks(range(len(all_odors)))
-    ax.set_xticklabels(new_order, rotation='90')
-    plt.savefig(os.path.join(save_path, 'split_heatmap.' + format))
-
-    # normalize valenz for colormap
-    all_vals = np.array(valenz.values())
-    for val in valenz:
-        valenz[val] = (valenz[val] / (2 * np.abs(np.max(all_vals))) + 0.5)
-
-    # splitted heatmap for valenz information
-    fig = vis.VisualizeTimeseries()
-    fig.subplot(1)
-    ax = fig.axes['base'][0]
-    plotti = np.ones((3, len(new_order))) * 0.5
-    for y, odor in enumerate(new_order):
-        for x, co in enumerate(conc):
-            if odor == 'MOL':
-                stim = 'MOL_0'
-            else:
-                stim = '%s_%s' % (odor, co)
-            if stim in valenz:
-                plotti[x, y] = valenz[stim]
-    fig.imshow(ax, plotti, cmap=plt.cm.RdYlGn)
-    fig.overlay_image(ax, plotti == 0.5, threshold=0.1,
-                      title={"label": "valenz - max: %f" % np.max(all_vals)},
-                      colormap=plt.cm.gray)
-    ax.set_yticks(range(len(conc)))
-    ax.set_yticklabels(conc)
-    ax.set_xticks(range(len(new_order)))
-    ax.set_xticklabels(new_order, rotation='90')
-    plt.savefig(os.path.join(save_path, 'split_heatmap_valenz.' + format))
+    fig = rl.plot_split_valenz_heatmap(valenz, config)
+    fig.savefig(os.path.join(save_path, 'split_heatmap_valenz.' + config['format']))
 
 
     # prepare data for 3 d plots
