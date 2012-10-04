@@ -11,11 +11,32 @@ import numpy as np
 import pylab as plt
 from scipy.stats.mstats_basic import scoreatpercentile
 from NeuralImageProcessing.pipeline import TimeSeries
+from NeuralImageProcessing import illustrate_decomposition as vis
 import NeuralImageProcessing.basic_functions as bf
 import logging as l
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
+
+def plot_spatial_base(region_label, s_modes, to_turn, load_path, colormaps):
+    fig = vis.VisualizeTimeseries()
+    fig.subplot(len(s_modes))
+    for i, (name, s_mode) in enumerate(s_modes):
+        n = '_'.join(name.split('_')[:-1])
+        filelist = glob.glob(os.path.join(load_path, '*' + n + '_baseline.json'))
+        base_series = TimeSeries()
+        base_series.load(os.path.splitext(filelist[0])[0])
+        base_series.shape = tuple(base_series.shape)
+        base = base_series.shaped2D()
+        if n in to_turn:
+            base = base[:, ::-1, :]
+            s_mode = s_mode[::-1, :]
+
+        fig.overlay_workaround(fig.axes['base'][i],
+                           np.mean(base, axis=0), {'cmap':plt.cm.bone},
+                           s_mode, {'threshold':0.2, 'colormap':colormaps[region_label]},
+                           {'title':{"label": n}})
+    return fig.fig
 
 def get_masked_selection(t_modes, all_stimuli, stim_selection, integrate=False):
     """mask array for nans and filter out non selected stimuli"""

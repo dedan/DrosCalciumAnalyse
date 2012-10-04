@@ -135,45 +135,30 @@ for region_label in all_region_labels:
                                          config['integrate'])
     fulldatadic[region_label] = t_modes_ma
     medians[region_label] = np.ma.extras.median(t_modes_ma, axis=0)
-
     if config['integrate']:
         fig = rl.plot_temporal_integrated(region_label, t_modes_ma)
         fig.savefig(region_savepath + '_temp_integrated.' + config['format'])
     elif config['lesion_data']:
-        fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians, stim_selection, config['n_frames'])
+        fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians,
+                                      stim_selection, config['n_frames'])
         fig.savefig(region_savepath + '_temp_lesion.' + config['format'])
     else:
-        fig = rl.plot_temporal(region_label, t_modes_ma, medians, stim_selection, config['n_frames'])
+        fig = rl.plot_temporal(region_label, t_modes_ma, medians,
+                               stim_selection, config['n_frames'])
         fig.savefig(region_savepath + '_temp.' + config['format'])
 
+    # write the temporal modes to csv files
+    with open(region_savepath  + '_tmodes.csv', 'w') as f:
+        header = __builtin__.sum([[s] * config['n_frames'] for s in all_stimuli], [])
+        f.write(', ' + ', '.join(header) + '\n')
+        for i, mode_name in enumerate(collected_modes['t_modes_names']):
+            f.write(mode_name + ', ' + ', '.join(collected_modes['t_modes'][i,:].astype('|S16')) + '\n')
 
     # spatial base plots
-    fig = vis.VisualizeTimeseries()
-    fig.subplot(len(s_modes))
-    for i, (name, s_mode) in enumerate(s_modes):
-        n = '_'.join(name.split('_')[:-1])
-        filelist = glob.glob(os.path.join(load_path, '*' + n + '_baseline.json'))
-        base_series = TimeSeries()
-        base_series.load(os.path.splitext(filelist[0])[0])
-        base_series.shape = tuple(base_series.shape)
-        base = base_series.shaped2D()
-        if n in to_turn:
-            base = base[:, ::-1, :]
-            s_mode = s_mode[::-1, :]
+    fig = rl.plot_spatial_base(region_label, collected_modes['s_modes'],
+                               config['to_turn'], load_path, lut_colormaps)
+    fig.savefig(region_savepath + '_spatial.' + config['format'])
 
-        fig.overlay_workaround(fig.axes['base'][i],
-                           np.mean(base, axis=0), {'cmap':plt.cm.bone},
-                           s_mode, {'threshold':0.2, 'colormap':colormaps[region_label]},
-                           {'title':{"label": n}})
-    fig.fig.savefig(os.path.join(save_path, region_label + add + '_spatial.' + format))
-
-    # write the data to csv files
-    assert(len(t_modes_names)==t_modes.shape[0])
-    with open(os.path.join(save_path, region_label + add + '.csv'), 'w') as f:
-        header = __builtin__.sum([[s] * n_frames for s in all_stimuli], [])
-        f.write(', ' + ', '.join(header) + '\n')
-        for i, mode_name in enumerate(t_modes_names):
-            f.write(mode_name + ', ' + ', '.join(t_modes[i,:].astype('|S16')) + '\n')
 
 if integrate:
 
