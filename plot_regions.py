@@ -112,7 +112,12 @@ for region_label in all_region_labels:
 
     region_savepath = os.path.join(save_path, region_label)
     modes = rl.collect_modes_for(region_label, regions_file_path, data)
-    fulldatadic[region_label] = modes
+    integrator = bf.StimulusIntegrator(method=config['integration_method'],
+                                       threshold=-10000,
+                                       window=config['integration_window'])
+    fulldatadic[region_label] = {}
+    fulldatadic[region_label]['modes'] = modes
+    fulldatadic[region_label]['modes_integrated'] = integrator(modes)
     # TODO: remove this after jan fixed the timecourses object
     if modes.timecourses.ndim < 2:
         tmp_t_modes = modes.timecourses.reshape((-1, 1))
@@ -124,6 +129,8 @@ for region_label in all_region_labels:
 # produce per-region plots
 for region_label in all_region_labels:
 
+    modes = fulldatadic[region_label]['modes']
+
     # latency plots
     latency_matrix = rl.compute_latencies(modes)
     fig = rl.plot_latencies(latency_matrix.T, region_label, all_stimuli)
@@ -131,14 +138,16 @@ for region_label in all_region_labels:
 
     # TODO: write generic function to write CSVs with headers
     with open(region_savepath + '_latencies.csv', 'w') as f:
-        f.write(', ' + ', '.join(all_stimuli) + '\n')
-        for i, mode_name in enumerate(collected_modes['t_modes_names']):
+        f.write(', ' + ', '.join(modes.label_sample) + '\n')
+        for i, mode_name in enumerate(modes.label_objects):
             f.write(mode_name + ', ' + ', '.join(latency_matrix[i,:].astype('|S16')) + '\n')
 
-    if config['integrate']:
-        fig = rl.plot_temporal_integrated(region_label, t_modes_ma)
-        fig.savefig(region_savepath + '_temp_integrated.' + config['format'])
-    elif config['lesion_data']:
+    fig = rl.plot_temporal_integrated(region_label,
+                                      fulldatadic[region_label]['modes_integrated'],
+                                      stim_selection)
+    fig.savefig(region_savepath + '_temp_integrated.' + config['format'])
+
+    if config['lesion_data']:
         fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians,
                                       stim_selection, config['n_frames'])
         fig.savefig(region_savepath + '_temp_lesion.' + config['format'])

@@ -278,14 +278,20 @@ def plot_temporal_lesion(region_label, t_modes_ma, medians, stim_selection, n_fr
     plt.legend(labels)
     return fig
 
-def plot_temporal_integrated(region_label, t_modes_ma):
+def plot_temporal_integrated(region_label, modes_integrated, stim_selection):
     """"""
     fig = plt.figure()
     fig.suptitle(region_label)
     ax = fig.add_subplot(111)
     # make it a list because boxplot has a problem with masked arrays
+    if modes_integrated.timecourses.ndim < 2:
+        timecourses = modes_integrated.timecourses.reshape((1, -1))
+    t_modes_ma = np.ma.array(timecourses, mask=np.isnan(timecourses))
     t_modes_ma = [[y for y in row if y] for row in t_modes_ma.T]
+    x_index = [stim_selection.index(lab) for lab in modes_integrated.label_sample]
+    t_modes_ma = [t_modes_ma[ind] for ind in x_index]
     ax.boxplot(t_modes_ma)
+    ax.set_xticklabels(stim_selection, rotation='45', ha='right')
     return fig
 
 def compute_latencies(modes):
