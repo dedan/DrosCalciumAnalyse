@@ -111,21 +111,22 @@ medians, fulldatadic = {}, {}
 for region_label in all_region_labels:
 
     region_savepath = os.path.join(save_path, region_label)
-    t_modes = rl.collect_modes_for(region_label, regions_file_path, data)
-    fulldatadic[region_label] = t_modes
+    modes = rl.collect_modes_for(region_label, regions_file_path, data)
+    fulldatadic[region_label] = modes
     # TODO: remove this after jan fixed the timecourses object
-    if t_modes.timecourses.ndim < 2:
-        tmp_t_modes = t_modes.timecourses.reshape((-1, 1))
+    if modes.timecourses.ndim < 2:
+        tmp_t_modes = modes.timecourses.reshape((-1, 1))
     else:
-        tmp_t_modes = t_modes.timecourses
+        tmp_t_modes = modes.timecourses
+    tmp_t_modes = np.ma.array(tmp_t_modes, mask=np.isnan(tmp_t_modes))
     medians[region_label] = np.ma.extras.median(tmp_t_modes, axis=1)
 
 # produce per-region plots
 for region_label in all_region_labels:
 
     # latency plots
-    latency_matrix = rl.compute_latencies(collected_modes, config['n_frames'])
-    fig = rl.plot_latencies(latency_matrix, region_label, all_stimuli)
+    latency_matrix = rl.compute_latencies(modes)
+    fig = rl.plot_latencies(latency_matrix.T, region_label, all_stimuli)
     fig.savefig(region_savepath + '_latencies.' + config['format'])
 
     # TODO: write generic function to write CSVs with headers

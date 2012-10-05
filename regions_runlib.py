@@ -288,21 +288,11 @@ def plot_temporal_integrated(region_label, t_modes_ma):
     ax.boxplot(t_modes_ma)
     return fig
 
-def compute_latencies(collected_modes, n_frames):
+def compute_latencies(modes):
     """latency: time (in frames) of the maximum response (peak)"""
-    n_animals = collected_modes['t_modes'].shape[0]
-    n_stimuli = collected_modes['t_modes'].shape[1]
-
-    res = np.zeros((n_animals, n_stimuli/n_frames))
-
-    for animal_index in range(n_animals):
-        for i, stim_begin in enumerate(range(0, n_stimuli, n_frames)):
-            stimulus = collected_modes['t_modes'][animal_index, stim_begin:stim_begin+n_frames]
-            if np.all(np.isnan(stimulus)):
-                res[animal_index, i] = np.nan
-            else:
-                res[animal_index, i] = np.argmax(stimulus)
-    return res
+    latencies = np.argmax(modes.trial_shaped(),axis=1).astype('float')
+    latencies[np.isnan(modes.trial_shaped()[:,0,:])] = np.nan
+    return latencies
 
 def plot_latencies(latency_matrix, region_label, all_stimuli):
     """boxplot for the distribution of latencies
@@ -360,8 +350,7 @@ def collect_modes_for(region_label, regions_json_path, data):
             s_shapes.append(ts.base.shape)
     t_modes = np.array(t_modes)
     s_modes = np.hstack(s_modes).reshape((1, -1))
-    t_modes_ma = np.ma.array(t_modes, mask=np.isnan(t_modes))
-    ts_temporal = bf.TimeSeries(name=[region_label], series=t_modes_ma,
+    ts_temporal = bf.TimeSeries(name=[region_label], series=t_modes,
                                 shape=(t_modes.shape[0],), label_sample=all_stimuli)
     ts_temporal.label_objects = t_modes_names
     ts_spatial = bf.TimeSeries(name=[region_label], shape=s_shapes)
