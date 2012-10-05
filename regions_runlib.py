@@ -286,9 +286,11 @@ def plot_temporal_integrated(region_label, modes_integrated, stim_selection):
     # make it a list because boxplot has a problem with masked arrays
     if modes_integrated.timecourses.ndim < 2:
         timecourses = modes_integrated.timecourses.reshape((1, -1))
+    else:
+        timecourses = modes_integrated.timecourses
     t_modes_ma = np.ma.array(timecourses, mask=np.isnan(timecourses))
-    t_modes_ma = [[y for y in row if y] for row in t_modes_ma.T]
-    x_index = [stim_selection.index(lab) for lab in modes_integrated.label_sample]
+    t_modes_ma = [[y for y in row if y] for row in t_modes_ma]
+    x_index = [modes_integrated.label_sample.index(lab) for lab in stim_selection]
     t_modes_ma = [t_modes_ma[ind] for ind in x_index]
     ax.boxplot(t_modes_ma)
     ax.set_xticklabels(stim_selection, rotation='45', ha='right')
@@ -354,10 +356,10 @@ def collect_modes_for(region_label, regions_json_path, data):
             t_modes_names.append("%s_%d" % (animal, mode))
             s_modes.append(ts.base.timecourses[mode, :])
             s_shapes.append(ts.base.shape)
-    t_modes = np.array(t_modes)
+    t_modes = np.array(t_modes).T
     s_modes = np.hstack(s_modes).reshape((1, -1))
     ts_temporal = bf.TimeSeries(name=[region_label], series=t_modes,
-                                shape=(t_modes.shape[0],), label_sample=all_stimuli)
+                                shape=(t_modes.shape[1],), label_sample=all_stimuli)
     ts_temporal.label_objects = t_modes_names
     ts_spatial = bf.TimeSeries(name=[region_label], shape=s_shapes)
     ts_spatial.timecourses = s_modes
