@@ -111,13 +111,17 @@ medians, fulldatadic = {}, {}
 for region_label in all_region_labels:
 
     region_savepath = os.path.join(save_path, region_label)
-    collected_modes = rl.collect_modes_for(region_label, regions_file_path, data)
-    fulldatadic[region_label] = collected_modes['t_modes']
-    medians[region_label] = np.ma.extras.median(collected_modes['t_modes'], axis=0)
+    t_modes = rl.collect_modes_for(region_label, regions_file_path, data)
+    fulldatadic[region_label] = t_modes
+    # TODO: remove this after jan fixed the timecourses object
+    if t_modes.timecourses.ndim < 2:
+        tmp_t_modes = t_modes.timecourses.reshape((-1, 1))
+    else:
+        tmp_t_modes = t_modes.timecourses
+    medians[region_label] = np.ma.extras.median(tmp_t_modes, axis=1)
 
 # produce per-region plots
 for region_label in all_region_labels:
-
 
     # latency plots
     latency_matrix = rl.compute_latencies(collected_modes, config['n_frames'])

@@ -326,7 +326,7 @@ def collect_modes_for(region_label, regions_json_path, data):
         * the information for this comes from the regions.json created by
           using the regions_gui
     """
-    t_modes, t_modes_names, s_modes = [], [], []
+    t_modes, t_modes_names, s_modes, s_shapes = [], [], [], []
     labeled_animals = json.load(open(regions_json_path))
     all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
 
@@ -356,15 +356,19 @@ def collect_modes_for(region_label, regions_json_path, data):
             # add to results list
             t_modes.append(pdat.flatten())
             t_modes_names.append("%s_%d" % (animal, mode))
-            s_modes.append(ts.base.trial_shaped2D()[mode, :, :, :].squeeze())
+            s_modes.append(ts.base.timecourses[mode, :])
+            s_shapes.append(ts.base.shape)
     t_modes = np.array(t_modes)
+    s_modes = np.hstack(s_modes).reshape((1, -1))
     t_modes_ma = np.ma.array(t_modes, mask=np.isnan(t_modes))
-    # ts = bf.TimeSeries(name=[region_label], series=t_modes_ma,
-    #                    shape=(t_modes.shape[0],), label_sample=all_stimuli)
-    # ts.timepoints =
-
-    return {'t_modes': t_modes, 't_modes_names': t_modes_names, 's_modes': s_modes}
-
+    ts_temporal = bf.TimeSeries(name=[region_label], series=t_modes_ma,
+                                shape=(t_modes.shape[0],), label_sample=all_stimuli)
+    ts_temporal.label_objects = t_modes_names
+    ts_spatial = bf.TimeSeries(name=[region_label], shape=s_shapes)
+    ts_spatial.timecourses = s_modes
+    ts_spatial.label_objects = t_modes_names
+    ts_temporal.base = ts_spatial
+    return ts_temporal
 
 def load_lesion_data(lesion_data_path):
     """read the table of which lesion was applied into a dictionary"""
