@@ -93,10 +93,9 @@ if config['lesion_data']:
 
 # read mf results
 l.info('read files from: %s' % load_path)
-data = rl.load_mf_results(load_path, selection, config['lesion_data'],
-                          config['integrate'], config['integrator_window'])
+data = rl.load_mf_results(load_path, selection, config['lesion_data'])
 
-# get all stimuli and region labels
+# get all stimuli and region labels (use selection if selection given)
 all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
 if not stim_selection:
     stim_selection = all_stimuli
@@ -107,32 +106,30 @@ with open(regions_file_path) as f:
 l.debug('all_stimuli: %s' % all_stimuli)
 l.debug('all_region_labels: %s' % all_region_labels)
 
-# produce a figure for each region_label
+# collect data for regions
 medians, fulldatadic = {}, {}
 for region_label in all_region_labels:
 
-    region_savepath = os.path.join(save_path, region_label + '_latencies.')
+    region_savepath = os.path.join(save_path, region_label)
     collected_modes = rl.collect_modes_for(region_label, regions_file_path, data)
+    fulldatadic[region_label] = collected_modes['t_modes']
+    medians[region_label] = np.ma.extras.median(collected_modes['t_modes'], axis=0)
+
+# produce per-region plots
+for region_label in all_region_labels:
+
 
     # latency plots
-    if not config['integrate']:
-        latency_matrix = rl.compute_latencies(collected_modes, config['n_frames'])
-        fig = rl.plot_latencies(latency_matrix, region_label, all_stimuli)
-        fig.savefig(region_savepath + '_latencies.' + config['format'])
+    latency_matrix = rl.compute_latencies(collected_modes, config['n_frames'])
+    fig = rl.plot_latencies(latency_matrix, region_label, all_stimuli)
+    fig.savefig(region_savepath + '_latencies.' + config['format'])
 
-        # TODO: write generic function to write CSVs with headers
-        with open(region_savepath + '_latencies.csv', 'w') as f:
-            f.write(', ' + ', '.join(all_stimuli) + '\n')
-            for i, mode_name in enumerate(collected_modes['t_modes_names']):
-                f.write(mode_name + ', ' + ', '.join(latency_matrix[i,:].astype('|S16')) + '\n')
+    # TODO: write generic function to write CSVs with headers
+    with open(region_savepath + '_latencies.csv', 'w') as f:
+        f.write(', ' + ', '.join(all_stimuli) + '\n')
+        for i, mode_name in enumerate(collected_modes['t_modes_names']):
+            f.write(mode_name + ', ' + ', '.join(latency_matrix[i,:].astype('|S16')) + '\n')
 
-    # temporal mode plots
-    t_modes_ma = rl.get_masked_selection(collected_modes['t_modes'],
-                                         all_stimuli,
-                                         stim_selection,
-                                         config['integrate'])
-    fulldatadic[region_label] = t_modes_ma
-    medians[region_label] = np.ma.extras.median(t_modes_ma, axis=0)
     if config['integrate']:
         fig = rl.plot_temporal_integrated(region_label, t_modes_ma)
         fig.savefig(region_savepath + '_temp_integrated.' + config['format'])

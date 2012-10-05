@@ -244,18 +244,6 @@ def plot_spatial_base(region_label, s_modes, to_turn, load_path, colormaps):
                            {'title':{"label": n}})
     return fig.fig
 
-def get_masked_selection(t_modes, all_stimuli, stim_selection, integrate=False):
-    """mask array for nans and filter out non selected stimuli"""
-    stim_selection_idxs = [all_stimuli.index(i) for i in stim_selection]
-    if not integrate:
-        # TODO: remove magic number
-        replicated_indeces = [range(i*20, i*20+20) for i in stim_selection_idxs]
-        stim_selection_idxs = __builtin__.sum(replicated_indeces, [])
-    # mask it for nans (! True in the mask means exclusion)
-    return np.ma.array(t_modes[:, stim_selection_idxs],
-                       mask=np.isnan(t_modes[:, stim_selection_idxs]))
-
-
 def plot_temporal(region_label, t_modes_ma, medians, stim_selection, n_frames):
     fig = plt.figure()
     fig.suptitle(region_label)
@@ -343,35 +331,38 @@ def collect_modes_for(region_label, regions_json_path, data):
     all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
 
     # iterate over region labels for each animal
+    trial_length = data[labeled_animals.keys()[0]].timepoints
     for animal, regions in labeled_animals.items():
 
         # load data and extract trial shape
         if not animal in data:
             continue
         ts = data[animal]
-        trial_shaped = ts.trial_shaped()
-        trial_length = trial_shaped.shape[1]
-        n_modes = trial_shaped.shape[2]
+        assert trial_length == ts.timepoints
+        n_modes = ts.num_objects
 
         # extract modes for region_label (several modes can belong to one region)
         modes = [i for i in range(n_modes) if regions[i] == region_label]
         for mode in modes:
 
             # initialize to nan (not all stimuli are found for all animals)
-            pdat = np.zeros(len(all_stimuli) * trial_length)
+            pdat = np.zeros((len(all_stimuli), trial_length))
             pdat[:] = np.nan
 
             # fill the results vector for the current animal
-            for i, stimulus in enumerate(all_stimuli):
-                if stimulus in ts.label_sample:
-                    index = ts.label_sample.index(stimulus)
-                    pdat[i * trial_length:i * trial_length + trial_length] = trial_shaped[index, :, mode]
+            indices = [all_stimuli.index(lab) for lab in ts.label_sample]
+            pdat[indices] = ts.trial_shaped()[:, :, mode]
 
             # add to results list
-            t_modes.append(pdat)
+            t_modes.append(pdat.flatten())
             t_modes_names.append("%s_%d" % (animal, mode))
-            s_modes.append((animal, ts.base.trial_shaped2D()[mode, :, :, :].squeeze()))
+            s_modes.append(ts.base.trial_shaped2D()[mode, :, :, :].squeeze())
     t_modes = np.array(t_modes)
+    t_modes_ma = np.ma.array(t_modes, mask=np.isnan(t_modes))
+    # ts = bf.TimeSeries(name=[region_label], series=t_modes_ma,
+    #                    shape=(t_modes.shape[0],), label_sample=all_stimuli)
+    # ts.timepoints =
+
     return {'t_modes': t_modes, 't_modes_names': t_modes_names, 's_modes': s_modes}
 
 
@@ -385,17 +376,10 @@ def load_lesion_data(lesion_data_path):
         les_dict[row[0]]['r'] = row[2]
     return les_dict
 
-def load_mf_results(load_path, selection, lesion_data, integrate, integrator_window):
+def load_mf_results(load_path, selection, lesion_data):
     """read data (matrix factorization results) to dictionary"""
 
     data = {}
-    # initialize processing (pipeline) components
-    average_over_stimulus_repetitions = bf.SingleSampleResponse()
-    if integrate:
-        integrator = bf.StimulusIntegrator(method=integrate,
-                                           threshold= -1000,
-                                           window=integrator_window)
-
     # load and filter filelist
     filelist = glob.glob(os.path.join(load_path, '*.json'))
     filelist = [f for f in filelist if not 'base' in os.path.basename(f)]
@@ -429,8 +413,6 @@ def load_mf_results(load_path, selection, lesion_data, integrate, integrator_win
                     new_labels.append(label)
             ts.label_sample = new_labels
 
-        if integrate:
-            data[name] = integrator(average_over_stimulus_repetitions(ts))
-        else:
-            data[name] = average_over_stimulus_repetitions(ts)
+        average_over_stimulus_repetitions = bf.SingleSampleResponse()
+        data[name] = average_over_stimulus_repetitions(ts)
     return data
