@@ -74,18 +74,18 @@ if not os.path.exists(os.path.join(save_path, 'odors')):
 
 # load list of animals to analyse
 selection = []
-if os.path.exists(os.path.join(load_path, 'selection.json')):
-    l.info('found selection file')
-    selection = json.load(open(os.path.join(load_path, 'selection.json')))
+if os.path.exists(config['animal_selection_file']):
+    l.info('found animal selection file')
+    selection = json.load(open(config['animal_selection_file']))
 
-# load stimulus selection list
+# load stimuli (and order to visualize)
 stim_selection = []
-if os.path.exists(os.path.join(load_path, 'stim_selection.json')):
+if os.path.exists(config['stimuli_order_file']):
     l.info('found stimulus selection file')
-    stim_selection = json.load(open(os.path.join(load_path, 'stim_selection.json')))
+    stim_selection = json.load(open(config['stimuli_order_file']))
 
 # load valenz information (which odor they like)
-valenz = json.load(open(os.path.join(config['results_path'], 'valenz.json')))
+valenz = json.load(open(config['valence_file']))
 
 # read lesion-tract table into dictionary for easy access
 if config['lesion_data']:
