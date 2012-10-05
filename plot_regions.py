@@ -133,7 +133,7 @@ for region_label in all_region_labels:
 
     # latency plots
     latency_matrix = rl.compute_latencies(modes)
-    fig = rl.plot_latencies(latency_matrix.T, region_label, all_stimuli)
+    fig = rl.plot_latencies(latency_matrix.T, region_label, stim_selection)
     fig.savefig(region_savepath + '_latencies.' + config['format'])
 
     # TODO: write generic function to write CSVs with headers
