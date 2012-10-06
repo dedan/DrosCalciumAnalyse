@@ -265,16 +265,16 @@ def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
         ax.set_ylim([min_y, max_y])
         ax.set_yticks([0, max_ylabel])
         ax.set_yticks(np.arange(min_y, max_y, 0.1), minor=True)
-        if stim == stim2ax['left']:
+        if stim in stim2ax['left']:
             ax.set_yticklabels([0, max_ylabel])
         else:
             ax.set_yticklabels([])
         ax.set_xticks(range(0, modes.timepoints, 8))
         ax.set_xticks(range(0, modes.timepoints), minor=True)
-        if mode_ix == toplot.num_objects - 1:
+        if stim in stim2ax['bottom']:
             ax.set_xticklabels(np.arange(0, modes.timepoints, 8) * modes.framerate, fontsize=10, rotation='45')
-         else:
-             ax.set_xticklabels([])
+        else:
+            ax.set_xticklabels([])
 
 # TODO: finish corrections
 def plot_temporal_lesion(modes, stim_selection):
@@ -382,7 +382,7 @@ def collect_modes_for(region_label, regions_json_path, data):
     # create timeseries object for region timecourses
     ts_temporal = ts.copy()
     ts.name = [region_label]
-    ts.timecourses = series = t_modes
+    ts.timecourses = t_modes
     ts.shape = t_modes.shape[1]
     ts.label_sample = all_stimuli
     ts_temporal.label_objects = t_modes_names
@@ -453,6 +453,7 @@ def generate_axesmatrix(fig, stimlist):
     ''' generates axes matrix according to stimlist, returns dictionary with
     maps stim_names to axes '''
     stim2ax = {}
+    stim2ax['bottom'], stim2ax['left'] = [], []
     dim0 = len(stimlist[0])
     dim1 = len(stimlist)
     for col_ix in range(dim1):
@@ -460,6 +461,10 @@ def generate_axesmatrix(fig, stimlist):
             stim = stimlist[col_ix][row_ix]
             if stim == 'empty':
                 continue
+            if col_ix == 0:
+                stim2ax['left'].append('stim')
+            if row_ix == dim0:
+                stim2ax['bottom'].append('stim')
             ax = fig.add_subplot(row_ix, col_ix, row_ix * dim1 + col_ix + 1)
             stim2ax[stim] = ax
     return stim2ax
@@ -468,9 +473,10 @@ def generate_axeslist(fig, stimlist):
     ''' generates axes list according to stimlist, returns dictionary with
     maps stim_names to axes '''
     stim2ax = {}
+    stim2ax['bottom'] = stimlist
     for col_ix, stim in enumerate(stimlist):
         if col_ix == 0:
-            stim2ax['left'] = stim
+            stim2ax['left'] = [stim]
         ax = fig.add_subplot(1, len(stimlist), col_ix + 1)
         stim2ax[stim] = ax
     return stim2ax
