@@ -378,9 +378,15 @@ def collect_modes_for(region_label, regions_json_path, data):
             s_shapes.append(ts.base.shape)
     t_modes = np.array(t_modes).T
     s_modes = np.hstack(s_modes).reshape((1, -1))
-    ts_temporal = bf.TimeSeries(name=[region_label], series=t_modes,
-                                shape=(t_modes.shape[1],), label_sample=all_stimuli)
+
+    # create timeseries object for region timecourses
+    ts_temporal = ts.copy()
+    ts.name = [region_label]
+    ts.timecourses = series = t_modes
+    ts.shape = t_modes.shape[1]
+    ts.label_sample = all_stimuli
     ts_temporal.label_objects = t_modes_names
+     # create timeseries object for region bases
     ts_spatial = bf.TimeSeries(name=[region_label], shape=s_shapes)
     ts_spatial.timecourses = s_modes
     ts_spatial.label_objects = t_modes_names
