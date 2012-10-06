@@ -30,7 +30,7 @@ def fit_models(data_dict, config):
                 t = data_dict[odor][concen]
                 x.append([t['data'][2], t['data'][0]])
                 y.append(t['valenz'])
-    fit = regressor.fit(x,y)
+    fit = regressor.fit(x, y)
     alpha = fit.coef_[1]
 
     agg = defaultdict(list)
@@ -286,8 +286,8 @@ def plot_temporal_lesion(modes, stim_selection):
     cols = ['r', 'g', 'b']
     labels = ['intact', 'iPN', 'vlPrc']
     for i in range(3):
-        idx = __builtin__.sum([range(j, j+n_frames) for
-                               j in range(i*n_frames, l, 3 * n_frames)], [])
+        idx = __builtin__.sum([range(j, j + n_frames) for
+                               j in range(i * n_frames, l, 3 * n_frames)], [])
         d = m[idx]
         p25 = scoreatpercentile(t_modes_ma, 25)
         p75 = scoreatpercentile(t_modes_ma, 75)
@@ -318,8 +318,8 @@ def plot_temporal_integrated(modes_integrated, stim_selection):
 
 def compute_latencies(modes):
     """latency: time (in frames) of the maximum response (peak)"""
-    latencies = np.argmax(modes.trial_shaped(),axis=1).astype('float')
-    latencies[np.isnan(modes.trial_shaped()[:,0,:])] = np.nan
+    latencies = np.argmax(modes.trial_shaped(), axis=1).astype('float')
+    latencies[np.isnan(modes.trial_shaped()[:, 0, :])] = np.nan
     return latencies
 
 def plot_latencies(latency_matrix, region_label, all_stimuli):
@@ -412,7 +412,6 @@ def load_mf_results(load_path, selection, lesion_data):
     filelist = [f for f in filelist if not 'base' in os.path.basename(f)]
     filelist = [f for f in filelist if not 'regions' in os.path.basename(f)]
     filelist = [f for f in filelist if not 'selection' in os.path.basename(f)]
-
     for fname in filelist:
 
         if selection:

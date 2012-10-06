@@ -134,7 +134,7 @@ for region_label in all_region_labels:
     with open(region_savepath + '_latencies.csv', 'w') as f:
         f.write(', ' + ', '.join(modes.label_sample) + '\n')
         for i, mode_name in enumerate(modes.label_objects):
-            f.write(mode_name + ', ' + ', '.join(latency_matrix[i,:].astype('|S16')) + '\n')
+            f.write(mode_name + ', ' + ', '.join(latency_matrix[i, :].astype('|S16')) + '\n')
 
     fig = rl.plot_temporal_integrated(region_label,
                                       fulldatadic[region_label]['modes_integrated'],
@@ -151,11 +151,11 @@ for region_label in all_region_labels:
         fig.savefig(region_savepath + '_temp.' + config['format'])
 
     # write the temporal modes to csv files
-    with open(region_savepath  + '_tmodes.csv', 'w') as f:
+    with open(region_savepath + '_tmodes.csv', 'w') as f:
         header = __builtin__.sum([[s] * config['n_frames'] for s in all_stimuli], [])
         f.write(', ' + ', '.join(header) + '\n')
         for i, mode_name in enumerate(collected_modes['t_modes_names']):
-            f.write(mode_name + ', ' + ', '.join(collected_modes['t_modes'][i,:].astype('|S16')) + '\n')
+            f.write(mode_name + ', ' + ', '.join(collected_modes['t_modes'][i, :].astype('|S16')) + '\n')
 
     # spatial base plots
     fig = rl.plot_spatial_base(region_label, collected_modes['s_modes'],
@@ -202,7 +202,7 @@ if config['integrate']:
         ax = fig.add_subplot(N, 1, i)
         ax.scatter(models[config['main_regions'][i]], models['val'])
         ax.set_title('%s %.2f' % (config['main_regions'][i],
-            np.corrcoef(models[config['main_regions'][i]], models['val'])[0,1]))
+            np.corrcoef(models[config['main_regions'][i]], models['val'])[0, 1]))
         ax.set_xlabel('activation')
         ax.set_ylabel('valenz')
     plt.savefig(os.path.join(save_path, 'activation_vs_valenz.' + config['format']))
@@ -210,7 +210,7 @@ if config['integrate']:
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.scatter(models['diff'], models['val'])
-    ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(models['diff'], models['val'])[0,1])
+    ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(models['diff'], models['val'])[0, 1])
     ax.set_xlabel('activation difference')
     ax.set_ylabel('valenz')
     plt.savefig(os.path.join(save_path, 'activation(difference)_vs_valenz.' + config['format']))
@@ -220,7 +220,7 @@ if config['integrate']:
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.scatter(models['ratio'], models['val'])
-    ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(models['ratio'], models['val'])[0,1])
+    ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(models['ratio'], models['val'])[0, 1])
     ax.set_xlabel('activation ratio')
     ax.set_ylabel('valenz')
     plt.savefig(os.path.join(save_path, 'activation(ratio)_vs_valenz.' + config['format']))
