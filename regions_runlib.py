@@ -352,7 +352,7 @@ def collect_modes_for(region_label, regions_json_path, data):
     trial_length = data[labeled_animals.keys()[0]].timepoints
     for animal, regions in labeled_animals.items():
 
-        # load data and extract trial shape
+        # load data and assert equal trial shape
         if not animal in data:
             continue
         ts = data[animal]
@@ -443,3 +443,35 @@ def load_mf_results(load_path, selection, lesion_data):
         average_over_stimulus_repetitions = bf.SingleSampleResponse()
         data[name] = average_over_stimulus_repetitions(ts)
     return data
+
+def calc_scoreatpercentile(modes, percentile):
+    ''' calculates percentile for Timeseries (may include nans)'''
+    tmp_t_modes = modes.trial_shaped()
+    tmp_t_modes = np.ma.array(tmp_t_modes, mask=np.isnan(tmp_t_modes))
+    return scoreatpercentile(tmp_t_modes, axis=2)
+
+def generate_axesmatrix(fig, stimlist):
+    ''' generates axes matrix according to stimlist, returns dictionary with
+    maps stim_names to axes '''
+    stim2ax = {}
+    dim0 = len(stimlist[0])
+    dim1 = len(stimlist)
+    for col_ix in range(dim1):
+        for row_ix in range(dim0):
+            stim = stimlist[col_ix][row_ix]
+            if stim == 'empty':
+                continue
+            ax = fig.add_subplot(row_ix, col_ix, row_ix * dim1 + col_ix + 1)
+            stim2ax[stim] = ax
+    return stim2ax
+
+def generate_axeslist(fig, stimlist):
+    ''' generates axes list according to stimlist, returns dictionary with
+    maps stim_names to axes '''
+    stim2ax = {}
+    for col_ix, stim in enumerate(stimlist):
+        if col_ix == 0:
+            stim2ax['left'] = stim
+        ax = fig.add_subplot(1, len(stimlist), col_ix + 1)
+        stim2ax[stim] = ax
+    return stim2ax
