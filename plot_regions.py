@@ -113,18 +113,12 @@ for region_label in all_region_labels:
     region_savepath = os.path.join(save_path, region_label)
     modes = rl.collect_modes_for(region_label, regions_file_path, data)
     integrator = bf.StimulusIntegrator(method=config['integration_method'],
-                                       threshold=-10000,
+                                       threshold= -10000,
                                        window=config['integration_window'])
     fulldatadic[region_label] = {}
     fulldatadic[region_label]['modes'] = modes
     fulldatadic[region_label]['modes_integrated'] = integrator(modes)
-    # TODO: remove this after jan fixed the timecourses object
-    if modes.timecourses.ndim < 2:
-        tmp_t_modes = modes.timecourses.reshape((-1, 1))
-    else:
-        tmp_t_modes = modes.timecourses
-    tmp_t_modes = np.ma.array(tmp_t_modes, mask=np.isnan(tmp_t_modes))
-    medians[region_label] = np.ma.extras.median(tmp_t_modes, axis=1)
+
 
 # produce per-region plots
 for region_label in all_region_labels:
@@ -147,13 +141,13 @@ for region_label in all_region_labels:
                                       stim_selection)
     fig.savefig(region_savepath + '_temp_integrated.' + config['format'])
 
+    # TODO: fix lesion plots
     if config['lesion_data']:
         fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians,
-                                      stim_selection, config['n_frames'])
+                                      stim_selection)
         fig.savefig(region_savepath + '_temp_lesion.' + config['format'])
     else:
-        fig = rl.plot_temporal(region_label, t_modes_ma, medians,
-                               stim_selection, config['n_frames'])
+        fig = rl.plot_temporal(region_label, modes, stim_selection)
         fig.savefig(region_savepath + '_temp.' + config['format'])
 
     # write the temporal modes to csv files
