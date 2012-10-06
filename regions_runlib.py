@@ -10,7 +10,7 @@ import itertools as it
 from collections import defaultdict
 import numpy as np
 import pylab as plt
-from scipy.stats.mstats_basic import scoreatpercentile
+from scipy.stats.mstats_basic import scoreatpercentile, mquantiles
 from NeuralImageProcessing.pipeline import TimeSeries
 from NeuralImageProcessing import illustrate_decomposition as vis
 import NeuralImageProcessing.basic_functions as bf
@@ -245,36 +245,42 @@ def plot_spatial_base(region_label, s_modes, to_turn, load_path, colormaps):
     return fig.fig
 
 #TODO: include plot_single
-def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
-    medians = calc_scoreatpercentile(modes, 50)
-    p25 = calc_scoreatpercentile(modes, 25)
-    p75 = calc_scoreatpercentile(modes, 75)
 
-    max_y = np.max(p25) + 0.05
-    min_y = np.min(p75) - 0.05
-    max_ylabel = np.floor(max_y * 10) / 10
+def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
+    medians = calc_scoreatpercentile(modes, 0.5).trial_shaped().squeeze()
+    p25 = calc_scoreatpercentile(modes, 0.25).trial_shaped().squeeze()
+    p75 = calc_scoreatpercentile(modes, 0.75).trial_shaped().squeeze()
+
+    max_y = np.max(p75) + 0.05
+    min_y = np.min(p25) - 0.05
+    max_ytick = np.floor(max_y * 10) / 10
+    min_ytick = np.ceil(min_y * 10) / 10
 
     for stim_ix, stim in enumerate(modes.label_sample):
+        if stim not in stim2ax:
+            continue
         ax = stim2ax[stim]
-        # create stimulus bar
-        ax.fill_between(np.array(modes.stim_window), max_y, min_y, color='b', alpha=0.2)
         ax.fill_between(range(modes.timepoints), p25[stim_ix], p75[stim_ix], linewidth=0, color='0.75')
         ax.plot(medians[stim_ix], linewidth=1.5, color='0')
+        # create stimulus bar
+        ax.fill_between(np.array(modes.stim_window), max_y, min_y, color='b',
+                        alpha=0.2, linewidth=0)
         ax.spines['top'].set_color('none')
         ax.spines['right'].set_color('none')
         ax.xaxis.set_ticks_position('bottom')
         ax.yaxis.set_ticks_position('left')
         ax.set_ylim([min_y, max_y])
-        ax.set_yticks([0, max_ylabel])
-        ax.set_yticks(np.arange(min_y, max_y, 0.1), minor=True)
+        ax.set_yticks([0, max_ytick])
+        ax.set_yticks(np.arange(min_ytick, max_ytick, 0.1), minor=True)
         if stim in stim2ax['left']:
-            ax.set_yticklabels([0, max_ylabel])
+            ax.set_yticklabels([0, max_ytick])
         else:
             ax.set_yticklabels([])
-        ax.set_xticks(range(0, modes.timepoints, 8))
+        xticks = range(0, modes.timepoints, 8)
+        ax.set_xticks(xticks)
         ax.set_xticks(range(0, modes.timepoints), minor=True)
         if stim in stim2ax['bottom']:
-            ax.set_xticklabels(np.arange(0, modes.timepoints, 8) * modes.framerate, fontsize=10, rotation='45')
+            ax.set_xticklabels(['%d' % i for i in np.array(xticks) * 1. / modes.framerate], fontsize=10)
         else:
             ax.set_xticklabels([])
 
@@ -312,7 +318,8 @@ def plot_temporal_integrated(modes_integrated, stim_selection):
         timecourses = modes_integrated.timecourses
     t_modes_ma = np.ma.array(timecourses, mask=np.isnan(timecourses))
     t_modes_ma = [[y for y in row if y] for row in t_modes_ma]
-    x_index = [modes_integrated.label_sample.index(lab) for lab in stim_selection]
+    x_index = [modes_integrated.label_sample.index(lab) for lab in stim_selection
+               if lab in modes_integrated.label_sample]
     t_modes_ma = [t_modes_ma[ind] for ind in x_index]
     ax.boxplot(t_modes_ma)
     ax.set_xticklabels(stim_selection, rotation='45', ha='right')
@@ -383,10 +390,10 @@ def collect_modes_for(region_label, regions_json_path, data):
 
     # create timeseries object for region timecourses
     ts_temporal = ts.copy()
-    ts.name = [region_label]
-    ts.timecourses = t_modes
-    ts.shape = t_modes.shape[1]
-    ts.label_sample = all_stimuli
+    ts_temporal.name = [region_label]
+    ts_temporal.timecourses = t_modes
+    ts_temporal.shape = t_modes.shape[1]
+    ts_temporal.label_sample = all_stimuli
     ts_temporal.label_objects = t_modes_names
     # TODO: remove when all data in correct format
     # adds framerate and stimuli_window for old data
@@ -456,9 +463,11 @@ def load_mf_results(load_path, selection, lesion_data):
 
 def calc_scoreatpercentile(modes, percentile):
     ''' calculates percentile for Timeseries (may include nans)'''
-    tmp_t_modes = modes.trial_shaped()
-    tmp_t_modes = np.ma.array(tmp_t_modes, mask=np.isnan(tmp_t_modes))
-    return scoreatpercentile(tmp_t_modes, axis=2)
+    out = modes.copy()
+    out.timecourses = np.ma.array(out.timecourses, mask=np.isnan(out.timecourses))
+    out.timecourses = mquantiles(out.timecourses, percentile, axis=1)
+    out.shape = (1,)
+    return out
 
 def generate_axesmatrix(fig, stimlist):
     ''' generates axes matrix according to stimlist, returns dictionary with
@@ -489,5 +498,8 @@ def generate_axeslist(fig, stimlist):
         if col_ix == 0:
             stim2ax['left'] = [stim]
         ax = fig.add_subplot(1, len(stimlist), col_ix + 1)
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title(stim, fontsize=6)
         stim2ax[stim] = ax
     return stim2ax

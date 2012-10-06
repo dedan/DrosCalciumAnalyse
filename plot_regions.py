@@ -136,8 +136,7 @@ for region_label in all_region_labels:
         for i, mode_name in enumerate(modes.label_objects):
             f.write(mode_name + ', ' + ', '.join(latency_matrix[i, :].astype('|S16')) + '\n')
 
-    fig = rl.plot_temporal_integrated(region_label,
-                                      fulldatadic[region_label]['modes_integrated'],
+    fig = rl.plot_temporal_integrated(fulldatadic[region_label]['modes_integrated'],
                                       stim_selection)
     fig.savefig(region_savepath + '_temp_integrated.' + config['format'])
 
@@ -147,7 +146,9 @@ for region_label in all_region_labels:
                                       stim_selection)
         fig.savefig(region_savepath + '_temp_lesion.' + config['format'])
     else:
-        fig = rl.plot_temporal(region_label, modes, stim_selection)
+        fig = plt.figure(figsize=(20, 3))
+        ax2stim = rl.generate_axeslist(fig, stim_selection)
+        rl.plot_temporal(modes, stim_selection, ax2stim)
         fig.savefig(region_savepath + '_temp.' + config['format'])
 
     # write the temporal modes to csv files
