@@ -329,7 +329,7 @@ def plot_latencies(latency_matrix, region_label, all_stimuli):
     """
     res_ma = np.ma.array(latency_matrix, mask=np.isnan(latency_matrix))
     # make it a list because boxplot has a problem with masked arrays
-    res_ma = [[y for y in row if y] for row in res_ma.T]
+    res_ma = [[y for y in row if y] for row in res_ma]
     fig = plt.figure()
     fig.suptitle(region_label)
     ax = fig.add_subplot(111)
