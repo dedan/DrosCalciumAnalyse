@@ -244,24 +244,44 @@ def plot_spatial_base(region_label, s_modes, to_turn, load_path, colormaps):
                            {'title':{"label": n}})
     return fig.fig
 
-def plot_temporal(region_label, t_modes_ma, medians, stim_selection, n_frames):
-    fig = plt.figure()
-    fig.suptitle(region_label)
-    ax = fig.add_subplot(111)
-    l = len(medians[region_label])
-    p25 = scoreatpercentile(t_modes_ma, 25)
-    p75 = scoreatpercentile(t_modes_ma, 75)
-    ax.fill_between(range(l), p25, p75, linewidth=0, color='0.75')
-    ax.plot(medians[region_label], linewidth=0.5, color='0')
-    ax.set_xticks(range(0, l, n_frames))
-    ax.set_xticklabels(list(stim_selection), rotation='90')
-    return fig
+#TODO: include plot_single
+def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
+    medians = calc_scoreatpercentile(modes, 50)
+    p25 = calc_scoreatpercentile(modes, 25)
+    p75 = calc_scoreatpercentile(modes, 75)
 
-def plot_temporal_lesion(region_label, t_modes_ma, medians, stim_selection, n_frames):
+    max_y = np.max(p25) + 0.05
+    min_y = np.min(p75) - 0.05
+    max_ylabel = np.floor(max_y * 10) / 10
+
+    for stim_ix, stim in enumerate(modes.label_sample):
+        ax = stim2ax[stim]
+        ax.fill_between(range(modes.timepoints), p25[stim_ix], p75[stim_ix], linewidth=0, color='0.75')
+        ax.plot(medians[stim_ix], linewidth=1.5, color='0')
+        ax.spines['top'].set_color('none')
+        ax.spines['right'].set_color('none')
+        ax.xaxis.set_ticks_position('bottom')
+        ax.yaxis.set_ticks_position('left')
+        ax.set_ylim([min_y, max_y])
+        ax.set_yticks([0, max_ylabel])
+        ax.set_yticks(np.arange(min_y, max_y, 0.1), minor=True)
+        if stim == stim2ax['left']:
+            ax.set_yticklabels([0, max_ylabel])
+        else:
+            ax.set_yticklabels([])
+        ax.set_xticks(range(0, modes.timepoints, 8))
+        ax.set_xticks(range(0, modes.timepoints), minor=True)
+        if mode_ix == toplot.num_objects - 1:
+            ax.set_xticklabels(np.arange(0, modes.timepoints, 8) * modes.framerate, fontsize=10, rotation='45')
+         else:
+             ax.set_xticklabels([])
+
+# TODO: finish corrections
+def plot_temporal_lesion(modes, stim_selection):
     fig = plt.figure()
-    fig.suptitle(region_label)
+    fig.suptitle(modes.name[0])
     ax = fig.add_subplot(111)
-    m = medians[region_label]
+    m = calc_scoreatpercentile(modes, 50)
     l = len(m)
     cols = ['r', 'g', 'b']
     labels = ['intact', 'iPN', 'vlPrc']
@@ -278,10 +298,10 @@ def plot_temporal_lesion(region_label, t_modes_ma, medians, stim_selection, n_fr
     plt.legend(labels)
     return fig
 
-def plot_temporal_integrated(region_label, modes_integrated, stim_selection):
+def plot_temporal_integrated(modes_integrated, stim_selection):
     """"""
     fig = plt.figure()
-    fig.suptitle(region_label)
+    fig.suptitle(modes_integrated.name[0])
     ax = fig.add_subplot(111)
     # make it a list because boxplot has a problem with masked arrays
     if modes_integrated.timecourses.ndim < 2:
