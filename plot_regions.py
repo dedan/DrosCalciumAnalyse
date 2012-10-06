@@ -36,7 +36,7 @@ output: plots (in all plots activity means the median activity for a certain odo
           main regions (split_heatmap_valenz)
         * plot of latencies of the maximum response per stimulus and region
 
-@author: stephan.gabler@gmail.com
+@author: stephan.gabler@gmail.com, j.soelter@fu-berlin.de
 """
 
 import os, glob, json, math, csv, __builtin__, sys
@@ -110,7 +110,6 @@ l.debug('all_region_labels: %s' % all_region_labels)
 medians, fulldatadic = {}, {}
 for region_label in all_region_labels:
 
-    region_savepath = os.path.join(save_path, region_label)
     modes = rl.collect_modes_for(region_label, regions_file_path, data)
     integrator = bf.StimulusIntegrator(method=config['integration_method'],
                                        threshold= -10000,
@@ -123,40 +122,53 @@ for region_label in all_region_labels:
 # produce per-region plots
 for region_label in all_region_labels:
 
+    #get_data
+    region_savepath = os.path.join(save_path, region_label)
     modes = fulldatadic[region_label]['modes']
+    modes_integrated = fulldatadic[region_label]['modes_integrated']
 
-    # latency plots
-    latency_matrix = rl.compute_latencies(modes)
-    fig = rl.plot_latencies(latency_matrix, region_label, stim_selection)
+    # =========================================================================
+    # latencies: calc, plot and save
+    # =========================================================================
+    latencies = rl.compute_latencies(modes)
+
+    fig = plt.figure(figsize=(12, 7))
+    fig.suptitle('latencies', y=0.96)
+    ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
+    rl.boxplot(ax, latencies, stim_selection)
     fig.savefig(region_savepath + '_latencies.' + config['format'])
+    rl.write_csv_wt_labels(region_savepath + '_latencies.csv',
+                           latencies)
 
-    # TODO: write generic function to write CSVs with headers
-    with open(region_savepath + '_latencies.csv', 'w') as f:
-        f.write(', ' + ', '.join(modes.label_sample) + '\n')
-        for i, mode_name in enumerate(modes.label_objects):
-            f.write(mode_name + ', ' + ', '.join(latency_matrix[i, :].astype('|S16')) + '\n')
+    # =========================================================================
+    # mean activation: plot, calc and save
+    # =========================================================================
+    fig = plt.figure(figsize=(12, 7))
+    fig.suptitle('activation', y=0.96)
+    ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
+    rl.boxplot(ax, modes_integrated, stim_selection)
+    fig.savefig(region_savepath + '_activation_integrated.' + config['format'])
+    rl.write_csv_wt_labels(region_savepath + '_activation_integrated.csv',
+                           modes_integrated)
 
-    fig = rl.plot_temporal_integrated(fulldatadic[region_label]['modes_integrated'],
-                                      stim_selection)
-    fig.savefig(region_savepath + '_temp_integrated.' + config['format'])
-
-    # TODO: fix lesion plots
+    # =========================================================================
+    # full time activation: plot, calc and save
+    # =========================================================================    
+    # TODO: fix lesion plots and save results
     if config['lesion_data']:
         fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians,
                                       stim_selection)
-        fig.savefig(region_savepath + '_temp_lesion.' + config['format'])
+        fig.savefig(region_savepath + '_activation_lesion.' + config['format'])
+        #write to csv
     else:
-        fig = plt.figure(figsize=(20, 3))
+        fig = plt.figure(figsize=(25, 3))
+        fig.suptitle(region_label, y=0.96)
         ax2stim = rl.generate_axeslist(fig, stim_selection)
         rl.plot_temporal(modes, stim_selection, ax2stim)
-        fig.savefig(region_savepath + '_temp.' + config['format'])
+        fig.savefig(region_savepath + '_activation.' + config['format'])
+        rl.write_csv_wt_labels(region_savepath + '_activation.csv', modes)
 
-    # write the temporal modes to csv files
-    with open(region_savepath + '_tmodes.csv', 'w') as f:
-        header = __builtin__.sum([[s] * config['n_frames'] for s in all_stimuli], [])
-        f.write(', ' + ', '.join(header) + '\n')
-        for i, mode_name in enumerate(collected_modes['t_modes_names']):
-            f.write(mode_name + ', ' + ', '.join(collected_modes['t_modes'][i, :].astype('|S16')) + '\n')
+
 
     # spatial base plots
     fig = rl.plot_spatial_base(region_label, collected_modes['s_modes'],

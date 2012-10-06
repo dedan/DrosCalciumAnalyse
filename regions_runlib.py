@@ -10,6 +10,7 @@ import itertools as it
 from collections import defaultdict
 import numpy as np
 import pylab as plt
+from matplotlib import gridspec
 from scipy.stats.mstats_basic import scoreatpercentile, mquantiles
 from NeuralImageProcessing.pipeline import TimeSeries
 from NeuralImageProcessing import illustrate_decomposition as vis
@@ -247,9 +248,12 @@ def plot_spatial_base(region_label, s_modes, to_turn, load_path, colormaps):
 #TODO: include plot_single
 
 def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
+
     medians = calc_scoreatpercentile(modes, 0.5).trial_shaped().squeeze()
     p25 = calc_scoreatpercentile(modes, 0.25).trial_shaped().squeeze()
     p75 = calc_scoreatpercentile(modes, 0.75).trial_shaped().squeeze()
+
+    num_modes = np.sum(np.logical_not(np.isnan(modes.trial_shaped()[:, 0])), 1)
 
     max_y = np.max(p75) + 0.05
     min_y = np.min(p25) - 0.05
@@ -283,6 +287,8 @@ def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
             ax.set_xticklabels(['%d' % i for i in np.array(xticks) * 1. / modes.framerate], fontsize=10)
         else:
             ax.set_xticklabels([])
+        ax.text(ax.get_xlim()[1] / 2., ax.get_ylim()[1] * 0.9,
+                str(num_modes[stim_ix]), fontsize=6)
 
 # TODO: finish corrections
 def plot_temporal_lesion(modes, stim_selection):
@@ -306,45 +312,45 @@ def plot_temporal_lesion(modes, stim_selection):
     plt.legend(labels)
     return fig
 
-def plot_temporal_integrated(modes_integrated, stim_selection):
-    """"""
-    fig = plt.figure()
-    fig.suptitle(modes_integrated.name[0])
-    ax = fig.add_subplot(111)
-    # make it a list because boxplot has a problem with masked arrays
-    if modes_integrated.timecourses.ndim < 2:
-        timecourses = modes_integrated.timecourses.reshape((1, -1))
+def boxplot(ax, modes, stim_selection):
+    """make boxplots of modes for stim in stim_selection in ax object
+       
+       ax: axes object to draw plot 
+       modes: TimeSeries object which contains multiple object for each stim.
+       Might contain nans. Should only have one value per stim, otherwise first
+       is taken
+       stim_selection: selection and order of stim to do the boxplot
+    """
+    if not(modes.timepoints == 1):
+        l.warning('''Temporal extension of stimuli > 1 (%d)/n
+                    only first taken into account''' % modes.timepoints)
+    ax.set_title(modes.name[0])
+    # TODO: remove if TimeSeries Class is fixed
+    if modes.timecourses.ndim < 2:
+        timecourses = modes.timecourses.reshape((1, -1))
     else:
-        timecourses = modes_integrated.timecourses
+        timecourses = modes.timecourses
+    # make it a list because boxplot has a problem with masked arrays
     t_modes_ma = np.ma.array(timecourses, mask=np.isnan(timecourses))
     t_modes_ma = [[y for y in row if y] for row in t_modes_ma]
-    x_index = [modes_integrated.label_sample.index(lab) for lab in stim_selection
-               if lab in modes_integrated.label_sample]
+    stim_wt_data = [i_stim for i_stim in stim_selection if i_stim in modes.label_sample]
+    x_index = [modes.label_sample.index(i_stim) for i_stim in stim_wt_data]
+
     t_modes_ma = [t_modes_ma[ind] for ind in x_index]
+    distribution_size = [len(tm) for tm in t_modes_ma]
     ax.boxplot(t_modes_ma)
-    ax.set_xticklabels(stim_selection, rotation='45', ha='right')
-    return fig
+    for pos, size in enumerate(distribution_size):
+        ax.text(pos + 1, ax.get_ylim()[1] * 0.99, str(size), fontsize=6, va='top')
+    ax.set_xticklabels(stim_wt_data, rotation='45', ha='right')
+
 
 def compute_latencies(modes):
     """latency: time (in frames) of the maximum response (peak)"""
+    latencies_timeseries = modes.copy()
     latencies = np.argmax(modes.trial_shaped(), axis=1).astype('float')
     latencies[np.isnan(modes.trial_shaped()[:, 0, :])] = np.nan
-    return latencies
-
-def plot_latencies(latency_matrix, region_label, all_stimuli):
-    """boxplot for the distribution of latencies
-
-       latency: time (in frames) of the maximum response (peak)
-    """
-    res_ma = np.ma.array(latency_matrix, mask=np.isnan(latency_matrix))
-    # make it a list because boxplot has a problem with masked arrays
-    res_ma = [[y for y in row if y] for row in res_ma]
-    fig = plt.figure()
-    fig.suptitle(region_label)
-    ax = fig.add_subplot(111)
-    ax.boxplot(res_ma)
-    ax.set_xticklabels(list(all_stimuli), rotation='90')
-    return fig
+    latencies_timeseries.timecourses = latencies
+    return latencies_timeseries
 
 def collect_modes_for(region_label, regions_json_path, data):
     """collect all spatial and temporal modes for a given region_label
@@ -494,12 +500,22 @@ def generate_axeslist(fig, stimlist):
     maps stim_names to axes '''
     stim2ax = {}
     stim2ax['bottom'] = stimlist
+    gs = gridspec.GridSpec(1, len(stimlist))
+    gs.update(left=0.02, right=0.99, top=0.8)
     for col_ix, stim in enumerate(stimlist):
         if col_ix == 0:
             stim2ax['left'] = [stim]
-        ax = fig.add_subplot(1, len(stimlist), col_ix + 1)
+        ax = fig.add_subplot(gs[0, col_ix])
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_title(stim, fontsize=6)
         stim2ax[stim] = ax
     return stim2ax
+
+def write_csv_wt_labels(filename, ts):
+    ''' write timeseries ts to csv file including row and col headers '''
+    with open(filename, 'w') as f:
+        headers = __builtin__.sum([[s] * ts.timepoints for s in ts.label_sample], [])
+        f.write(', '.join([''] + headers) + '\n')
+        for i, lab in enumerate(ts.label_objects):
+            f.write(', '.join([lab] + list(ts.timecourses[:, i].astype('|S16'))) + '\n')
