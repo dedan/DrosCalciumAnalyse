@@ -388,7 +388,16 @@ def collect_modes_for(region_label, regions_json_path, data):
     ts.shape = t_modes.shape[1]
     ts.label_sample = all_stimuli
     ts_temporal.label_objects = t_modes_names
-     # create timeseries object for region bases
+    # TODO: remove when all data in correct format
+    # adds framerate and stimuli_window for old data
+    if not(hasattr(ts_temporal, 'stim_window')):
+        l.info('no stim_window given, set to (4,8)')
+        ts_temporal.stim_window = (4, 8)
+    if not(hasattr(ts_temporal, 'framerate')):
+        l.info('no framerate given, set to 2')
+        ts_temporal.framerate = 2
+
+    # create timeseries object for region bases
     ts_spatial = bf.TimeSeries(name=[region_label], shape=s_shapes)
     ts_spatial.timecourses = s_modes
     ts_spatial.label_objects = t_modes_names
