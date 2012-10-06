@@ -91,9 +91,14 @@ valenz = json.load(open(config['valence_file']))
 if config['lesion_data']:
     lesion_dict = rl.load_lesion_data(config['lesion_table_path'])
 
-# read mf results
+#get data
 l.info('read files from: %s' % load_path)
+# read mf results
 data = rl.load_mf_results(load_path, selection, config['lesion_data'])
+#collect bg for animals (take just first picture)
+bg_dic = rl.load_baseline(load_path, selection)
+for k in bg_dic:
+    bg_dic[k] = bg_dic[k].shaped2D()[0]
 
 # get all stimuli and region labels (use selection if selection given)
 all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
@@ -117,7 +122,6 @@ for region_label in all_region_labels:
     fulldatadic[region_label] = {}
     fulldatadic[region_label]['modes'] = modes
     fulldatadic[region_label]['modes_integrated'] = integrator(modes)
-
 
 # produce per-region plots
 for region_label in all_region_labels:
@@ -163,77 +167,78 @@ for region_label in all_region_labels:
     else:
         fig = plt.figure(figsize=(25, 3))
         fig.suptitle(region_label, y=0.96)
-        ax2stim = rl.generate_axeslist(fig, stim_selection)
+        ax2stim = rl.axesline_dic(fig, stim_selection)
         rl.plot_temporal(modes, stim_selection, ax2stim)
         fig.savefig(region_savepath + '_activation.' + config['format'])
         rl.write_csv_wt_labels(region_savepath + '_activation.csv', modes)
 
-
-
-    # spatial base plots
-    fig = rl.plot_spatial_base(region_label, collected_modes['s_modes'],
-                               config['to_turn'], load_path, lut_colormaps)
+    # =========================================================================
+    # region bases: plot
+    # ========================================================================= 
+    fig = plt.figure(figsize=(12, 12))
+    axlist = rl.axesgrid_list(fig, len(modes.base.shape))
+    rl.plot_spatial_base(axlist, modes.base, bg_dic)
     fig.savefig(region_savepath + '_spatial.' + config['format'])
 
 
-if config['integrate']:
-
-    fig = rl.plot_median_overview(region_label, medians, all_stimuli)
-    fig.savefig(os.path.join(save_path, 'medians.' + config['format']))
-    np.savetxt(os.path.join(save_path, 'medians.csv'), medians.values(), delimiter=',')
-
-    fig = rl.plot_median_comparison(medians, config['comparisons'], all_stimuli)
-    fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
-
-    all_odors = sorted(set([s.split('_')[0] for s in all_stimuli]))
-    for odor in all_odors:
-        fig = rl.plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels)
-        plt.savefig(os.path.join(save_path, 'odors', odor + '.' + config['format']))
-
-    fig = rl.plot_medians_heatmap(medians, config['main_regions'])
-    fig.savefig(os.path.join(save_path, 'heatmap.' + config['format']))
-
-    fig = rl.plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config)
-    plt.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
-
-    fig = rl.plot_split_valenz_heatmap(valenz, config)
-    fig.savefig(os.path.join(save_path, 'split_heatmap_valenz.' + config['format']))
-
-    data_dict = rl.organize_data_in_dict(medians, all_stimuli, all_odors, valenz, config)
-    fig = rl.plot_medians_3d(data_dict, config)
-    plt.savefig(os.path.join(save_path, '3dscatter.' + config['format']))
-
-    fig = rl.plot_valenz_3d(data_dict, config)
-    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + config['format']))
-
-    models = rl.fit_models(data_dict, config)
-
-    # valenz vs. activation plot
-    fig = plt.figure()
-    N = 3
-    for i in range(N):
-        ax = fig.add_subplot(N, 1, i)
-        ax.scatter(models[config['main_regions'][i]], models['val'])
-        ax.set_title('%s %.2f' % (config['main_regions'][i],
-            np.corrcoef(models[config['main_regions'][i]], models['val'])[0, 1]))
-        ax.set_xlabel('activation')
-        ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(save_path, 'activation_vs_valenz.' + config['format']))
-
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.scatter(models['diff'], models['val'])
-    ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(models['diff'], models['val'])[0, 1])
-    ax.set_xlabel('activation difference')
-    ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(save_path, 'activation(difference)_vs_valenz.' + config['format']))
-
-    idx = np.argmax(models['ratio'])
-    models['val'].pop(idx)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.scatter(models['ratio'], models['val'])
-    ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(models['ratio'], models['val'])[0, 1])
-    ax.set_xlabel('activation ratio')
-    ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(save_path, 'activation(ratio)_vs_valenz.' + config['format']))
+#if config['integrate']:
+#
+#    fig = rl.plot_median_overview(region_label, medians, all_stimuli)
+#    fig.savefig(os.path.join(save_path, 'medians.' + config['format']))
+#    np.savetxt(os.path.join(save_path, 'medians.csv'), medians.values(), delimiter=',')
+#
+#    fig = rl.plot_median_comparison(medians, config['comparisons'], all_stimuli)
+#    fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
+#
+#    all_odors = sorted(set([s.split('_')[0] for s in all_stimuli]))
+#    for odor in all_odors:
+#        fig = rl.plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels)
+#        plt.savefig(os.path.join(save_path, 'odors', odor + '.' + config['format']))
+#
+#    fig = rl.plot_medians_heatmap(medians, config['main_regions'])
+#    fig.savefig(os.path.join(save_path, 'heatmap.' + config['format']))
+#
+#    fig = rl.plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config)
+#    plt.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
+#
+#    fig = rl.plot_split_valenz_heatmap(valenz, config)
+#    fig.savefig(os.path.join(save_path, 'split_heatmap_valenz.' + config['format']))
+#
+#    data_dict = rl.organize_data_in_dict(medians, all_stimuli, all_odors, valenz, config)
+#    fig = rl.plot_medians_3d(data_dict, config)
+#    plt.savefig(os.path.join(save_path, '3dscatter.' + config['format']))
+#
+#    fig = rl.plot_valenz_3d(data_dict, config)
+#    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + config['format']))
+#
+#    models = rl.fit_models(data_dict, config)
+#
+#    # valenz vs. activation plot
+#    fig = plt.figure()
+#    N = 3
+#    for i in range(N):
+#        ax = fig.add_subplot(N, 1, i)
+#        ax.scatter(models[config['main_regions'][i]], models['val'])
+#        ax.set_title('%s %.2f' % (config['main_regions'][i],
+#            np.corrcoef(models[config['main_regions'][i]], models['val'])[0, 1]))
+#        ax.set_xlabel('activation')
+#        ax.set_ylabel('valenz')
+#    plt.savefig(os.path.join(save_path, 'activation_vs_valenz.' + config['format']))
+#
+#    fig = plt.figure()
+#    ax = fig.add_subplot(111)
+#    ax.scatter(models['diff'], models['val'])
+#    ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(models['diff'], models['val'])[0, 1])
+#    ax.set_xlabel('activation difference')
+#    ax.set_ylabel('valenz')
+#    plt.savefig(os.path.join(save_path, 'activation(difference)_vs_valenz.' + config['format']))
+#
+#    idx = np.argmax(models['ratio'])
+#    models['val'].pop(idx)
+#    fig = plt.figure()
+#    ax = fig.add_subplot(111)
+#    ax.scatter(models['ratio'], models['val'])
+#    ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(models['ratio'], models['val'])[0, 1])
+#    ax.set_xlabel('activation ratio')
+#    ax.set_ylabel('valenz')
+#    plt.savefig(os.path.join(save_path, 'activation(ratio)_vs_valenz.' + config['format']))

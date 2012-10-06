@@ -6,7 +6,7 @@ Created by  on 2012-01-27.
 Copyright (c) 2012. All rights reserved.
 """
 import sys, os, glob, csv, json, __builtin__
-import itertools as it
+import itertools as iter
 from collections import defaultdict
 import numpy as np
 import pylab as plt
@@ -225,28 +225,19 @@ def plot_median_overview(region_label, medians, all_stimuli):
     ax.set_xticklabels(list(all_stimuli), rotation='90')
     return fig
 
-def plot_spatial_base(region_label, s_modes, to_turn, load_path, colormaps):
-    fig = vis.VisualizeTimeseries()
-    fig.subplot(len(s_modes))
-    for i, (name, s_mode) in enumerate(s_modes):
-        n = '_'.join(name.split('_')[:-1])
-        filelist = glob.glob(os.path.join(load_path, '*' + n + '_baseline.json'))
-        base_series = TimeSeries()
-        base_series.load(os.path.splitext(filelist[0])[0])
-        base_series.shape = tuple(base_series.shape)
-        base = base_series.shaped2D()
-        if n in to_turn:
-            base = base[:, ::-1, :]
-            s_mode = s_mode[::-1, :]
+def plot_spatial_base(axlist, modes, bg_dic):
+    plotter = vis.VisualizeTimeseries()
+    for base_ix, base in enumerate(modes.objects_sample(0)):
+        region_label = modes.name[0]
+        mode_name = modes.label_objects[base_ix]
+        animal_name = '_'.join(mode_name.split('_')[:-2])
+        ax = axlist[base_ix]
+        plotter.overlay_workaround(ax, bg_dic[animal_name], {'cmap':plt.cm.bone},
+                           base, {'threshold':0.05},
+                           {'title':{"label": mode_name, 'fontsize':8}})
 
-        fig.overlay_workaround(fig.axes['base'][i],
-                           np.mean(base, axis=0), {'cmap':plt.cm.bone},
-                           s_mode, {'threshold':0.2, 'colormap':colormaps[region_label]},
-                           {'title':{"label": n}})
-    return fig.fig
 
 #TODO: include plot_single
-
 def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
 
     medians = calc_scoreatpercentile(modes, 0.5).trial_shaped().squeeze()
@@ -343,7 +334,6 @@ def boxplot(ax, modes, stim_selection):
         ax.text(pos + 1, ax.get_ylim()[1] * 0.99, str(size), fontsize=6, va='top')
     ax.set_xticklabels(stim_wt_data, rotation='45', ha='right')
 
-
 def compute_latencies(modes):
     """latency: time (in frames) of the maximum response (peak)"""
     latencies_timeseries = modes.copy()
@@ -361,7 +351,7 @@ def collect_modes_for(region_label, regions_json_path, data):
     """
     t_modes, t_modes_names, s_modes, s_shapes = [], [], [], []
     labeled_animals = json.load(open(regions_json_path))
-    all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
+    all_stimuli = sorted(set(iter.chain.from_iterable([ts.label_sample for ts in data.values()])))
 
     # iterate over region labels for each animal
     trial_length = data[labeled_animals.keys()[0]].timepoints
@@ -441,12 +431,12 @@ def load_mf_results(load_path, selection, lesion_data):
         if selection:
             skip = True
             for sel in selection:
-                if sel in name:
+                if sel in fname:
                     skip = False
             if skip:
-                l.info('skip %s because not in selection' % name)
+                l.info('skip %s because not in selection' % fname)
                 continue
-            l.info('taking %s because found in selection' % name)
+            l.info('taking %s because found in selection' % fname)
 
         ts = TimeSeries()
         ts.load(os.path.splitext(fname)[0])
@@ -467,6 +457,27 @@ def load_mf_results(load_path, selection, lesion_data):
         data[name] = average_over_stimulus_repetitions(ts)
     return data
 
+def load_baseline(load_path, selection):
+    """read data (baseline) to dictionary"""
+
+    data = {}
+    # get filelist
+    filelist = glob.glob(os.path.join(load_path, '*baseline*.json'))
+    for fname in filelist:
+        fname = os.path.splitext(fname)[0]
+        animal = os.path.basename(fname).split('_baseline')[0]
+        if selection:
+            if animal in selection:
+                l.info('taking %s because found in selection' % animal)
+            else:
+                l.info('skip %s because not in selection' % animal)
+                continue
+
+        ts = TimeSeries()
+        ts.load(fname)
+        data[animal] = ts
+    return data
+
 def calc_scoreatpercentile(modes, percentile):
     ''' calculates percentile for Timeseries (may include nans)'''
     out = modes.copy()
@@ -475,7 +486,7 @@ def calc_scoreatpercentile(modes, percentile):
     out.shape = (1,)
     return out
 
-def generate_axesmatrix(fig, stimlist):
+def axesmatrix_dic(fig, stimlist):
     ''' generates axes matrix according to stimlist, returns dictionary with
     maps stim_names to axes '''
     stim2ax = {}
@@ -495,7 +506,7 @@ def generate_axesmatrix(fig, stimlist):
             stim2ax[stim] = ax
     return stim2ax
 
-def generate_axeslist(fig, stimlist):
+def axesline_dic(fig, stimlist):
     ''' generates axes list according to stimlist, returns dictionary with
     maps stim_names to axes '''
     stim2ax = {}
@@ -512,6 +523,23 @@ def generate_axeslist(fig, stimlist):
         stim2ax[stim] = ax
     return stim2ax
 
+def axesgrid_list(fig, num_axes, num_col=None):
+    ''' generates axes-grid list containing num_axes '''
+    if not num_col:
+        num_col = int(np.ceil(np.sqrt(num_axes)))
+    num_row = int(np.ceil(1.* num_axes / num_col))
+    gs = gridspec.GridSpec(num_row, num_col)
+    axlist = []
+    for col_ix, row_ix in iter.product(range(num_col), xrange(num_row)):
+        # generate only as many axes as there are objects
+        num_axes -= 1
+        if num_axes < 0:
+            break
+        ax = fig.add_subplot(gs[row_ix, col_ix])
+        axlist.append(ax)
+    return axlist
+
+#TODO: include as method in TimeSerie class
 def write_csv_wt_labels(filename, ts):
     ''' write timeseries ts to csv file including row and col headers '''
     with open(filename, 'w') as f:
