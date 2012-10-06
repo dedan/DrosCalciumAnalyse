@@ -256,6 +256,8 @@ def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
 
     for stim_ix, stim in enumerate(modes.label_sample):
         ax = stim2ax[stim]
+        # create stimulus bar
+        ax.fill_between(np.array(modes.stim_window), max_y, min_y, color='b', alpha=0.2)
         ax.fill_between(range(modes.timepoints), p25[stim_ix], p75[stim_ix], linewidth=0, color='0.75')
         ax.plot(medians[stim_ix], linewidth=1.5, color='0')
         ax.spines['top'].set_color('none')
