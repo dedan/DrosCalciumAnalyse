@@ -173,7 +173,7 @@ for region_label in all_region_labels:
     region_savepath = os.path.join(save_path, region_label)
     if not os.path.exists(region_savepath):
         os.mkdir(region_savepath)
-    region_savepath += region_label
+    region_savepath = os.path.join(region_savepath, region_label)
     modes = fulldatadic[region_label]['modes']
     modes_integrated = fulldatadic[region_label]['modes_integrated']
 
