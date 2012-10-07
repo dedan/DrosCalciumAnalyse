@@ -21,35 +21,6 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
-def fit_models(data_dict, config):
-    """fit different models to our data"""
-    regressor = linear_model.LinearRegression(fit_intercept=False)
-    x, y = [], []
-    for odor in data_dict:
-        for concen in data_dict[odor]:
-            if 'valenz' in data_dict[odor][concen]:
-                t = data_dict[odor][concen]
-                x.append([t['data'][2], t['data'][0]])
-                y.append(t['valenz'])
-    fit = regressor.fit(x, y)
-    alpha = fit.coef_[1]
-
-    agg = defaultdict(list)
-    for odor in data_dict:
-        for concen in data_dict[odor]:
-            if 'valenz' in data_dict[odor][concen]:
-                t = data_dict[odor][concen]
-                agg['val'].append(t['valenz'])
-                for i in range(3):
-                    agg[config['main_regions'][i]].append(t['data'][i])
-                agg['ratio'].append(data_dict[odor][concen]['data'][2] /
-                                    data_dict[odor][concen]['data'][0])
-                agg['diff'].append(data_dict[odor][concen]['data'][2] -
-                                   alpha * data_dict[odor][concen]['data'][0])
-    idx = np.argmax(agg['ratio'])
-    agg['ratio'].pop(idx)
-    return agg
-
 def plot_valenz_3d(data_dict, config):
     """3d valenz plot"""
     symbols = lambda x: 'x' if x == '0' else 'o'
@@ -90,26 +61,6 @@ def plot_medians_3d(data_dict, config):
     ax.set_zlabel(config['main_regions'][2])
     plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
     return fig
-
-def organize_data_in_dict(medians, all_stimuli, all_odors, valenz, config):
-    """prepare data for 3 d plots"""
-    data_dict = {}
-    hm_data = np.array([medians[region] for region in config['main_regions']])
-    for i in range(len(all_stimuli)):
-        odor, concen = all_stimuli[i].split('_')
-        if not odor in data_dict:
-            data_dict[odor] = {}
-        data_dict[odor][concen] = {}
-        c = plt.cm.hsv(float(all_odors.index(odor)) / len(all_odors))
-        data_dict[odor][concen]['color'] = c
-
-        # add color to code valenz (if valenz available)
-        if all_stimuli[i] in valenz:
-            c = plt.cm.RdYlGn(valenz[all_stimuli[i]])
-            data_dict[odor][concen]['valenz_color'] = c
-            data_dict[odor][concen]['valenz'] = valenz[all_stimuli[i]]
-        data_dict[odor][concen]['data'] = hm_data[:, i]
-    return data_dict
 
 def plot_split_valenz_heatmap(valenz, config):
     # normalize valenz for colormap
@@ -236,7 +187,6 @@ def plot_spatial_base(axlist, modes, bg_dic):
                            base, {'threshold':0.05},
                            {'title':{"label": mode_name, 'fontsize':8}})
 
-
 #TODO: include plot_single
 def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
 
@@ -343,13 +293,29 @@ def plot_regions_of_animal(ax, modes_bases, bg, mode_labels, color_dic, cut_off=
         ax.set_yticks([])
 
 
-def compute_latencies(modes):
-    """latency: time (in frames) of the maximum response (peak)"""
-    latencies_timeseries = modes.copy()
-    latencies = np.argmax(modes.trial_shaped(), axis=1).astype('float')
-    latencies[np.isnan(modes.trial_shaped()[:, 0, :])] = np.nan
-    latencies_timeseries.timecourses = latencies
-    return latencies_timeseries
+#===============================================================================
+# reading and collectiog data
+#===============================================================================
+
+def organize_data_in_dict(medians, all_stimuli, all_odors, valenz, config):
+    """prepare data for 3 d plots"""
+    data_dict = {}
+    hm_data = np.array([medians[region] for region in config['main_regions']])
+    for i in range(len(all_stimuli)):
+        odor, concen = all_stimuli[i].split('_')
+        if not odor in data_dict:
+            data_dict[odor] = {}
+        data_dict[odor][concen] = {}
+        c = plt.cm.hsv(float(all_odors.index(odor)) / len(all_odors))
+        data_dict[odor][concen]['color'] = c
+
+        # add color to code valenz (if valenz available)
+        if all_stimuli[i] in valenz:
+            c = plt.cm.RdYlGn(valenz[all_stimuli[i]])
+            data_dict[odor][concen]['valenz_color'] = c
+            data_dict[odor][concen]['valenz'] = valenz[all_stimuli[i]]
+        data_dict[odor][concen]['data'] = hm_data[:, i]
+    return data_dict
 
 def collect_modes_for(region_label, regions_dic, data):
     """collect all spatial and temporal modes for a given region_label
@@ -487,6 +453,19 @@ def load_baseline(load_path, selection):
         data[animal] = ts
     return data
 
+
+#===============================================================================
+# timeseries calculations
+#===============================================================================
+
+def compute_latencies(modes):
+    """latency: time (in frames) of the maximum response (peak)"""
+    latencies_timeseries = modes.copy()
+    latencies = np.argmax(modes.trial_shaped(), axis=1).astype('float')
+    latencies[np.isnan(modes.trial_shaped()[:, 0, :])] = np.nan
+    latencies_timeseries.timecourses = latencies
+    return latencies_timeseries
+
 def calc_scoreatpercentile(modes, percentile):
     ''' calculates percentile for Timeseries (may include nans)'''
     out = modes.copy()
@@ -494,6 +473,10 @@ def calc_scoreatpercentile(modes, percentile):
     out.timecourses = mquantiles(out.timecourses, percentile, axis=1)
     out.shape = (1,)
     return out
+
+#===============================================================================
+# figure layouter
+#===============================================================================
 
 def axesmatrix_dic(fig, stimlist):
     ''' generates axes matrix according to stimlist, returns dictionary with
@@ -548,6 +531,11 @@ def axesgrid_list(fig, num_axes, num_col=None):
         axlist.append(ax)
     return axlist
 
+
+#===============================================================================
+# helper functions
+#===============================================================================
+
 #TODO: include as method in TimeSerie class
 def write_csv_wt_labels(filename, ts):
     ''' write timeseries ts to csv file including row and col headers '''
@@ -559,3 +547,32 @@ def write_csv_wt_labels(filename, ts):
 
 def flat_colormap(rgb_value):
     return lambda array: np.ones(list(array.shape) + [3]) * rgb_value
+
+def fit_models(data_dict, config):
+    """fit different models to our data"""
+    regressor = linear_model.LinearRegression(fit_intercept=False)
+    x, y = [], []
+    for odor in data_dict:
+        for concen in data_dict[odor]:
+            if 'valenz' in data_dict[odor][concen]:
+                t = data_dict[odor][concen]
+                x.append([t['data'][2], t['data'][0]])
+                y.append(t['valenz'])
+    fit = regressor.fit(x, y)
+    alpha = fit.coef_[1]
+
+    agg = defaultdict(list)
+    for odor in data_dict:
+        for concen in data_dict[odor]:
+            if 'valenz' in data_dict[odor][concen]:
+                t = data_dict[odor][concen]
+                agg['val'].append(t['valenz'])
+                for i in range(3):
+                    agg[config['main_regions'][i]].append(t['data'][i])
+                agg['ratio'].append(data_dict[odor][concen]['data'][2] /
+                                    data_dict[odor][concen]['data'][0])
+                agg['diff'].append(data_dict[odor][concen]['data'][2] -
+                                   alpha * data_dict[odor][concen]['data'][0])
+    idx = np.argmax(agg['ratio'])
+    agg['ratio'].pop(idx)
+    return agg
