@@ -334,6 +334,15 @@ def boxplot(ax, modes, stim_selection):
         ax.text(pos + 1, ax.get_ylim()[1] * 0.99, str(size), fontsize=6, va='top')
     ax.set_xticklabels(stim_wt_data, rotation='45', ha='right')
 
+def plot_regions_of_animal(ax, modes_bases, bg, mode_labels, color_dic, cut_off=0.3):
+    ax.imshow(bg, cmap=plt.cm.bone)
+    for base_ix, base in enumerate(modes_bases.shaped2D()):
+        ax.contourf(base, [cut_off, 1], alpha=0.7,
+                    colors=(color_dic[mode_labels[base_ix]],))
+        ax.set_xticks([])
+        ax.set_yticks([])
+
+
 def compute_latencies(modes):
     """latency: time (in frames) of the maximum response (peak)"""
     latencies_timeseries = modes.copy()
@@ -342,7 +351,7 @@ def compute_latencies(modes):
     latencies_timeseries.timecourses = latencies
     return latencies_timeseries
 
-def collect_modes_for(region_label, regions_json_path, data):
+def collect_modes_for(region_label, regions_dic, data):
     """collect all spatial and temporal modes for a given region_label
 
         * several modes from one animal can belong to one region
@@ -350,7 +359,7 @@ def collect_modes_for(region_label, regions_json_path, data):
           using the regions_gui
     """
     t_modes, t_modes_names, s_modes, s_shapes = [], [], [], []
-    labeled_animals = json.load(open(regions_json_path))
+    labeled_animals = regions_dic
     all_stimuli = sorted(set(iter.chain.from_iterable([ts.label_sample for ts in data.values()])))
 
     # iterate over region labels for each animal

@@ -63,12 +63,24 @@ config = ConfigObj(sys.argv[1], unrepr=True)
 
 # load the dictionary with mapping from a region to a colormap
 lut_colormaps = utils.get_all_lut_colormaps(config['main_regions'])
+# another colormap dictionary
+# TODO: more generic solution
+color_dic = defaultdict(lambda: np.array([160, 82, 45]) / 256.)
+color_dic['iPN'] = np.array([48, 128, 20]) / 256.
+color_dic['iPNsecond'] = np.array([173, 255, 47]) / 256.
+color_dic['iPNtract'] = np.array([67, 110, 238]) / 256.
+color_dic['vlPRCt'] = np.array([220, 20, 60]) / 256.
+color_dic['vlPRCb'] = np.array([238, 218, 0]) / 256.
+color_dic['betweenTract'] = np.array([155, 48, 255]) / 256.
+color_dic['blackhole'] = np.array([142, 142, 142]) / 256.
 
 # set paths and create folders
 load_path = os.path.join(config['results_path'], 'timeseries')
 save_path = os.path.join(config['results_path'], 'region_plots')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
+if not os.path.exists(os.path.join(save_path, 'regions')):
+    os.mkdir(os.path.join(save_path, 'regions'))
 if not os.path.exists(os.path.join(save_path, 'odors')):
     os.mkdir(os.path.join(save_path, 'odors'))
 
@@ -108,7 +120,6 @@ for mf in data.values():
             new_labels.append(i_label)
     mf.label_sample = new_labels
 
-
 #collect bg for animals (take just first picture)
 bg_dic = rl.load_baseline(load_path, selection)
 for k in bg_dic:
@@ -120,8 +131,8 @@ if not stim_selection:
     stim_selection = all_stimuli
 regions_file_path = os.path.join(config['results_path'], 'regions.json')
 with open(regions_file_path) as f:
-    all_labels_list = [labels for labels in json.load(f).values()]
-    all_region_labels = list(set(it.chain.from_iterable(all_labels_list)))
+    regions_dic = json.load(f)
+    all_region_labels = list(set(__builtin__.sum(regions_dic.values(), [])))
 l.debug('all_stimuli: %s' % all_stimuli)
 l.debug('all_region_labels: %s' % all_region_labels)
 
@@ -129,7 +140,7 @@ l.debug('all_region_labels: %s' % all_region_labels)
 medians, fulldatadic = {}, {}
 for region_label in all_region_labels:
 
-    modes = rl.collect_modes_for(region_label, regions_file_path, data)
+    modes = rl.collect_modes_for(region_label, regions_dic, data)
     integrator = bf.StimulusIntegrator(method=config['integration_method'],
                                        threshold= -10000,
                                        window=config['integration_window'])
@@ -137,11 +148,32 @@ for region_label in all_region_labels:
     fulldatadic[region_label]['modes'] = modes
     fulldatadic[region_label]['modes_integrated'] = integrator(modes)
 
-# produce per-region plots
-for region_label in all_region_labels:
+# =============================================================================
+# per-animal plots
+# =============================================================================
+for animal in data:
+    #TODO: trimming only for old data, remove later 
+    animal_trim = '_'.join(animal.split('_')[:-1])
+    animal_savepath = os.path.join(save_path, 'regions', animal_trim)
+    # exclude animals wto region data
+    if animal not in regions_dic.keys():
+        continue
+    fig = plt.figure(figsize=(7, 7))
+    ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
+    rl. plot_regions_of_animal(ax, data[animal].base, bg_dic[animal_trim],
+                               regions_dic[animal], color_dic,
+                               cut_off=config['region_plot_cutoff'])
+    fig.savefig(animal_savepath + '.' + config['format'])
 
+# =============================================================================
+# per-region plots
+# =============================================================================
+for region_label in all_region_labels:
     #get_data
     region_savepath = os.path.join(save_path, region_label)
+    if not os.path.exists(region_savepath):
+        os.mkdir(region_savepath)
+    region_savepath += region_label
     modes = fulldatadic[region_label]['modes']
     modes_integrated = fulldatadic[region_label]['modes_integrated']
 
