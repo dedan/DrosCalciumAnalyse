@@ -95,6 +95,20 @@ if config['lesion_data']:
 l.info('read files from: %s' % load_path)
 # read mf results
 data = rl.load_mf_results(load_path, selection, config['lesion_data'])
+# for old data: rename labels
+# TODO: remove if all data in correct format
+for mf in data.values():
+    change_from = ['CO2_-1', 'CO2_-5', 'CO2_1, CO2_5']
+    change_to = ['CO2_01', 'CO2_05', 'CO2_01, CO2_05']
+    new_labels = []
+    for i_label in mf.label_sample:
+        if i_label in change_from:
+            new_labels.append(change_to[change_from.index(i_label)])
+        else:
+            new_labels.append(i_label)
+    mf.label_sample = new_labels
+
+
 #collect bg for animals (take just first picture)
 bg_dic = rl.load_baseline(load_path, selection)
 for k in bg_dic:
