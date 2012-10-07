@@ -110,8 +110,8 @@ data = rl.load_mf_results(load_path, selection, config['lesion_data'])
 # for old data: rename labels
 # TODO: remove if all data in correct format
 for mf in data.values():
-    change_from = ['CO2_-1', 'CO2_-5', 'CO2_1, CO2_5']
-    change_to = ['CO2_01', 'CO2_05', 'CO2_01, CO2_05']
+    change_from = ['CO2_-1', 'CO2_-5', 'CO2_1', 'CO2_5']
+    change_to = ['CO2_01', 'CO2_05', 'CO2_01', 'CO2_05']
     new_labels = []
     for i_label in mf.label_sample:
         if i_label in change_from:
@@ -216,7 +216,7 @@ if config['do_per_region']:
             fig = plt.figure(figsize=(25, 3))
             fig.suptitle(region_label, y=0.96)
             ax2stim = rl.axesline_dic(fig, stim_selection)
-            rl.plot_temporal(modes, stim_selection, ax2stim)
+            rl.plot_temporal(modes, ax2stim)
             fig.savefig(region_savepath + '_activation.' + config['format'])
             rl.write_csv_wt_labels(region_savepath + '_activation.csv', modes)
 

@@ -192,7 +192,7 @@ def plot_spatial_base(axlist, modes, bg_dic):
                            {'title':{"label": mode_name, 'fontsize':8}})
 
 #TODO: include plot_single
-def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
+def plot_temporal(modes, stim2ax, plot_single=False):
 
     medians = calc_scoreatpercentile(modes, 0.5).trial_shaped().squeeze()
     p25 = calc_scoreatpercentile(modes, 0.25).trial_shaped().squeeze()
@@ -510,7 +510,7 @@ def calc_scoreatpercentile(modes, percentile):
     out.timecourses = np.ma.array(out.timecourses, mask=np.isnan(out.timecourses))
     out.timecourses = mquantiles(out.timecourses, percentile, axis=1)
     out.shape = (1,)
-    out.label_objects = ['percentile' + str(percentile)]
+    out.label_objects = ['percentile%d' % (percentile * 100)]
     return out
 
 #===============================================================================
