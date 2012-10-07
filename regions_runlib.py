@@ -556,3 +556,6 @@ def write_csv_wt_labels(filename, ts):
         f.write(', '.join([''] + headers) + '\n')
         for i, lab in enumerate(ts.label_objects):
             f.write(', '.join([lab] + list(ts.timecourses[:, i].astype('|S16'))) + '\n')
+
+def flat_colormap(rgb_value):
+    return lambda array: np.ones(list(array.shape) + [3]) * rgb_value
