@@ -323,7 +323,7 @@ def boxplot(ax, modes, stim_selection):
         timecourses = modes.timecourses
     # make it a list because boxplot has a problem with masked arrays
     t_modes_ma = np.ma.array(timecourses, mask=np.isnan(timecourses))
-    t_modes_ma = [[y for y in row if y] for row in t_modes_ma]
+    t_modes_ma = [row[~np.isnan(row)] for row in t_modes_ma]
     stim_wt_data = [i_stim for i_stim in stim_selection if i_stim in modes.label_sample]
     x_index = [modes.label_sample.index(i_stim) for i_stim in stim_wt_data]
 
