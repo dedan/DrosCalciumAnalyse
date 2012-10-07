@@ -235,6 +235,40 @@ def plot_temporal(modes, stim_layout, stim2ax, plot_single=False):
         ax.text(ax.get_xlim()[1] / 2., ax.get_ylim()[1] * 0.9,
                 str(num_modes[stim_ix]), fontsize=6)
 
+def plot_stim_heatmap(ts, stim2ax, object_order=None):
+
+    max_color = np.max(np.abs(ts.timecourses))
+    data = ts.trial_shaped()
+    if object_order:
+        ylabels = [ilabel for ilabel in object_order if ilabel in ts.label_objects]
+        new_order = [ts.label_objects.index(ilabel) for ilabel in ylabels]
+        data = data[:, :, new_order]
+    else:
+        ylabels = ts.label_objects
+
+    for stim_ix, stim in enumerate(ts.label_sample):
+        if stim not in stim2ax:
+            l.info(stim + 'in heatmap excluded')
+            continue
+        ax = stim2ax[stim]
+        ax.imshow(data[stim_ix].T, vmin= -max_color, vmax=max_color,
+                  interpolation='none', aspect='auto')
+
+        if stim in stim2ax['left']:
+            ax.set_yticks(range(len(ylabels)))
+            ax.set_yticklabels(ylabels)
+        else:
+            ax.set_yticks([])
+        xticks = range(0, ts.timepoints, 8)
+        ax.set_xticks(xticks)
+        ax.set_xticks(range(0, ts.timepoints), minor=True)
+        if stim in stim2ax['bottom']:
+            ax.set_xticklabels(['%d' % i for i in np.array(xticks) * 1. / ts.framerate], fontsize=10)
+        else:
+            ax.set_xticklabels([])
+
+
+
 # TODO: finish corrections
 def plot_temporal_lesion(modes, stim_selection):
     fig = plt.figure()
@@ -503,13 +537,13 @@ def axesmatrix_dic(fig, stimlist):
             stim2ax[stim] = ax
     return stim2ax
 
-def axesline_dic(fig, stimlist):
+def axesline_dic(fig, stimlist, leftspace=0.02):
     ''' generates axes list according to stimlist, returns dictionary with
     maps stim_names to axes '''
     stim2ax = {}
     stim2ax['bottom'] = stimlist
     gs = gridspec.GridSpec(1, len(stimlist))
-    gs.update(left=0.02, right=0.99, top=0.8)
+    gs.update(left=leftspace, right=0.99, top=0.8)
     for col_ix, stim in enumerate(stimlist):
         if col_ix == 0:
             stim2ax['left'] = [stim]

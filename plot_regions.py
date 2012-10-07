@@ -232,9 +232,19 @@ if config['do_overall_region']:
     # ==========================================================================
     # median region activation; calc and plots
     # ==========================================================================
-    median_ts_list = [rl.scoreatpercentile(region[modes], 0.5)
-                          for region in fulldatadicvalues()]
+    median_ts_list = [rl.calc_scoreatpercentile(region['modes'], 0.5)
+                          for region in fulldatadic.values()]
     all_region_ts = bf.ObjectConcat()(median_ts_list)
+    # remove percentile string from object labels
+    all_region_ts.label_objects = ['_'.join(ilabel.split('_')[:-1])
+                                   for ilabel in all_region_ts.label_objects]
+    with open(config['region_order_file']) as f:
+        regions2plot = json.load(f)
+    fig = plt.figure(figsize=(25, 3))
+    ax2stim = rl.axesline_dic(fig, stim_selection, leftspace=0.07)
+    rl.plot_stim_heatmap(all_region_ts, ax2stim, regions2plot)
+
+
 
 #if config['integrate']:
 #
