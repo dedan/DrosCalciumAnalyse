@@ -21,6 +21,10 @@ l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
 
+#===============================================================================
+# plot functions
+#===============================================================================
+
 def plot_valenz_3d(data_dict, config):
     """3d valenz plot"""
     symbols = lambda x: 'x' if x == '0' else 'o'
@@ -361,7 +365,7 @@ def collect_modes_for(region_label, regions_dic, data):
 
     # create timeseries object for region timecourses
     ts_temporal = ts.copy()
-    ts_temporal.name = [region_label]
+    ts_temporal.name = region_label
     ts_temporal.timecourses = t_modes
     ts_temporal.shape = t_modes.shape[1]
     ts_temporal.label_sample = all_stimuli
@@ -376,7 +380,7 @@ def collect_modes_for(region_label, regions_dic, data):
         ts_temporal.framerate = 2
 
     # create timeseries object for region bases
-    ts_spatial = bf.TimeSeries(name=[region_label], shape=s_shapes)
+    ts_spatial = bf.TimeSeries(name=region_label, shape=s_shapes)
     ts_spatial.timecourses = s_modes
     ts_spatial.label_objects = t_modes_names
     ts_temporal.base = ts_spatial
@@ -472,6 +476,7 @@ def calc_scoreatpercentile(modes, percentile):
     out.timecourses = np.ma.array(out.timecourses, mask=np.isnan(out.timecourses))
     out.timecourses = mquantiles(out.timecourses, percentile, axis=1)
     out.shape = (1,)
+    out.label_objects = ['percentile' + str(percentile)]
     return out
 
 #===============================================================================
