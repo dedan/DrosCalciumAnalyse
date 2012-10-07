@@ -148,84 +148,93 @@ for region_label in all_region_labels:
     fulldatadic[region_label]['modes'] = modes
     fulldatadic[region_label]['modes_integrated'] = integrator(modes)
 
-# =============================================================================
-# per-animal plots
-# =============================================================================
-for animal in data:
-    #TODO: trimming only for old data, remove later 
-    animal_trim = '_'.join(animal.split('_')[:-1])
-    animal_savepath = os.path.join(save_path, 'regions', animal_trim)
-    # exclude animals wto region data
-    if animal not in regions_dic.keys():
-        continue
-    fig = plt.figure(figsize=(7, 7))
-    ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
-    rl. plot_regions_of_animal(ax, data[animal].base, bg_dic[animal_trim],
-                               regions_dic[animal], color_dic,
-                               cut_off=config['region_plot_cutoff'])
-    fig.savefig(animal_savepath + '.' + config['format'])
+if config['do_per_animal']:
+    # =============================================================================
+    # per-animal plots
+    # =============================================================================
+    for animal in data:
+        #TODO: trimming only for old data, remove later 
+        animal_trim = '_'.join(animal.split('_')[:-1])
+        animal_savepath = os.path.join(save_path, 'regions', animal_trim)
+        # exclude animals wto region data
+        if animal not in regions_dic.keys():
+            continue
+        fig = plt.figure(figsize=(7, 7))
+        ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
+        rl. plot_regions_of_animal(ax, data[animal].base, bg_dic[animal_trim],
+                                   regions_dic[animal], color_dic,
+                                   cut_off=config['region_plot_cutoff'])
+        fig.savefig(animal_savepath + '.' + config['format'])
 
-# =============================================================================
-# per-region plots
-# =============================================================================
-for region_label in all_region_labels:
-    #get_data
-    region_savepath = os.path.join(save_path, region_label)
-    if not os.path.exists(region_savepath):
-        os.mkdir(region_savepath)
-    region_savepath = os.path.join(region_savepath, region_label)
-    modes = fulldatadic[region_label]['modes']
-    modes_integrated = fulldatadic[region_label]['modes_integrated']
+if config['do_per_region']:
+    # ==========================================================================
+    # per-region plots
+    # ==========================================================================
+    for region_label in all_region_labels:
+        #get_data
+        region_savepath = os.path.join(save_path, region_label)
+        if not os.path.exists(region_savepath):
+            os.mkdir(region_savepath)
+        region_savepath = os.path.join(region_savepath, region_label)
+        modes = fulldatadic[region_label]['modes']
+        modes_integrated = fulldatadic[region_label]['modes_integrated']
 
-    # =========================================================================
-    # latencies: calc, plot and save
-    # =========================================================================
-    latencies = rl.compute_latencies(modes)
+        # ======================================================================
+        # latencies: calc, plot and save
+        # ======================================================================
+        latencies = rl.compute_latencies(modes)
 
-    fig = plt.figure(figsize=(12, 7))
-    fig.suptitle('latencies', y=0.96)
-    ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
-    rl.boxplot(ax, latencies, stim_selection)
-    fig.savefig(region_savepath + '_latencies.' + config['format'])
-    rl.write_csv_wt_labels(region_savepath + '_latencies.csv',
-                           latencies)
+        fig = plt.figure(figsize=(12, 7))
+        fig.suptitle('latencies', y=0.96)
+        ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
+        rl.boxplot(ax, latencies, stim_selection)
+        fig.savefig(region_savepath + '_latencies.' + config['format'])
+        rl.write_csv_wt_labels(region_savepath + '_latencies.csv',
+                               latencies)
 
-    # =========================================================================
-    # mean activation: plot, calc and save
-    # =========================================================================
-    fig = plt.figure(figsize=(12, 7))
-    fig.suptitle('activation', y=0.96)
-    ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
-    rl.boxplot(ax, modes_integrated, stim_selection)
-    fig.savefig(region_savepath + '_activation_integrated.' + config['format'])
-    rl.write_csv_wt_labels(region_savepath + '_activation_integrated.csv',
-                           modes_integrated)
+        # ======================================================================
+        # mean activation: plot, calc and save
+        # ======================================================================
+        fig = plt.figure(figsize=(12, 7))
+        fig.suptitle('activation', y=0.96)
+        ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
+        rl.boxplot(ax, modes_integrated, stim_selection)
+        fig.savefig(region_savepath + '_activation_integrated.' + config['format'])
+        rl.write_csv_wt_labels(region_savepath + '_activation_integrated.csv',
+                               modes_integrated)
 
-    # =========================================================================
-    # full time activation: plot, calc and save
-    # =========================================================================    
-    # TODO: fix lesion plots and save results
-    if config['lesion_data']:
-        fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians,
-                                      stim_selection)
-        fig.savefig(region_savepath + '_activation_lesion.' + config['format'])
-        #write to csv
-    else:
-        fig = plt.figure(figsize=(25, 3))
-        fig.suptitle(region_label, y=0.96)
-        ax2stim = rl.axesline_dic(fig, stim_selection)
-        rl.plot_temporal(modes, stim_selection, ax2stim)
-        fig.savefig(region_savepath + '_activation.' + config['format'])
-        rl.write_csv_wt_labels(region_savepath + '_activation.csv', modes)
+        # ======================================================================
+        # full time activation: plot, calc and save
+        # ======================================================================
+        # TODO: fix lesion plots and save results
+        if config['lesion_data']:
+            fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians,
+                                          stim_selection)
+            fig.savefig(region_savepath + '_activation_lesion.' + config['format'])
+            #write to csv
+        else:
+            fig = plt.figure(figsize=(25, 3))
+            fig.suptitle(region_label, y=0.96)
+            ax2stim = rl.axesline_dic(fig, stim_selection)
+            rl.plot_temporal(modes, stim_selection, ax2stim)
+            fig.savefig(region_savepath + '_activation.' + config['format'])
+            rl.write_csv_wt_labels(region_savepath + '_activation.csv', modes)
 
-    # =========================================================================
-    # region bases: plot
-    # ========================================================================= 
-    fig = plt.figure(figsize=(12, 12))
-    axlist = rl.axesgrid_list(fig, len(modes.base.shape))
-    rl.plot_spatial_base(axlist, modes.base, bg_dic)
-    fig.savefig(region_savepath + '_spatial.' + config['format'])
+        # ======================================================================
+        # region bases: plot
+        # ====================================================================== 
+        fig = plt.figure(figsize=(12, 12))
+        axlist = rl.axesgrid_list(fig, len(modes.base.shape))
+        rl.plot_spatial_base(axlist, modes.base, bg_dic)
+        fig.savefig(region_savepath + '_spatial.' + config['format'])
 
+if config['do_overall_region']:
+    # ==========================================================================
+    # median region activation; calc and plots
+    # ==========================================================================
+    median_ts_list = [rl.scoreatpercentile(region[modes], 0.5)
+                          for region in fulldatadicvalues()]
+    all_region_ts = bf.ObjectConcat()(median_ts_list)
 
 #if config['integrate']:
 #
