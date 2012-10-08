@@ -66,19 +66,18 @@ def plot_medians_3d(data_dict, config):
     plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
     return fig
 
-def plot_split_valenz_heatmap(valenz, config):
+def plot_split_valenz_heatmap(ax, valenz, stim_selection, config):
+    """splitted heatmap for valenz information"""
     # normalize valenz for colormap
     norm_val = {}
     all_vals = np.array(valenz.values())
     for val in valenz:
         norm_val[val] = (valenz[val] / (2 * np.abs(np.max(all_vals))) + 0.5)
+    all_odors = get_all_odors(stim_selection)
 
-    # splitted heatmap for valenz information
     fig = vis.VisualizeTimeseries()
-    fig.subplot(1)
-    ax = fig.axes['base'][0]
-    plotti = np.ones((3, len(config['new_stimuli_order']))) * 0.5
-    for y, odor in enumerate(config['new_stimuli_order']):
+    plotti = np.ones((3, len(all_odors))) * 0.5
+    for y, odor in enumerate(all_odors):
         for x, co in enumerate(config['concentrations']):
             if odor == 'MOL':
                 stim = 'MOL_0'
@@ -92,11 +91,10 @@ def plot_split_valenz_heatmap(valenz, config):
                       colormap=plt.cm.gray)
     ax.set_yticks(range(len(config['concentrations'])))
     ax.set_yticklabels(config['concentrations'])
-    ax.set_xticks(range(len(config['new_stimuli_order'])))
-    ax.set_xticklabels(config['new_stimuli_order'], rotation='90')
-    return fig.fig
+    ax.set_xticks(range(len(all_odors)))
+    ax.set_xticklabels(all_odors, rotation='90')
 
-def plot_splitsort_heatmaps(data_dict, stim_selection, config):
+def plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config):
     """split and sort heatmap of medians"""
     dats = []
     fig = plt.figure()
@@ -112,7 +110,7 @@ def plot_splitsort_heatmaps(data_dict, stim_selection, config):
                     sub_heatmap[j, i] = data_dict[odor][conc]['medians'][region]
         dats.append(sub_heatmap)
     for i in range(len(config['concentrations'])):
-        ax = fig.add_subplot(len(config['concentrations']), 1, i + 1)
+        ax = fig.add_subplot(len(config['concentrations']) + 1, 1, i + 1)
         ax.set_title("region: %s - max: %f" % (config['main_regions'][i], np.max(dats[i])))
         ax.imshow(dats[i], interpolation='nearest')
         ax.set_yticks(range(len(config['concentrations'])))
@@ -120,6 +118,8 @@ def plot_splitsort_heatmaps(data_dict, stim_selection, config):
         ax.set_xticks([])
     ax.set_xticks(range(len(all_odors)))
     ax.set_xticklabels(all_odors, rotation='90')
+    ax = fig.add_subplot(len(config['concentrations']) + 1, 1, 4)
+    plot_split_valenz_heatmap(ax, valenz, stim_selection, config)
     return fig
 
 def plot_medians_heatmap(medians, main_regions):

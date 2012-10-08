@@ -281,13 +281,8 @@ if config['do_overall_region'] and not config['lesion_table_path']:
 
     data_dict = rl.organize_data_in_dict(all_region_ts, stim_selection, valenz, config)
 
-    fig = rl.plot_splitsort_heatmaps(data_dict, stim_selection, config)
+    fig = rl.plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config)
     plt.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
-#
-    # TODO: integrate into splitsort_heatmap
-#    fig = rl.plot_split_valenz_heatmap(valenz, config)
-#    fig.savefig(os.path.join(save_path, 'split_heatmap_valenz.' + config['format']))
-#
 
 
 #    fig = rl.plot_valenz_3d(data_dict, config)
