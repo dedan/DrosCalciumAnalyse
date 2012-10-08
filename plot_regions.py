@@ -137,8 +137,7 @@ for k in bg_dic:
 all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
 if not stim_selection:
     stim_selection = all_stimuli
-regions_file_path = os.path.join(config['results_path'], 'regions.json')
-with open(regions_file_path) as f:
+with open(config['regions_file_path']) as f:
     regions_dic = json.load(f)
     all_region_labels = list(set(__builtin__.sum(regions_dic.values(), [])))
 l.debug('all_stimuli: %s' % all_stimuli)
@@ -161,7 +160,7 @@ if config['do_per_animal']:
     # per-animal plots
     # =============================================================================
     for animal in data:
-        #TODO: trimming only for old data, remove later 
+        #TODO: trimming only for old data, remove later
         animal_trim = '_'.join(animal.split('_')[:-1])
         animal_savepath = os.path.join(save_path, 'regions', animal_trim)
         # exclude animals wto region data

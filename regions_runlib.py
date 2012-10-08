@@ -293,8 +293,8 @@ def plot_temporal_lesion(modes, stim_selection):
 
 def boxplot(ax, modes, stim_selection):
     """make boxplots of modes for stim in stim_selection in ax object
-       
-       ax: axes object to draw plot 
+
+       ax: axes object to draw plot
        modes: TimeSeries object which contains multiple object for each stim.
        Might contain nans. Should only have one value per stim, otherwise first
        is taken
