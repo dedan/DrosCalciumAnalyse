@@ -108,13 +108,13 @@ if os.path.exists(config['stimuli_matrix_file']):
 valenz = json.load(open(config['valence_file']))
 
 # read lesion-tract table into dictionary for easy access
-if config['lesion_data']:
+if config['lesion_table_path']:
     lesion_dict = rl.load_lesion_data(config['lesion_table_path'])
 
 #get data
 l.info('read files from: %s' % load_path)
 # read mf results
-data = rl.load_mf_results(load_path, selection, config['lesion_data'])
+data = rl.load_mf_results(load_path, selection, config['lesion_table_path'])
 # for old data: rename labels
 # TODO: remove if all data in correct format
 for mf in data.values():
@@ -215,22 +215,22 @@ if config['do_per_region']:
         # full time activation: plot, calc and save
         # ======================================================================
         # TODO: fix lesion plots and save results
-        if config['lesion_data']:
+        if config['lesion_table_path']:
             fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians,
                                           stim_selection)
             fig.savefig(region_savepath + '_activation_lesion.' + config['format'])
-            #write to csv
+            # TODO: write to csv
         else:
             fig = plt.figure(figsize=(25, 3))
             fig.suptitle(region_label, y=0.96)
-            ax2stim = rl.axesline_dic(fig, stim_selection)
-            rl.plot_temporal(modes, ax2stim)
+            stim2ax = rl.axesline_dic(fig, stim_selection)
+            rl.plot_temporal(modes, stim2ax)
             fig.savefig(region_savepath + '_activation.' + config['format'])
             rl.write_csv_wt_labels(region_savepath + '_activation.csv', modes)
 
         # ======================================================================
         # region bases: plot
-        # ====================================================================== 
+        # ======================================================================
         fig = plt.figure(figsize=(12, 12))
         axlist = rl.axesgrid_list(fig, len(modes.base.shape))
         rl.plot_spatial_base(axlist, modes.base, bg_dic)
