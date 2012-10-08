@@ -341,24 +341,33 @@ def plot_regions_of_animal(ax, modes_bases, bg, mode_labels, color_dic, cut_off=
 # reading and collectiog data
 #===============================================================================
 
-def organize_data_in_dict(medians, all_stimuli, all_odors, valenz, config):
+def organize_data_in_dict(medians, stim_selection, valenz, config):
     """prepare data for 3 d plots"""
-    data_dict = {}
-    hm_data = np.array([medians[region] for region in config['main_regions']])
-    for i in range(len(all_stimuli)):
-        odor, concen = all_stimuli[i].split('_')
-        if not odor in data_dict:
-            data_dict[odor] = {}
+    data_dict = defaultdict(dict)
+    all_odors = get_all_odors(stim_selection)
+
+    for stim in stim_selection:
+
+        stim_idx = medians.label_sample.index(stim)
+        odor, concen = stim.split('_')
         data_dict[odor][concen] = {}
+
+        # add color code for odor
         c = plt.cm.hsv(float(all_odors.index(odor)) / len(all_odors))
         data_dict[odor][concen]['color'] = c
 
         # add color to code valenz (if valenz available)
-        if all_stimuli[i] in valenz:
-            c = plt.cm.RdYlGn(valenz[all_stimuli[i]])
+        if stim in valenz:
+            c = plt.cm.RdYlGn(valenz[stim])
             data_dict[odor][concen]['valenz_color'] = c
-            data_dict[odor][concen]['valenz'] = valenz[all_stimuli[i]]
-        data_dict[odor][concen]['data'] = hm_data[:, i]
+            data_dict[odor][concen]['valenz'] = valenz[stim]
+
+        # add median value for odor, conc and region
+        data_dict[odor][concen]['medians'] = {}
+        for region in config['main_regions']:
+            region_idx = medians.label_objects.index(region)
+            tmp_median = medians.timecourses[stim_idx, region_idx]
+            data_dict[odor][concen]['medians'][region] = tmp_median
     return data_dict
 
 def collect_modes_for(region_label, regions_dic, data):
@@ -630,6 +639,18 @@ def axesgrid_list(fig, num_axes, num_col=None):
 #===============================================================================
 # helper functions
 #===============================================================================
+
+def get_all_odors(stim_selection):
+    """get all odors from a stim selection (stim concentration combinations)
+
+        in the original order
+    """
+    all_odors = []
+    for stim in stim_selection:
+        odor, _, _ = stim.partition('_')
+        if not odor in all_odors:
+            all_odors.append(odor)
+    return all_odors
 
 #TODO: include as method in TimeSerie class
 def write_csv_wt_labels(filename, ts):

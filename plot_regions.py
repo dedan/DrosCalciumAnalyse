@@ -231,7 +231,7 @@ if config['do_per_region']:
         rl.plot_spatial_base(axlist, modes.base, bg_dic)
         fig.savefig(region_savepath + '_spatial.' + config['format'])
 
-if config['do_overall_region']:
+if config['do_overall_region'] and not config['lesion_table_path']:
     with open(config['region_order_file']) as f:
         regions2plot = json.load(f)
     # ==========================================================================
