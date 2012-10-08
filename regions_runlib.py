@@ -512,7 +512,7 @@ def calc_scoreatpercentile(modes, percentile):
     ''' calculates percentile for Timeseries (may include nans)'''
     out = modes.copy()
     out.timecourses = np.ma.array(out.timecourses, mask=np.isnan(out.timecourses))
-    out.timecourses = mquantiles(out.timecourses, percentile, axis=1)
+    out.timecourses = mquantiles(out.matrix_shaped(), percentile, axis=1)
     out.shape = (1,)
     out.label_objects = ['percentile%d' % (percentile * 100)]
     return out
