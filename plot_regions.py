@@ -276,15 +276,9 @@ if config['do_overall_region']:
     fig.savefig(os.path.join(overall_savepath,
                              'activation_heatmap_integrated.' + config['format']))
 
-#if config['integrate']:
-#
-    # TODO: delete
-#    fig = rl.plot_median_overview(region_label, medians, all_stimuli)
-#    fig.savefig(os.path.join(save_path, 'medians.' + config['format']))
-#    np.savetxt(os.path.join(save_path, 'medians.csv'), medians.values(), delimiter=',')
-#
-#    fig = rl.plot_median_comparison(medians, config['comparisons'], all_stimuli)
-#    fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
+    fig = rl.plot_median_comparison(all_region_ts, config['comparisons'])
+    fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
+
 #
     # TODO: delete
 #    all_odors = sorted(set([s.split('_')[0] for s in all_stimuli]))

@@ -152,19 +152,20 @@ def plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels):
     ax.set_xticklabels(sorted(medians.keys()), rotation='90')
     return fig
 
-def plot_median_comparison(medians, comparisons, all_stimuli):
+def plot_median_comparison(medians, comparisons):
     """medians comparison plot"""
     fig = plt.figure()
     for i, comparison in enumerate(comparisons):
         ax = fig.add_subplot(len(comparisons), 1, i + 1)
-        l = len(medians[comparison[0]])
-        ax.bar(range(l), medians[comparison[0]], color='r')
-        ax.bar(range(l), medians[comparison[1]] * -1, color='b')
+        m1 = medians.timecourses[:, medians.label_objects.index(comparison[0])]
+        m2 = medians.timecourses[:, medians.label_objects.index(comparison[1])]
+        ax.bar(range(len(m1)), m1, color='r')
+        ax.bar(range(len(m1)), m2 * -1, color='b')
         ax.set_yticks([])
         ax.set_xticks([])
         ax.set_ylabel(', '.join(comparison), rotation='0')
-    ax.set_xticks(range(l))
-    ax.set_xticklabels(list(all_stimuli), rotation='90')
+    ax.set_xticks(range(len(m1)))
+    ax.set_xticklabels(medians.label_sample, rotation='90')
     return fig
 
 def plot_median_overview(region_label, medians, all_stimuli):
