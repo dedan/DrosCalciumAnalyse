@@ -279,17 +279,6 @@ if config['do_overall_region']:
     fig = rl.plot_median_comparison(all_region_ts, config['comparisons'])
     fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
 
-#
-    # TODO: delete
-#    all_odors = sorted(set([s.split('_')[0] for s in all_stimuli]))
-#    for odor in all_odors:
-#        fig = rl.plot_region_comparison_for(odor, medians, all_stimuli, all_region_labels)
-#        plt.savefig(os.path.join(save_path, 'odors', odor + '.' + config['format']))
-#
-    # TODO: delete
-#    fig = rl.plot_medians_heatmap(medians, config['main_regions'])
-#    fig.savefig(os.path.join(save_path, 'heatmap.' + config['format']))
-#
 #    fig = rl.plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config)
 #    plt.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
 #
@@ -300,10 +289,6 @@ if config['do_overall_region']:
 
 #    data_dict = rl.organize_data_in_dict(medians, all_stimuli, all_odors, valenz, config)
 
-    # TODO: delete
-#    fig = rl.plot_medians_3d(data_dict, config)
-#    plt.savefig(os.path.join(save_path, '3dscatter.' + config['format']))
-#
 #    fig = rl.plot_valenz_3d(data_dict, config)
 #    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + config['format']))
 #
