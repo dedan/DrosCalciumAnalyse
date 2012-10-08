@@ -77,12 +77,15 @@ color_dic['blackhole'] = np.array([142, 142, 142]) / 256.
 # set paths and create folders
 load_path = os.path.join(config['results_path'], 'timeseries')
 save_path = os.path.join(config['results_path'], 'region_plots')
+overall_savepath = os.path.join(save_path, 'overall')
 if not os.path.exists(save_path):
     os.mkdir(save_path)
 if not os.path.exists(os.path.join(save_path, 'regions')):
     os.mkdir(os.path.join(save_path, 'regions'))
 if not os.path.exists(os.path.join(save_path, 'odors')):
     os.mkdir(os.path.join(save_path, 'odors'))
+if not os.path.exists(overall_savepath):
+    os.mkdir(overall_savepath)
 
 # load list of animals to analyse
 selection = []
@@ -95,6 +98,11 @@ stim_selection = []
 if os.path.exists(config['stimuli_order_file']):
     l.info('found stimulus selection file')
     stim_selection = json.load(open(config['stimuli_order_file']))
+
+# load 2D stimuli layout
+if os.path.exists(config['stimuli_matrix_file']):
+    l.info('found 2D stimulus layout file')
+    stim_matrix = json.load(open(config['stimuli_matrix_file']))
 
 # load valenz information (which odor they like)
 valenz = json.load(open(config['valence_file']))
@@ -229,22 +237,46 @@ if config['do_per_region']:
         fig.savefig(region_savepath + '_spatial.' + config['format'])
 
 if config['do_overall_region']:
+    with open(config['region_order_file']) as f:
+        regions2plot = json.load(f)
     # ==========================================================================
     # median region activation; calc and plots
-    # ==========================================================================
+    # ==========================================================================  
     median_ts_list = [rl.calc_scoreatpercentile(region['modes'], 0.5)
                           for region in fulldatadic.values()]
     all_region_ts = bf.ObjectConcat()(median_ts_list)
     # remove percentile string from object labels
     all_region_ts.label_objects = ['_'.join(ilabel.split('_')[:-1])
                                    for ilabel in all_region_ts.label_objects]
-    with open(config['region_order_file']) as f:
-        regions2plot = json.load(f)
+    #plot
     fig = plt.figure(figsize=(25, 3))
-    ax2stim = rl.axesline_dic(fig, stim_selection, leftspace=0.07)
+    #ax2stim = rl.axesline_dic(fig, stim_selection, leftspace=0.07)
+    ax2stim = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.07, topspace=0.8,
+                                   inner_axesspace=0.2, gapspace=0.01,
+                                   title_param={'va':'bottom', 'rotation':'90', 'fontsize':8})
     rl.plot_stim_heatmap(all_region_ts, ax2stim, regions2plot)
+    fig.savefig(os.path.join(overall_savepath,
+                             'activation_heatmap.' + config['format']))
 
-
+    # ==========================================================================
+    # median integrated region activation; calc and plots
+    # ==========================================================================
+    median_ts_list = [rl.calc_scoreatpercentile(region['modes_integrated'], 0.5)
+                          for region in fulldatadic.values()]
+    all_region_ts = bf.ObjectConcat()(median_ts_list)
+    # remove percentile string from object labels
+    all_region_ts.label_objects = ['_'.join(ilabel.split('_')[:-1])
+                                   for ilabel in all_region_ts.label_objects]
+    #plot
+    fig = plt.figure(figsize=(20, 3))
+    ax2stim = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.07, topspace=0.8,
+                                   inner_axesspace=0., gapspace=0.01, noborder=True,
+                                   title_param={'va':'bottom', 'rotation':'90', 'fontsize':8})
+    rl.plot_stim_heatmap(all_region_ts, ax2stim, regions2plot)
+    for ax in ax2stim['bottom']:
+        ax.set_xticks([])
+    fig.savefig(os.path.join(overall_savepath,
+                             'activation_heatmap_integrated.' + config['format']))
 
 #if config['integrate']:
 #

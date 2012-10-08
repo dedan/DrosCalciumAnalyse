@@ -254,7 +254,7 @@ def plot_stim_heatmap(ts, stim2ax, object_order=None):
         ax.imshow(data[stim_ix].T, vmin= -max_color, vmax=max_color,
                   interpolation='none', aspect='auto')
 
-        if stim in stim2ax['left']:
+        if ax in stim2ax['left']:
             ax.set_yticks(range(len(ylabels)))
             ax.set_yticklabels(ylabels)
         else:
@@ -262,7 +262,7 @@ def plot_stim_heatmap(ts, stim2ax, object_order=None):
         xticks = range(0, ts.timepoints, 8)
         ax.set_xticks(xticks)
         ax.set_xticks(range(0, ts.timepoints), minor=True)
-        if stim in stim2ax['bottom']:
+        if ax in stim2ax['bottom']:
             ax.set_xticklabels(['%d' % i for i in np.array(xticks) * 1. / ts.framerate], fontsize=10)
         else:
             ax.set_xticklabels([])
@@ -540,18 +540,63 @@ def axesmatrix_dic(fig, stimlist):
 def axesline_dic(fig, stimlist, leftspace=0.02):
     ''' generates axes list according to stimlist, returns dictionary with
     maps stim_names to axes '''
-    stim2ax = {}
-    stim2ax['bottom'] = stimlist
+    stim2ax = defaultdict(list)
     gs = gridspec.GridSpec(1, len(stimlist))
     gs.update(left=leftspace, right=0.99, top=0.8)
     for col_ix, stim in enumerate(stimlist):
-        if col_ix == 0:
-            stim2ax['left'] = [stim]
         ax = fig.add_subplot(gs[0, col_ix])
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_title(stim, fontsize=6)
         stim2ax[stim] = ax
+        stim2ax['bottom'].append(ax)
+        if col_ix == 0:
+            stim2ax['left'].append(ax)
+    return stim2ax
+
+def axesgroupline_dic(fig, stimlist, **kwargs):
+    ''' generates axes list according to stimlist, returns dictionary with
+    maps stim_names to axes '''
+
+    title_param = kwargs.get('title_param', {})
+    leftspace = kwargs.get('leftspace', 0.02)
+    topspace = kwargs.get('topspace', 0.95)
+    inner_axesspace = kwargs.get('inner_axesspace', 0.01)
+    gapspace = kwargs.get('gapspace', 0.01)
+    noborder = kwargs.get('noborder', False)
+
+    stim2ax = defaultdict(list)
+    all_stim = __builtin__.sum(stimlist, [])
+    ax_width = (0.99 - leftspace - (len(stimlist) - 1) * gapspace) / len(all_stim)
+
+    stim_num = 0
+    for col_ix, inner_stim in enumerate(stimlist):
+        gs = gridspec.GridSpec(1, len(inner_stim))
+        gs.update(left=leftspace + stim_num * ax_width + col_ix * gapspace,
+                  right=(leftspace + (stim_num + len(inner_stim)) * ax_width
+                         + col_ix * gapspace),
+                  top=topspace,
+                  wspace=inner_axesspace)
+        for col2_ix, stim in enumerate(inner_stim):
+            ax = fig.add_subplot(gs[0, col2_ix])
+            ax.set_title(stim, **title_param)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            stim2ax[stim] = ax
+            # take care of axes borders
+            if noborder:
+                if col2_ix < (len(inner_stim) - 1):
+                    ax.spines['right'].set_color('none')
+                    ax.yaxis.set_ticks_position('left')
+                if col2_ix > 0:
+                    ax.spines['left'].set_color('none')
+            # save axespos
+            if (col_ix + col2_ix) == 0:
+                stim2ax['left'].append(ax)
+            if (col2_ix) == 0:
+                stim2ax['left_inner'].append(ax)
+            stim2ax['bottom'].append(ax)
+            stim_num += 1
     return stim2ax
 
 def axesgrid_list(fig, num_axes, num_col=None):
@@ -569,6 +614,7 @@ def axesgrid_list(fig, num_axes, num_col=None):
         ax = fig.add_subplot(gs[row_ix, col_ix])
         axlist.append(ax)
     return axlist
+
 
 
 #===============================================================================
