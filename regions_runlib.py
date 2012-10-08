@@ -5,7 +5,7 @@
 Created by  on 2012-01-27.
 Copyright (c) 2012. All rights reserved.
 """
-import sys, os, glob, csv, json, __builtin__
+import sys, os, glob, csv, json, __builtin__, re
 import itertools as iter
 from collections import defaultdict
 import numpy as np
@@ -458,9 +458,10 @@ def load_mf_results(load_path, selection, lesion_table_path):
         ts.load(os.path.splitext(fname)[0])
         name = os.path.splitext(os.path.basename(fname))[0]
 
-        if lesion_data:
-            if '_' in name:
-                fname_base, side = name.split('_')
+        if lesion_table_path:
+            tmp_name = re.search('\d.*?_(r|l)', name).group()
+            if '_' in tmp_name:
+                fname_base, side = tmp_name.split('_')
             new_labels = []
             for label in ts.label_sample:
                 if label[0] == 'm':
