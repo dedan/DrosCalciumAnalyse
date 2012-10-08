@@ -192,7 +192,7 @@ def plot_spatial_base(axlist, modes, bg_dic):
                            {'title':{"label": mode_name, 'fontsize':8}})
 
 #TODO: include plot_single
-def plot_temporal(modes, stim2ax, plot_single=False):
+def plot_temporal(modes, stim2ax, plot_single=False, conditions={}):
 
     medians = calc_scoreatpercentile(modes, 0.5).trial_shaped().squeeze()
     p25 = calc_scoreatpercentile(modes, 0.25).trial_shaped().squeeze()
@@ -206,14 +206,23 @@ def plot_temporal(modes, stim2ax, plot_single=False):
     min_ytick = np.ceil(min_y * 10) / 10
 
     for stim_ix, stim in enumerate(modes.label_sample):
+
+        if conditions:
+            stim, _, cond = stim.rpartition('_')
+            color = conditions[cond]
+        else:
+            color = '0'
+
         if stim not in stim2ax:
             continue
         ax = stim2ax[stim]
-        ax.fill_between(range(modes.timepoints), p25[stim_ix], p75[stim_ix], linewidth=0, color='0.75')
-        ax.plot(medians[stim_ix], linewidth=1.5, color='0')
+        ax.fill_between(range(modes.timepoints), p25[stim_ix], p75[stim_ix],
+                        linewidth=0, color=color, alpha=0.4)
+        ax.plot(medians[stim_ix], linewidth=1.5, color=color, label=str(num_modes[stim_ix]))
+
         # create stimulus bar
         ax.fill_between(np.array(modes.stim_window), max_y, min_y, color='b',
-                        alpha=0.2, linewidth=0)
+                        alpha=0.1, linewidth=0)
         ax.spines['top'].set_color('none')
         ax.spines['right'].set_color('none')
         ax.xaxis.set_ticks_position('bottom')
@@ -232,8 +241,8 @@ def plot_temporal(modes, stim2ax, plot_single=False):
             ax.set_xticklabels(['%d' % i for i in np.array(xticks) * 1. / modes.framerate], fontsize=10)
         else:
             ax.set_xticklabels([])
-        ax.text(ax.get_xlim()[1] / 2., ax.get_ylim()[1] * 0.9,
-                str(num_modes[stim_ix]), fontsize=6)
+        le = ax.legend(frameon=False, markerscale=0.1, numpoints=1, prop={'size': 6})
+
 
 def plot_stim_heatmap(ts, stim2ax, object_order=None):
 
@@ -463,7 +472,7 @@ def load_mf_results(load_path, selection, lesion_table_path):
                 if label[0] == 'm':
                     new_labels.append(label[1:] + '_' + lesion_dict[fname_base][side])
                 else:
-                    new_labels.append(label)
+                    new_labels.append(label + '_intact')
             ts.label_sample = new_labels
 
         average_over_stimulus_repetitions = bf.SingleSampleResponse()

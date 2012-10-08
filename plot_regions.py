@@ -191,8 +191,7 @@ if config['do_per_region']:
         ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
         rl.boxplot(ax, latencies, stim_selection)
         fig.savefig(region_savepath + '_latencies.' + config['format'])
-        rl.write_csv_wt_labels(region_savepath + '_latencies.csv',
-                               latencies)
+        rl.write_csv_wt_labels(region_savepath + '_latencies.csv', latencies)
 
         # ======================================================================
         # mean activation: plot, calc and save
@@ -208,12 +207,14 @@ if config['do_per_region']:
         # ======================================================================
         # full time activation: plot, calc and save
         # ======================================================================
-        # TODO: fix lesion plots and save results
         if config['lesion_table_path']:
-            fig = rl.plot_temporal_lesion(region_label, t_modes_ma, medians,
-                                          stim_selection)
+            fig = plt.figure()
+            fig.suptitle(region_label)
+            tmp_stim_select = list(set(['_'.join(s.split('_')[0:2]) for s in stim_selection]))
+            stim2ax = rl.axesline_dic(fig, tmp_stim_select)
+            rl.plot_temporal(modes, stim2ax, conditions=config['conditions'])
             fig.savefig(region_savepath + '_activation_lesion.' + config['format'])
-            # TODO: write to csv
+            rl.write_csv_wt_labels(region_savepath + '_activation_lesion.csv', modes)
         else:
             fig = plt.figure(figsize=(25, 3))
             fig.suptitle(region_label, y=0.96)
