@@ -304,14 +304,10 @@ def boxplot(ax, modes, stim_selection):
         l.warning('''Temporal extension of stimuli > 1 (%d)/n
                     only first taken into account''' % modes.timepoints)
     ax.set_title(modes.name[0])
-    # TODO: remove if TimeSeries Class is fixed
-    if modes.timecourses.ndim < 2:
-        timecourses = modes.timecourses.reshape((1, -1))
-    else:
-        timecourses = modes.timecourses
+    timecourses = modes.matrix_shaped()
+
     # make it a list because boxplot has a problem with masked arrays
-    t_modes_ma = np.ma.array(timecourses, mask=np.isnan(timecourses))
-    t_modes_ma = [row[~np.isnan(row)] for row in t_modes_ma]
+    t_modes_ma = [row[~np.isnan(row)] for row in timecourses]
     stim_wt_data = [i_stim for i_stim in stim_selection if i_stim in modes.label_sample]
     x_index = [modes.label_sample.index(i_stim) for i_stim in stim_wt_data]
 
@@ -632,7 +628,7 @@ def write_csv_wt_labels(filename, ts):
         headers = __builtin__.sum([[s] * ts.timepoints for s in ts.label_sample], [])
         f.write(', '.join([''] + headers) + '\n')
         for i, lab in enumerate(ts.label_objects):
-            f.write(', '.join([lab] + list(ts.timecourses[:, i].astype('|S16'))) + '\n')
+            f.write(', '.join([lab] + list(ts.matrix_shaped()[:, i].astype('|S16'))) + '\n')
 
 def flat_colormap(rgb_value):
     return lambda array: np.ones(list(array.shape) + [3]) * rgb_value
