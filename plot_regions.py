@@ -75,7 +75,6 @@ color_dic['betweenTract'] = np.array([155, 48, 255]) / 256.
 color_dic['blackhole'] = np.array([142, 142, 142]) / 256.
 
 # set paths and create folders
-load_path = os.path.join(config['results_path'], 'timeseries')
 save_path = os.path.join(config['results_path'], 'region_plots')
 overall_savepath = os.path.join(save_path, 'overall')
 if not os.path.exists(save_path):
@@ -108,9 +107,9 @@ if os.path.exists(config['stimuli_matrix_file']):
 valenz = json.load(open(config['valence_file']))
 
 #get data
-l.info('read files from: %s' % load_path)
+l.info('read files from: %s' % config['results_path'])
 # read mf results
-data = rl.load_mf_results(load_path, selection, config['lesion_table_path'])
+data = rl.load_mf_results(config['results_path'], selection, config['lesion_table_path'])
 # for old data: rename labels
 # TODO: remove if all data in correct format
 for mf in data.values():
@@ -125,7 +124,7 @@ for mf in data.values():
     mf.label_sample = new_labels
 
 #collect bg for animals (take just first picture)
-bg_dic = rl.load_baseline(load_path, selection)
+bg_dic = rl.load_baseline(config['results_path'], selection)
 for k in bg_dic:
     bg_dic[k] = bg_dic[k].shaped2D()[0]
 
