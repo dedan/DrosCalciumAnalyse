@@ -96,22 +96,21 @@ def plot_split_valenz_heatmap(valenz, config):
     ax.set_xticklabels(config['new_stimuli_order'], rotation='90')
     return fig.fig
 
-def plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config):
+def plot_splitsort_heatmaps(data_dict, stim_selection, config):
     """split and sort heatmap of medians"""
     dats = []
-    hm_data = np.array([medians[region] for region in config['main_regions']])
     fig = plt.figure()
-    for i in range(len(config['concentrations'])):
-        plotti = np.zeros((3, len(config['new_stimuli_order'])))
-        for y, odor in enumerate(config['new_stimuli_order']):
-            for x, co in enumerate(config['concentrations']):
-                if odor == 'MOL':
-                    stim = 'MOL_0'
-                else:
-                    stim = '%s_%s' % (odor, co)
-                if stim in all_stimuli:
-                    plotti[x, y] = hm_data[i, all_stimuli.index(stim)]
-        dats.append(plotti)
+    n_conc = len(config['concentrations'])
+    all_odors = get_all_odors(stim_selection)
+
+    for region in config['main_regions']:
+        sub_heatmap = np.zeros((n_conc, len(all_odors)))
+        for i, odor in enumerate(all_odors):
+            for j, conc in enumerate(config['concentrations']):
+                stim = '%s_%s' % (odor, conc)
+                if stim in stim_selection:
+                    sub_heatmap[j, i] = data_dict[odor][conc]['medians'][region]
+        dats.append(sub_heatmap)
     for i in range(len(config['concentrations'])):
         ax = fig.add_subplot(len(config['concentrations']), 1, i + 1)
         ax.set_title("region: %s - max: %f" % (config['main_regions'][i], np.max(dats[i])))
@@ -120,7 +119,7 @@ def plot_splitsort_heatmaps(medians, all_stimuli, all_odors, config):
         ax.set_yticklabels(config['concentrations'])
         ax.set_xticks([])
     ax.set_xticks(range(len(all_odors)))
-    ax.set_xticklabels(config['new_stimuli_order'], rotation='90')
+    ax.set_xticklabels(all_odors, rotation='90')
     return fig
 
 def plot_medians_heatmap(medians, main_regions):
