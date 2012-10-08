@@ -107,10 +107,6 @@ if os.path.exists(config['stimuli_matrix_file']):
 # load valenz information (which odor they like)
 valenz = json.load(open(config['valence_file']))
 
-# read lesion-tract table into dictionary for easy access
-if config['lesion_table_path']:
-    lesion_dict = rl.load_lesion_data(config['lesion_table_path'])
-
 #get data
 l.info('read files from: %s' % load_path)
 # read mf results

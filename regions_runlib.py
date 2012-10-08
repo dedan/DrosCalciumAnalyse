@@ -430,7 +430,7 @@ def load_lesion_data(lesion_data_path):
         les_dict[row[0]]['r'] = row[2]
     return les_dict
 
-def load_mf_results(load_path, selection, lesion_data):
+def load_mf_results(load_path, selection, lesion_table_path):
     """read data (matrix factorization results) to dictionary"""
 
     data = {}
@@ -439,6 +439,9 @@ def load_mf_results(load_path, selection, lesion_data):
     filelist = [f for f in filelist if not 'base' in os.path.basename(f)]
     filelist = [f for f in filelist if not 'regions' in os.path.basename(f)]
     filelist = [f for f in filelist if not 'selection' in os.path.basename(f)]
+    if lesion_table_path:
+        lesion_dict = load_lesion_data(lesion_table_path)
+
     for fname in filelist:
 
         if selection:
@@ -461,7 +464,7 @@ def load_mf_results(load_path, selection, lesion_data):
             new_labels = []
             for label in ts.label_sample:
                 if label[0] == 'm':
-                    new_labels.append(label[1:] + '-' + les_dict[fname_base][side])
+                    new_labels.append(label[1:] + '_' + lesion_dict[fname_base][side])
                 else:
                     new_labels.append(label)
             ts.label_sample = new_labels
