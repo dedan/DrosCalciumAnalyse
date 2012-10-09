@@ -87,10 +87,11 @@ def preprocess(ts, config):
     out['sorted_baseline'] = sorted_baseline
 
     # temporal downsampling by factor 2 (originally 40 frames)
-    ts = bf.TrialMean(20)(ts)
-    ts.framerate /= ds
-    ts.stim_window = (np.floor(1.*ts.stim_window[0] / ds),
-                      np.ceil(1.*ts.stim_window[1] / ds))
+    t_ds = 2
+    ts = bf.TrialMean(ts.timepoints / t_ds)(ts)
+    ts.framerate /= t_ds
+    ts.stim_window = (np.floor(1.*ts.stim_window[0] / t_ds),
+                      np.ceil(1.*ts.stim_window[1] / t_ds))
 
     # compute relative change (w.r.t. baseline)
     pp = rel_change(ts, baseline)
