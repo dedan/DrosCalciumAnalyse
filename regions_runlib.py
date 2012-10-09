@@ -370,7 +370,7 @@ def organize_data_in_dict(medians, stim_selection, valenz, config):
 
         # add median value for odor, conc and region
         data_dict[odor][concen]['medians'] = {}
-        for region in config['main_regions']:
+        for region in medians.label_objects:
             region_idx = medians.label_objects.index(region)
             tmp_median = medians.timecourses[stim_idx, region_idx]
             data_dict[odor][concen]['medians'][region] = tmp_median

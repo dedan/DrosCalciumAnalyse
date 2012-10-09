@@ -190,6 +190,7 @@ if config['do_per_animal']:
                                    regions_dic[animal], color_dic,
                                    cut_off=config['region_plot_cutoff'])
         fig.savefig(animal_savepath + '.' + config['format'])
+        plt.close('all')
 
 if config['do_per_region']:
     # ==========================================================================
@@ -253,6 +254,7 @@ if config['do_per_region']:
         axlist = rl.axesgrid_list(fig, len(modes.base.shape))
         rl.plot_spatial_base(axlist, modes.base, bg_dic)
         fig.savefig(region_savepath + '_spatial.' + config['format'])
+        plt.close('all')
 
 if config['do_overall_region'] and not config['lesion_table_path']:
     with open(config['region_order_file']) as f:
@@ -288,13 +290,13 @@ if config['do_overall_region'] and not config['lesion_table_path']:
                              'activation_heatmap_integrated.' + config['format']))
 
     fig = rl.plot_median_comparison(all_region_ts, config['comparisons'])
-    fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
+    fig.savefig(os.path.join(overall_savepath, 'comparisons.' + config['format']))
 
     fig = rl.plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config)
-    fig.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
+    fig.savefig(os.path.join(overall_savepath, 'split_heatmap.' + config['format']))
 
     fig = rl.plot_valenz_3d(data_dict, config)
-    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + config['format']))
+    plt.savefig(os.path.join(overall_savepath, '3dscatter_valenz.' + config['format']))
 
     models = rl.fit_models(data_dict, config)
 
@@ -308,7 +310,7 @@ if config['do_overall_region'] and not config['lesion_table_path']:
             np.corrcoef(models[config['main_regions'][i]], models['val'])[0, 1]))
         ax.set_xlabel('activation')
         ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(save_path, 'activation_vs_valenz.' + config['format']))
+    plt.savefig(os.path.join(overall_savepath, 'activation_vs_valenz.' + config['format']))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -316,7 +318,7 @@ if config['do_overall_region'] and not config['lesion_table_path']:
     ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(models['diff'], models['val'])[0, 1])
     ax.set_xlabel('activation difference')
     ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(save_path, 'activation(difference)_vs_valenz.' + config['format']))
+    plt.savefig(os.path.join(overall_savepath, 'activation(difference)_vs_valenz.' + config['format']))
 
     idx = np.argmax(models['ratio'])
     models['val'].pop(idx)
@@ -326,4 +328,40 @@ if config['do_overall_region'] and not config['lesion_table_path']:
     ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(models['ratio'], models['val'])[0, 1])
     ax.set_xlabel('activation ratio')
     ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(save_path, 'activation(ratio)_vs_valenz.' + config['format']))
+    plt.savefig(os.path.join(overall_savepath, 'activation(ratio)_vs_valenz.' + config['format']))
+    plt.close('all')
+
+
+if config['do_region_concentration_valenz']:
+
+    for region in fulldatadic.keys():
+        fig = plt.figure()
+        fig.suptitle(region)
+        ax = fig.add_subplot(111)
+        x_data, y_data = [], []
+        for odor in data_dict:
+            for conc in data_dict[odor]:
+                if region in data_dict[odor][conc]['medians']:
+                    x_data.append(int(conc))
+                    y_data.append(data_dict[odor][conc]['medians'][region])
+        ax.scatter(x_data, y_data)
+        ax.set_xlabel('concentration')
+        ax.set_ylabel('median activation')
+        fig.savefig(os.path.join(save_path, 'regions', region + '_conc_act.' + config['format']))
+
+        fig = plt.figure()
+        fig.suptitle(region)
+        ax = fig.add_subplot(111)
+        x_data, y_data = [], []
+        for odor in data_dict:
+            for conc in data_dict[odor]:
+                if region in data_dict[odor][conc]['medians'] and 'valenz' in data_dict[odor][conc]:
+                    x_data.append(data_dict[odor][conc]['valenz'])
+                    y_data.append(data_dict[odor][conc]['medians'][region])
+        ax.scatter(x_data, y_data)
+        ax.set_xlabel('valenz')
+        ax.set_ylabel('median activation')
+        fig.savefig(os.path.join(save_path, 'regions', region + '_conc_val.' + config['format']))
+        plt.close('all')
+
+
