@@ -151,6 +151,7 @@ def mf_overview_plot_single(out, fig, params):
 
     # get parameter
     overlay = params.get('overlay', True)
+    workaround = params.get('workaround', False)
     if 'stimset' in params:
         stimset = params['stimset']
     else:
@@ -161,10 +162,17 @@ def mf_overview_plot_single(out, fig, params):
     mf_overview.base_and_singlestimtime(mf.num_objects, stimset)
     for mode_ix, resp in enumerate(mf.base.shaped2D()):
         if overlay:
-            mf_overview.overlay_workaround(mf_overview.axes['base'][mode_ix],
+            if workaround:
+                mf_overview.overlay_workaround(mf_overview.axes['base'][mode_ix],
                                out['sorted_baseline'].shaped2D()[0],
                                {'cmap':plt.cm.bone, 'extent':[0, mf.base.shape[1], mf.base.shape[0], 0]},
                                resp, params.get('overlay', {}), {})
+            else:
+                ax = mf_overview.axes['base'][mode_ix]
+                ax.imshow(out['sorted_baseline'].shaped2D()[0], cmap=plt.cm.bone,
+                          extent=[0, mf.base.shape[1], mf.base.shape[0], 0])
+                datamax = np.max(np.abs(resp))
+                ax.imshow(resp, vmax=datamax, vmin= -datamax, alpha=0.4)
         else:
             mf_overview.imshow(mf_overview.axes['base'][mode_ix], resp, cmap=plt.cm.jet)
         # set timeplot parameter
