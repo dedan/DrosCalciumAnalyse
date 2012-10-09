@@ -162,9 +162,11 @@ def plot_median_comparison(medians, comparisons):
         ax.bar(range(len(m1)), m2 * -1, color='b')
         ax.set_yticks([])
         ax.set_xticks([])
-        ax.set_ylabel(', '.join(comparison), rotation='0')
+        ax.set_title(', '.join(comparison), rotation='0')
+        ax.set_xlim((0, len(m1)))
     ax.set_xticks(range(len(m1)))
-    ax.set_xticklabels(medians.label_sample, rotation='90')
+    ax.set_xticklabels(medians.label_sample, rotation='45')
+    fig.subplots_adjust(hspace=0.6)
     return fig
 
 def plot_median_overview(region_label, medians, all_stimuli):
