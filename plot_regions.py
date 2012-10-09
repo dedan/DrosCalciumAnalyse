@@ -261,7 +261,7 @@ if config['do_per_region']:
         fig.savefig(region_savepath + '_spatial.' + config['format'])
         plt.close('all')
 
-if config['do_overall_region'] and not config['lesion_table_path']:
+if config['do_overall_region']:
     with open(config['region_order_file']) as f:
         regions2plot = json.load(f)
     # ==========================================================================
@@ -290,35 +290,37 @@ if config['do_overall_region'] and not config['lesion_table_path']:
     fig.savefig(os.path.join(overall_savepath,
                              'activation_heatmap_integrated.' + config['format']))
 
-    fig = rl.plot_median_comparison(all_region_ts, config['comparisons'])
-    fig.savefig(os.path.join(overall_savepath, 'comparisons.' + config['format']))
+    if not config['lesion_table_path']:
 
-    fig = rl.plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config)
-    fig.savefig(os.path.join(overall_savepath, 'split_heatmap.' + config['format']))
+        fig = rl.plot_median_comparison(all_region_ts, config['comparisons'])
+        fig.savefig(os.path.join(overall_savepath, 'comparisons.' + config['format']))
 
-    fig = rl.plot_valenz_3d(data_dict, config)
-    plt.savefig(os.path.join(overall_savepath, '3dscatter_valenz.' + config['format']))
+        fig = rl.plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config)
+        fig.savefig(os.path.join(overall_savepath, 'split_heatmap.' + config['format']))
 
-    models = rl.fit_models(data_dict, config)
+        fig = rl.plot_valenz_3d(data_dict, config)
+        plt.savefig(os.path.join(overall_savepath, '3dscatter_valenz.' + config['format']))
 
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.scatter(models['diff'], models['val'])
-    ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(models['diff'], models['val'])[0, 1])
-    ax.set_xlabel('activation difference')
-    ax.set_ylabel('valenz')
-    fig.savefig(os.path.join(overall_savepath, 'activation(difference)_vs_valenz.' + config['format']))
+        models = rl.fit_models(data_dict, config)
 
-    idx = np.argmax(models['ratio'])
-    models['val'].pop(idx)
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.scatter(models['ratio'], models['val'])
-    ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(models['ratio'], models['val'])[0, 1])
-    ax.set_xlabel('activation ratio')
-    ax.set_ylabel('valenz')
-    fig.savefig(os.path.join(overall_savepath, 'activation(ratio)_vs_valenz.' + config['format']))
-    plt.close('all')
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(models['diff'], models['val'])
+        ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(models['diff'], models['val'])[0, 1])
+        ax.set_xlabel('activation difference')
+        ax.set_ylabel('valenz')
+        fig.savefig(os.path.join(overall_savepath, 'activation(difference)_vs_valenz.' + config['format']))
+
+        idx = np.argmax(models['ratio'])
+        models['val'].pop(idx)
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
+        ax.scatter(models['ratio'], models['val'])
+        ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(models['ratio'], models['val'])[0, 1])
+        ax.set_xlabel('activation ratio')
+        ax.set_ylabel('valenz')
+        fig.savefig(os.path.join(overall_savepath, 'activation(ratio)_vs_valenz.' + config['format']))
+        plt.close('all')
 
 
 if config['do_region_concentration_valenz'] and not config['lesion_table_path']:
