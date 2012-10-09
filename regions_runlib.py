@@ -42,7 +42,6 @@ def plot_valenz_3d(data_dict, config):
                 s_concen = sorted([int(concen) for concen in data_dict[odor]])
                 line_data = [[data_dict[odor][str(concen)]['medians'][r] for r in config['main_regions']]
                                                                         for concen in s_concen]
-                print line_data
                 ax.plot(*[x for x in np.array(line_data).T], c='0.5')
     ax.set_xlabel(config['main_regions'][0])
     ax.set_ylabel(config['main_regions'][1])
@@ -367,7 +366,7 @@ def organize_data_in_dict(medians, stim_selection, valenz, config):
         if stim in valenz:
             c = plt.cm.RdYlGn(norm_val[stim])
             data_dict[odor][concen]['valenz_color'] = c
-            data_dict[odor][concen]['valenz'] = valenz[stim]
+            data_dict[odor][concen]['valenz'] = norm_val[stim]
 
         # add median value for odor, conc and region
         data_dict[odor][concen]['medians'] = {}
@@ -673,13 +672,14 @@ def flat_colormap(rgb_value):
 
 def fit_models(data_dict, config):
     """fit different models to our data"""
+    main_reg = config['main_regions']
     regressor = linear_model.LinearRegression(fit_intercept=False)
     x, y = [], []
     for odor in data_dict:
         for concen in data_dict[odor]:
             if 'valenz' in data_dict[odor][concen]:
                 t = data_dict[odor][concen]
-                x.append([t['data'][2], t['data'][0]])
+                x.append([t['medians'][main_reg[2]], t['medians'][main_reg[0]]])
                 y.append(t['valenz'])
     fit = regressor.fit(x, y)
     alpha = fit.coef_[1]
@@ -691,11 +691,11 @@ def fit_models(data_dict, config):
                 t = data_dict[odor][concen]
                 agg['val'].append(t['valenz'])
                 for i in range(3):
-                    agg[config['main_regions'][i]].append(t['data'][i])
-                agg['ratio'].append(data_dict[odor][concen]['data'][2] /
-                                    data_dict[odor][concen]['data'][0])
-                agg['diff'].append(data_dict[odor][concen]['data'][2] -
-                                   alpha * data_dict[odor][concen]['data'][0])
+                    agg[main_reg[i]].append(t['medians'][main_reg[i]])
+                agg['ratio'].append(data_dict[odor][concen]['medians'][main_reg[2]] /
+                                    data_dict[odor][concen]['medians'][main_reg[0]])
+                agg['diff'].append(data_dict[odor][concen]['medians'][main_reg[2]] -
+                                   alpha * data_dict[odor][concen]['medians'][main_reg[0]])
     idx = np.argmax(agg['ratio'])
     agg['ratio'].pop(idx)
     return agg

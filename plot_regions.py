@@ -288,40 +288,39 @@ if config['do_overall_region'] and not config['lesion_table_path']:
         del(data_dict['CO2'][conc])
 
     fig = rl.plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config)
-    plt.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
-
+    fig.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
 
     fig = rl.plot_valenz_3d(data_dict, config)
     plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + config['format']))
-#
-#    models = rl.fit_models(data_dict, config)
-#
-#    # valenz vs. activation plot
-#    fig = plt.figure()
-#    N = 3
-#    for i in range(N):
-#        ax = fig.add_subplot(N, 1, i)
-#        ax.scatter(models[config['main_regions'][i]], models['val'])
-#        ax.set_title('%s %.2f' % (config['main_regions'][i],
-#            np.corrcoef(models[config['main_regions'][i]], models['val'])[0, 1]))
-#        ax.set_xlabel('activation')
-#        ax.set_ylabel('valenz')
-#    plt.savefig(os.path.join(save_path, 'activation_vs_valenz.' + config['format']))
-#
-#    fig = plt.figure()
-#    ax = fig.add_subplot(111)
-#    ax.scatter(models['diff'], models['val'])
-#    ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(models['diff'], models['val'])[0, 1])
-#    ax.set_xlabel('activation difference')
-#    ax.set_ylabel('valenz')
-#    plt.savefig(os.path.join(save_path, 'activation(difference)_vs_valenz.' + config['format']))
-#
-#    idx = np.argmax(models['ratio'])
-#    models['val'].pop(idx)
-#    fig = plt.figure()
-#    ax = fig.add_subplot(111)
-#    ax.scatter(models['ratio'], models['val'])
-#    ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(models['ratio'], models['val'])[0, 1])
-#    ax.set_xlabel('activation ratio')
-#    ax.set_ylabel('valenz')
-#    plt.savefig(os.path.join(save_path, 'activation(ratio)_vs_valenz.' + config['format']))
+
+    models = rl.fit_models(data_dict, config)
+
+    # valenz vs. activation plot
+    fig = plt.figure()
+    N = 3
+    for i in range(N):
+        ax = fig.add_subplot(N, 1, i)
+        ax.scatter(models[config['main_regions'][i]], models['val'])
+        ax.set_title('%s %.2f' % (config['main_regions'][i],
+            np.corrcoef(models[config['main_regions'][i]], models['val'])[0, 1]))
+        ax.set_xlabel('activation')
+        ax.set_ylabel('valenz')
+    plt.savefig(os.path.join(save_path, 'activation_vs_valenz.' + config['format']))
+
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(models['diff'], models['val'])
+    ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(models['diff'], models['val'])[0, 1])
+    ax.set_xlabel('activation difference')
+    ax.set_ylabel('valenz')
+    plt.savefig(os.path.join(save_path, 'activation(difference)_vs_valenz.' + config['format']))
+
+    idx = np.argmax(models['ratio'])
+    models['val'].pop(idx)
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(models['ratio'], models['val'])
+    ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(models['ratio'], models['val'])[0, 1])
+    ax.set_xlabel('activation ratio')
+    ax.set_ylabel('valenz')
+    plt.savefig(os.path.join(save_path, 'activation(ratio)_vs_valenz.' + config['format']))
