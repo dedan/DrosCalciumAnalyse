@@ -505,10 +505,12 @@ def load_baseline(load_path, selection):
         fname = os.path.splitext(fname)[0]
         animal = os.path.basename(fname).split('_baseline')[0]
         if selection:
-            if animal in selection:
-                l.info('taking %s because found in selection' % animal)
-            else:
-                l.info('skip %s because not in selection' % animal)
+            skip = True
+            for sel in selection:
+                if sel in fname:
+                    skip = False
+            if skip:
+                l.info('skip %s because not in selection' % fname)
                 continue
 
         ts = TimeSeries()
