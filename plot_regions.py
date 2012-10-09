@@ -81,8 +81,8 @@ if not os.path.exists(save_path):
     os.mkdir(save_path)
 if not os.path.exists(os.path.join(save_path, 'regions')):
     os.mkdir(os.path.join(save_path, 'regions'))
-if not os.path.exists(os.path.join(save_path, 'odors')):
-    os.mkdir(os.path.join(save_path, 'odors'))
+if not os.path.exists(os.path.join(save_path, 'all_regions')):
+    os.mkdir(os.path.join(save_path, 'all_regions'))
 if not os.path.exists(overall_savepath):
     os.mkdir(overall_savepath)
 
@@ -306,7 +306,7 @@ if config['do_overall_region'] and not config['lesion_table_path']:
             np.corrcoef(models[config['main_regions'][i]], models['val'])[0, 1]))
         ax.set_xlabel('activation')
         ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(overall_savepath, 'activation_vs_valenz.' + config['format']))
+    fig.savefig(os.path.join(overall_savepath, 'activation_vs_valenz.' + config['format']))
 
     fig = plt.figure()
     ax = fig.add_subplot(111)
@@ -314,7 +314,7 @@ if config['do_overall_region'] and not config['lesion_table_path']:
     ax.set_title('vlPRCt - alpha * iPN %.2f' % np.corrcoef(models['diff'], models['val'])[0, 1])
     ax.set_xlabel('activation difference')
     ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(overall_savepath, 'activation(difference)_vs_valenz.' + config['format']))
+    fig.savefig(os.path.join(overall_savepath, 'activation(difference)_vs_valenz.' + config['format']))
 
     idx = np.argmax(models['ratio'])
     models['val'].pop(idx)
@@ -324,7 +324,7 @@ if config['do_overall_region'] and not config['lesion_table_path']:
     ax.set_title('vlPRCt / iPN %.2f' % np.corrcoef(models['ratio'], models['val'])[0, 1])
     ax.set_xlabel('activation ratio')
     ax.set_ylabel('valenz')
-    plt.savefig(os.path.join(overall_savepath, 'activation(ratio)_vs_valenz.' + config['format']))
+    fig.savefig(os.path.join(overall_savepath, 'activation(ratio)_vs_valenz.' + config['format']))
     plt.close('all')
 
 
@@ -343,7 +343,7 @@ if config['do_region_concentration_valenz']:
         ax.scatter(x_data, y_data)
         ax.set_xlabel('concentration')
         ax.set_ylabel('median activation')
-        fig.savefig(os.path.join(save_path, 'regions', region + '_conc_act.' + config['format']))
+        fig.savefig(os.path.join(save_path, 'all_regions', region + '_conc_act.' + config['format']))
 
         fig = plt.figure()
         fig.suptitle(region)
@@ -357,7 +357,7 @@ if config['do_region_concentration_valenz']:
         ax.scatter(x_data, y_data)
         ax.set_xlabel('valenz')
         ax.set_ylabel('median activation')
-        fig.savefig(os.path.join(save_path, 'regions', region + '_conc_val.' + config['format']))
+        fig.savefig(os.path.join(save_path, 'all_regions', region + '_conc_val.' + config['format']))
         plt.close('all')
 
 
