@@ -235,7 +235,11 @@ if config['do_per_region']:
         if config['lesion_table_path']:
             fig = plt.figure()
             fig.suptitle(region_label)
-            tmp_stim_select = list(set(['_'.join(s.split('_')[0:2]) for s in stim_selection]))
+            tmp_stim_select = []
+            for stim in stim_selection:
+                tmp_stim = '_'.join(stim.split('_')[0:2])
+                if not tmp_stim in tmp_stim_select:
+                    tmp_stim_select.append(tmp_stim)
             stim2ax = rl.axesline_dic(fig, tmp_stim_select)
             rl.plot_temporal(modes, stim2ax, conditions=config['conditions'])
             fig.savefig(region_savepath + '_activation_lesion.' + config['format'])
