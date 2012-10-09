@@ -281,6 +281,12 @@ if config['do_overall_region'] and not config['lesion_table_path']:
 
     data_dict = rl.organize_data_in_dict(all_region_ts, stim_selection, valenz, config)
 
+    # fix the CO2 labels
+    FIXES = {'01': '-5', '05': '-3', '10': '-1'}
+    for conc in FIXES:
+        data_dict['CO2'][FIXES[conc]] = data_dict['CO2'][conc]
+        del(data_dict['CO2'][conc])
+
     fig = rl.plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config)
     plt.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
 

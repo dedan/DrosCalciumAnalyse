@@ -105,9 +105,10 @@ def plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config):
         sub_heatmap = np.zeros((n_conc, len(all_odors)))
         for i, odor in enumerate(all_odors):
             for j, conc in enumerate(config['concentrations']):
-                stim = '%s_%s' % (odor, conc)
-                if stim in stim_selection:
+                if conc in data_dict[odor]:
                     sub_heatmap[j, i] = data_dict[odor][conc]['medians'][region]
+                else:
+                    sub_heatmap[j, i] = 0
         dats.append(sub_heatmap)
     for i in range(len(config['concentrations'])):
         ax = fig.add_subplot(len(config['concentrations']) + 1, 1, i + 1)
@@ -116,9 +117,8 @@ def plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config):
         ax.set_yticks(range(len(config['concentrations'])))
         ax.set_yticklabels(config['concentrations'])
         ax.set_xticks([])
-    ax.set_xticks(range(len(all_odors)))
-    ax.set_xticklabels(all_odors, rotation='90')
     ax = fig.add_subplot(len(config['concentrations']) + 1, 1, 4)
+    fig.subplots_adjust(hspace = 0.4)
     plot_split_valenz_heatmap(ax, valenz, stim_selection, config)
     return fig
 
