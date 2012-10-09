@@ -291,8 +291,8 @@ if config['do_overall_region'] and not config['lesion_table_path']:
     plt.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
 
 
-#    fig = rl.plot_valenz_3d(data_dict, config)
-#    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + config['format']))
+    fig = rl.plot_valenz_3d(data_dict, config)
+    plt.savefig(os.path.join(save_path, '3dscatter_valenz.' + config['format']))
 #
 #    models = rl.fit_models(data_dict, config)
 #

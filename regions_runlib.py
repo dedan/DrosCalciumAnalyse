@@ -33,18 +33,20 @@ def plot_valenz_3d(data_dict, config):
     for odor in data_dict:
         for concen in data_dict[odor]:
             if 'valenz_color' in data_dict[odor][concen]:
-                ax.scatter(*[[i] for i in data_dict[odor][concen]['data']],
+                plot_data = [[data_dict[odor][concen]['medians'][r]] for r in config['main_regions']]
+                ax.scatter(*plot_data,
                            edgecolors=data_dict[odor][concen]['valenz_color'],
                            facecolors=data_dict[odor][concen]['valenz_color'],
                            marker=symbols(concen), label=odor)
                 ax.plot([], [], 'o', c=data_dict[odor][concen]['valenz_color'], label=odor)
                 s_concen = sorted([int(concen) for concen in data_dict[odor]])
-                bla = np.array([data_dict[odor][str(concen)]['data'] for concen in s_concen])
-                ax.plot(*[x for x in bla.T], c='0.5')
+                line_data = [[data_dict[odor][str(concen)]['medians'][r] for r in config['main_regions']]
+                                                                        for concen in s_concen]
+                print line_data
+                ax.plot(*[x for x in np.array(line_data).T], c='0.5')
     ax.set_xlabel(config['main_regions'][0])
     ax.set_ylabel(config['main_regions'][1])
     ax.set_zlabel(config['main_regions'][2])
-    plt.legend(loc=(0.0, 0.6), ncol=2, prop={"size":9})
     return fig
 
 def plot_medians_3d(data_dict, config):
@@ -346,6 +348,10 @@ def organize_data_in_dict(medians, stim_selection, valenz, config):
     """prepare data for 3 d plots"""
     data_dict = defaultdict(dict)
     all_odors = get_all_odors(stim_selection)
+    norm_val = {}
+    all_vals = np.array(valenz.values())
+    for val in valenz:
+        norm_val[val] = (valenz[val] / (2 * np.abs(np.max(all_vals))) + 0.5)
 
     for stim in stim_selection:
 
@@ -359,7 +365,7 @@ def organize_data_in_dict(medians, stim_selection, valenz, config):
 
         # add color to code valenz (if valenz available)
         if stim in valenz:
-            c = plt.cm.RdYlGn(valenz[stim])
+            c = plt.cm.RdYlGn(norm_val[stim])
             data_dict[odor][concen]['valenz_color'] = c
             data_dict[odor][concen]['valenz'] = valenz[stim]
 
