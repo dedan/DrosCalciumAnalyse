@@ -165,12 +165,13 @@ all_region_ts = bf.ObjectConcat()(median_ts_list)
 all_region_ts.label_objects = ['_'.join(ilabel.split('_')[:-1])
                                for ilabel in all_region_ts.label_objects]
 
-data_dict = rl.organize_data_in_dict(all_region_ts, stim_selection, valenz, config)
-# fix the CO2 labels
-FIXES = {'01': '-5', '05': '-3', '10': '-1'}
-for conc in FIXES:
-    data_dict['CO2'][FIXES[conc]] = data_dict['CO2'][conc]
-    del(data_dict['CO2'][conc])
+if not config['lesion_table_path']:
+    data_dict = rl.organize_data_in_dict(all_region_ts, stim_selection, valenz, config)
+    # fix the CO2 labels
+    FIXES = {'01': '-5', '05': '-3', '10': '-1'}
+    for conc in FIXES:
+        data_dict['CO2'][FIXES[conc]] = data_dict['CO2'][conc]
+        del(data_dict['CO2'][conc])
 
 
 if config['do_per_animal']:
@@ -316,7 +317,7 @@ if config['do_overall_region'] and not config['lesion_table_path']:
     plt.close('all')
 
 
-if config['do_region_concentration_valenz']:
+if config['do_region_concentration_valenz'] and not config['lesion_table_path']:
 
     for region in fulldatadic.keys():
         fig = plt.figure()
