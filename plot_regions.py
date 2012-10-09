@@ -150,6 +150,29 @@ for region_label in all_region_labels:
     fulldatadic[region_label]['modes'] = modes
     fulldatadic[region_label]['modes_integrated'] = integrator(modes)
 
+median_ts_list = [rl.calc_scoreatpercentile(region['modes'], 0.5)
+                      for region in fulldatadic.values()]
+all_region_ts_raw = bf.ObjectConcat()(median_ts_list)
+# TODO: save as csv
+# remove percentile string from object labels
+all_region_ts_raw.label_objects = ['_'.join(ilabel.split('_')[:-1])
+                                   for ilabel in all_region_ts_raw.label_objects]
+median_ts_list = [rl.calc_scoreatpercentile(region['modes_integrated'], 0.5)
+                      for region in fulldatadic.values()]
+all_region_ts = bf.ObjectConcat()(median_ts_list)
+# TODO: save as csv
+# remove percentile string from object labels
+all_region_ts.label_objects = ['_'.join(ilabel.split('_')[:-1])
+                               for ilabel in all_region_ts.label_objects]
+
+data_dict = rl.organize_data_in_dict(all_region_ts, stim_selection, valenz, config)
+# fix the CO2 labels
+FIXES = {'01': '-5', '05': '-3', '10': '-1'}
+for conc in FIXES:
+    data_dict['CO2'][FIXES[conc]] = data_dict['CO2'][conc]
+    del(data_dict['CO2'][conc])
+
+
 if config['do_per_animal']:
     # =============================================================================
     # per-animal plots
@@ -237,34 +260,22 @@ if config['do_overall_region'] and not config['lesion_table_path']:
     # ==========================================================================
     # median region activation; calc and plots
     # ==========================================================================
-    median_ts_list = [rl.calc_scoreatpercentile(region['modes'], 0.5)
-                          for region in fulldatadic.values()]
-    all_region_ts = bf.ObjectConcat()(median_ts_list)
-    # TODO: save as csv
     # remove percentile string from object labels
-    all_region_ts.label_objects = ['_'.join(ilabel.split('_')[:-1])
-                                   for ilabel in all_region_ts.label_objects]
+    all_region_ts_raw.label_objects = ['_'.join(ilabel.split('_')[:-1])
+                                       for ilabel in all_region_ts_raw.label_objects]
     #plot
     fig = plt.figure(figsize=(25, 3))
     #ax2stim = rl.axesline_dic(fig, stim_selection, leftspace=0.07)
     ax2stim = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.07, topspace=0.8,
                                    inner_axesspace=0.2, gapspace=0.01,
                                    title_param={'va':'bottom', 'rotation':'90', 'fontsize':8})
-    rl.plot_stim_heatmap(all_region_ts, ax2stim, regions2plot)
+    rl.plot_stim_heatmap(all_region_ts_raw, ax2stim, regions2plot)
     fig.savefig(os.path.join(overall_savepath,
                              'activation_heatmap.' + config['format']))
 
     # ==========================================================================
     # median integrated region activation; calc and plots
     # ==========================================================================
-    median_ts_list = [rl.calc_scoreatpercentile(region['modes_integrated'], 0.5)
-                          for region in fulldatadic.values()]
-    all_region_ts = bf.ObjectConcat()(median_ts_list)
-    # TODO: save as csv
-
-    # remove percentile string from object labels
-    all_region_ts.label_objects = ['_'.join(ilabel.split('_')[:-1])
-                                   for ilabel in all_region_ts.label_objects]
     #plot
     fig = plt.figure(figsize=(20, 3))
     ax2stim = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.07, topspace=0.8,
@@ -278,14 +289,6 @@ if config['do_overall_region'] and not config['lesion_table_path']:
 
     fig = rl.plot_median_comparison(all_region_ts, config['comparisons'])
     fig.savefig(os.path.join(save_path, 'comparisons.' + config['format']))
-
-    data_dict = rl.organize_data_in_dict(all_region_ts, stim_selection, valenz, config)
-
-    # fix the CO2 labels
-    FIXES = {'01': '-5', '05': '-3', '10': '-1'}
-    for conc in FIXES:
-        data_dict['CO2'][FIXES[conc]] = data_dict['CO2'][conc]
-        del(data_dict['CO2'][conc])
 
     fig = rl.plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config)
     fig.savefig(os.path.join(save_path, 'split_heatmap.' + config['format']))
