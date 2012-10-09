@@ -296,18 +296,6 @@ if config['do_overall_region'] and not config['lesion_table_path']:
 
     models = rl.fit_models(data_dict, config)
 
-    # valenz vs. activation plot
-    fig = plt.figure()
-    N = 3
-    for i in range(N):
-        ax = fig.add_subplot(N, 1, i)
-        ax.scatter(models[config['main_regions'][i]], models['val'])
-        ax.set_title('%s %.2f' % (config['main_regions'][i],
-            np.corrcoef(models[config['main_regions'][i]], models['val'])[0, 1]))
-        ax.set_xlabel('activation')
-        ax.set_ylabel('valenz')
-    fig.savefig(os.path.join(overall_savepath, 'activation_vs_valenz.' + config['format']))
-
     fig = plt.figure()
     ax = fig.add_subplot(111)
     ax.scatter(models['diff'], models['val'])
