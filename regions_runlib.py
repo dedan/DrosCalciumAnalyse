@@ -280,29 +280,6 @@ def plot_stim_heatmap(ts, stim2ax, object_order=None):
             ax.set_xticklabels([])
 
 
-
-# TODO: finish corrections
-def plot_temporal_lesion(modes, stim_selection):
-    fig = plt.figure()
-    fig.suptitle(modes.name[0])
-    ax = fig.add_subplot(111)
-    m = calc_scoreatpercentile(modes, 50)
-    l = len(m)
-    cols = ['r', 'g', 'b']
-    labels = ['intact', 'iPN', 'vlPrc']
-    for i in range(3):
-        idx = __builtin__.sum([range(j, j + n_frames) for
-                               j in range(i * n_frames, l, 3 * n_frames)], [])
-        d = m[idx]
-        p25 = scoreatpercentile(t_modes_ma, 25)
-        p75 = scoreatpercentile(t_modes_ma, 75)
-        ax.fill_between(range(len(d)), p25[idx], p75[idx], linewidth=0, color=cols[i], alpha=0.2)
-        ax.plot(d, linewidth=0.5, color=cols[i], label=labels[i])
-        ax.set_xticks(range(0, len(d), n_frames))
-        ax.set_xticklabels(list(stim_selection)[::3], rotation='90')
-    plt.legend(labels)
-    return fig
-
 def boxplot(ax, modes, stim_selection):
     """make boxplots of modes for stim in stim_selection in ax object
 
