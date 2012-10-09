@@ -262,10 +262,6 @@ if config['do_overall_region'] and not config['lesion_table_path']:
     # ==========================================================================
     # median region activation; calc and plots
     # ==========================================================================
-    # remove percentile string from object labels
-    all_region_ts_raw.label_objects = ['_'.join(ilabel.split('_')[:-1])
-                                       for ilabel in all_region_ts_raw.label_objects]
-    #plot
     fig = plt.figure(figsize=(25, 3))
     #ax2stim = rl.axesline_dic(fig, stim_selection, leftspace=0.07)
     ax2stim = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.07, topspace=0.8,
