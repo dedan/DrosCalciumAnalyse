@@ -168,8 +168,12 @@ class MainGui(QtGui.QMainWindow, Ui_MainGuiWin):
                 progdialog.setValue(i)
                 folder_path = os.path.join(self.fname, folder)
                 QtCore.QCoreApplication.processEvents()
+                try:
+                    ts = runlib.create_timeseries_from_pngs(folder_path, folder)
+                except OSError:
+                    l.warning('No pngs available for animal %s' % folder)
+                    continue
 
-                ts = runlib.create_timeseries_from_pngs(folder_path, folder)
                 ts.framerate = framerate
                 ts.stim_window = stim_window
                 ts.save(os.path.join(folder_path, 'timeseries'))
