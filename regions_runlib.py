@@ -233,23 +233,22 @@ def plot_temporal(modes, stim2ax, plot_single=False, conditions={}):
         ax.set_ylim([min_y, max_y])
         ax.set_yticks([0, max_ytick])
         ax.set_yticks(np.arange(min_ytick, max_ytick, 0.1), minor=True)
-        if stim in stim2ax['left']:
-            ax.set_yticklabels([0, max_ytick])
-        else:
-            ax.set_yticklabels([])
+        ax.set_yticklabels([])
         xticks = range(0, modes.timepoints, 8)
         ax.set_xticks(xticks)
         ax.set_xticks(range(0, modes.timepoints), minor=True)
-        if stim in stim2ax['bottom']:
-            ax.set_xticklabels(['%d' % i for i in np.array(xticks) * 1. / modes.framerate], fontsize=10)
-        else:
-            ax.set_xticklabels([])
+        ax.set_xticklabels([])
         le = ax.legend(frameon=False, markerscale=0.1, numpoints=1, prop={'size': 6})
+    for ax in stim2ax['left']:
+        ax.set_yticklabels([0, max_ytick])
+    for ax in stim2ax['bottom']:
+        pass
+        #ax.set_xticklabels(['%d' % i for i in np.array(xticks) * 1. / modes.framerate], fontsize=10)
 
 
 def plot_stim_heatmap(ts, stim2ax, object_order=None):
 
-    max_color = np.max(np.abs(ts.timecourses))
+
     data = ts.trial_shaped()
     if object_order:
         ylabels = [ilabel for ilabel in object_order if ilabel in ts.label_objects]
@@ -258,13 +257,15 @@ def plot_stim_heatmap(ts, stim2ax, object_order=None):
     else:
         ylabels = ts.label_objects
 
+    max_color = np.max(np.abs(data))
+
     for stim_ix, stim in enumerate(ts.label_sample):
         if stim not in stim2ax:
             l.info(stim + 'in heatmap excluded')
             continue
         ax = stim2ax[stim]
-        ax.imshow(data[stim_ix].T, vmin= -max_color, vmax=max_color,
-                  interpolation='none', aspect='auto')
+        ax.imshow(data[stim_ix].T, vmin=0, vmax=max_color,
+                  interpolation='none', aspect='auto', cmap=plt.cm.hot)
 
         if ax in stim2ax['left']:
             ax.set_yticks(range(len(ylabels)))
@@ -292,7 +293,7 @@ def boxplot(ax, modes, stim_selection):
     if not(modes.timepoints == 1):
         l.warning('''Temporal extension of stimuli > 1 (%d)/n
                     only first taken into account''' % modes.timepoints)
-    ax.set_title(modes.name[0])
+    ax.set_title(modes.name)
     timecourses = modes.matrix_shaped()
 
     # make it a list because boxplot has a problem with masked arrays
@@ -302,7 +303,7 @@ def boxplot(ax, modes, stim_selection):
 
     t_modes_ma = [t_modes_ma[ind] for ind in x_index]
     distribution_size = [len(tm) for tm in t_modes_ma]
-    ax.boxplot(t_modes_ma)
+    ax.boxplot(t_modes_ma, sym='.')
     for pos, size in enumerate(distribution_size):
         ax.text(pos + 1, ax.get_ylim()[1] * 0.99, str(size), fontsize=6, va='top')
     ax.set_xticklabels(stim_wt_data, rotation='45', ha='right')
