@@ -103,9 +103,12 @@ def preprocess(ts, config):
         pp.timecourses[:, np.logical_not(spatial_mask.flatten())] = 0
 
     # spatial filtering
-    pixel_filter = bf.Filter('median', config['medianfilter'])
     gauss_filter = bf.Filter('gauss', config['lowpass'], downscale=config['spatial_down'])
-    pp = gauss_filter(pixel_filter(pp))
+    if config['medianfilter'] > 0:
+        pixel_filter = bf.Filter('median', config['medianfilter'])
+        pp = gauss_filter(pixel_filter(pp))
+    else:
+        pp = gauss_filter(pp)
     pp.timecourses[np.isnan(pp.timecourses)] = 0
     pp.timecourses[np.isinf(pp.timecourses)] = 0
 
