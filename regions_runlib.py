@@ -446,9 +446,7 @@ def load_mf_results(load_path, selection, lesion_table_path):
                 else:
                     new_labels.append(label + '_intact')
             ts.label_sample = new_labels
-
-        average_over_stimulus_repetitions = bf.SingleSampleResponse()
-        data[name] = average_over_stimulus_repetitions(ts)
+        data[name] = ts
     return data
 
 def load_baseline(load_path, selection):

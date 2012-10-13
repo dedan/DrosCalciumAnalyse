@@ -53,6 +53,9 @@ from scipy.stats.mstats_basic import scoreatpercentile
 import utils
 import regions_runlib as rl
 import logging as l
+from scipy.cluster.hierarchy import dendrogram, linkage
+from scipy.spatial.distance import pdist
+
 l.basicConfig(level=l.DEBUG,
             format='%(asctime)s %(levelname)s: %(message)s',
             datefmt='%Y-%m-%d %H:%M:%S');
@@ -131,10 +134,10 @@ for mf in data.values():
             new_labels.append(i_label)
     mf.label_sample = new_labels
 
-#collect bg for animals (take just first picture)
-bg_dic = rl.load_baseline(config['results_path'], selection)
-for k in bg_dic:
-    bg_dic[k] = bg_dic[k].shaped2D()[0]
+# instantiate function to integrate stimuli
+integrator = bf.StimulusIntegrator(method=config['integration_method'],
+                                   threshold= -10000,
+                                   window=config['integration_window'])
 
 # get all stimuli and region labels (use selection if selection given)
 all_stimuli = sorted(set(it.chain.from_iterable([ts.label_sample for ts in data.values()])))
@@ -146,14 +149,55 @@ with open(config['regions_file_path']) as f:
 l.debug('all_stimuli: %s' % all_stimuli)
 l.debug('all_region_labels: %s' % all_region_labels)
 
+# calc Stimulusdrive for each mode and than reduce to single stimulus response
+average_over_stimulus_repetitions = bf.SingleSampleResponse()
+stimulusdrive_fct = bf.CalcStimulusDrive()
+stimulusdrive_ts_dic = {}
+for key, dat in data.items():
+    st_drive = stimulusdrive_fct(dat)
+    st_drive.timecourses = st_drive.timecourses.flatten()
+    stimulusdrive_ts_dic[key] = st_drive
+    data[key] = average_over_stimulus_repetitions(dat)
+
+# create dataset according to stimuli set
+# also reorganice stimulusdrives to dic with single value
+stim_sets = {'PAC':[], 'BEA':[], 'LIN':[], 'ISO':[]}
+for id_stim, animallist in stim_sets.items():
+    for animal, mf in data.items():
+        if id_stim + '_-1' in mf.label_sample:
+            animallist.append(animal)
+stimulusdrive_dic = {}
+for id_stim, animals in stim_sets.items():
+    all_data = []
+    for animal_id in animals:
+        if animal_id not in regions_dic.keys():
+            continue
+        dat = data[animal_id].copy()
+        if config['mode_thres']:
+            dat = bf.SelectModes(config['mode_thres'])(dat,
+                                            stimulusdrive_ts_dic[animal_id])
+        modeIDs = [int(i[-1]) for i in dat.label_objects]
+        dat.label_objects = [regions_dic[animal_id][i] for i in modeIDs]
+        dat.name = '_'.join(dat.name.split('_')[:-1])
+        if dat.num_objects:
+            all_data.append(dat)
+        else:
+            l.info('no mode left for %s' % animal_id)
+        for mode_id, lab  in zip(modeIDs, dat.label_objects):
+            stimulusdrive_dic['_'.join([animal_id, lab])] = stimulusdrive_ts_dic[animal_id].timecourses[mode_id]
+    stim_sets[id_stim] = integrator(bf.ObjectConcat(unequalsample=True)(all_data))
+
+#collect bg for animals (take just first picture)
+bg_dic = rl.load_baseline(config['results_path'], selection)
+for k in bg_dic:
+    bg_dic[k] = bg_dic[k].shaped2D()[0]
+
 # collect data for regions
 medians, fulldatadic = {}, {}
 for region_label in all_region_labels:
 
     modes = rl.collect_modes_for(region_label, regions_dic, data)
-    integrator = bf.StimulusIntegrator(method=config['integration_method'],
-                                       threshold= -10000,
-                                       window=config['integration_window'])
+
     fulldatadic[region_label] = {}
     fulldatadic[region_label]['modes'] = modes
     fulldatadic[region_label]['modes_integrated'] = integrator(modes)
@@ -342,7 +386,30 @@ if config['do_overall_region']:
     fig.savefig(os.path.join(overall_savepath,
                              'activation_heatmap_integrated.' + config['format']))
 
+
     if not config['lesion_table_path']:
+
+        # ======================================================================
+        # hierachical clustering
+        # ======================================================================
+        for id_stim, set_modes in stim_sets.items():
+            fig = plt.figure(figsize=(10, 10))
+            ax = fig.add_axes([0.3, 0.05, 0.65, 0.9])
+            dendrogram(linkage(pdist(set_modes.timecourses.T, 'cosine'), 'average'),
+                       labels=set_modes.label_objects, orientation='left', color_threshold=0)
+            newtext = [i.get_text() + ' (%.2f)' % stimulusdrive_dic[i.get_text()]
+                        for i in ax.get_yticklabels()]
+            ax.set_yticklabels(newtext)
+            for lab in ax.get_yticklabels():
+                region_name = lab.get_text().split('_')[-1].split()[0]
+                lab.set_color(color_dic[region_name])
+
+            ax.set_title(','.join(set([i.split('_')[0] for i in set_modes.label_sample])))
+            fig.savefig(os.path.join(overall_savepath, 'cluster' + id_stim
+                                     + '.' + config['format']))
+        # ======================================================================
+        # overview plots
+        # ======================================================================
 
         fig = rl.plot_median_comparison(all_region_ts, config['comparisons'])
         fig.savefig(os.path.join(overall_savepath, 'comparisons.' + config['format']))
