@@ -154,7 +154,7 @@ def mf_overview_plot_single(out, fig, params):
 
     # get parameter
     overlay = params.get('overlay', True)
-    workaround = params.get('workaround', False)
+    workaround = params.get('workaround', True)
     if 'stimset' in params:
         stimset = params['stimset']
     else:
