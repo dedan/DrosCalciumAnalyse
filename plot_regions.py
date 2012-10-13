@@ -61,8 +61,6 @@ reload(rl)
 
 config = ConfigObj(sys.argv[1], unrepr=True)
 
-# load the dictionary with mapping from a region to a colormap
-lut_colormaps = utils.get_all_lut_colormaps(config['main_regions'])
 # another colormap dictionary
 # TODO: more generic solution
 color_dic = defaultdict(lambda: np.array([160, 82, 45]) / 256.)
@@ -73,6 +71,16 @@ color_dic['vlPRCt'] = np.array([220, 20, 60]) / 256.
 color_dic['vlPRCb'] = np.array([238, 218, 0]) / 256.
 color_dic['betweenTract'] = np.array([155, 48, 255]) / 256.
 color_dic['blackhole'] = np.array([142, 142, 142]) / 256.
+
+def my_xaxeslayout(ax, ts, tickstep, labelstep):
+    ax.xaxis.set_tick_params(direction='out', top=False, bottom=True, size=3)
+    xticks = range(0, ts.timepoints + 1, tickstep)
+    ax.set_xlim((0, ts.timepoints))
+    ax.set_xticks(xticks)
+    mylabels = ['%d' % i for i in np.array(xticks) * 1. / ts.framerate]
+    for i in range(1, len(mylabels), labelstep):
+        mylabels[i] = ''
+    ax.set_xticklabels(mylabels, fontsize=8)
 
 # set paths and create folders
 save_path = os.path.join(config['results_path'], 'region_plots')
@@ -173,14 +181,16 @@ if not config['lesion_table_path']:
         data_dict['CO2'][FIXES[conc]] = data_dict['CO2'][conc]
         del(data_dict['CO2'][conc])
 
-
 if config['do_per_animal']:
     # =============================================================================
     # per-animal plots
     # =============================================================================
     for animal in data:
         #TODO: trimming only for old data, remove later
-        animal_trim = '_'.join(animal.split('_')[:-1])
+        if config['old_data']:
+            animal_trim = '_'.join(animal.split('_')[:-1])
+        else:
+            animal_trim = animal
         animal_savepath = os.path.join(save_path, 'regions', animal_trim)
         # exclude animals wto region data
         if animal not in regions_dic.keys():
@@ -214,6 +224,7 @@ if config['do_per_region']:
         fig = plt.figure(figsize=(12, 7))
         fig.suptitle('latencies', y=0.96)
         ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
+        ax.xaxis.set_tick_params(direction='out', top=False)
         rl.boxplot(ax, latencies, stim_selection)
         fig.savefig(region_savepath + '_latencies.' + config['format'])
         rl.write_csv_wt_labels(region_savepath + '_latencies.csv', latencies)
@@ -224,6 +235,7 @@ if config['do_per_region']:
         fig = plt.figure(figsize=(12, 7))
         fig.suptitle('activation', y=0.96)
         ax = fig.add_axes([0.05, 0.1, 0.9, 0.8])
+        ax.xaxis.set_tick_params(direction='out', top=False)
         rl.boxplot(ax, modes_integrated, stim_selection)
         fig.savefig(region_savepath + '_activation_integrated.' + config['format'])
         rl.write_csv_wt_labels(region_savepath + '_activation_integrated.csv',
@@ -240,17 +252,35 @@ if config['do_per_region']:
                 tmp_stim = '_'.join(stim.split('_')[0:2])
                 if not tmp_stim in tmp_stim_select:
                     tmp_stim_select.append(tmp_stim)
-            stim2ax = rl.axesline_dic(fig, tmp_stim_select)
+            stim2ax = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.05, topspace=0.6,
+                                   bottomspace=0.1, inner_axesspace=0.2, gapspace=0.01,
+                                   title_param={'va':'bottom', 'rotation':'90', 'fontsize':8})
             rl.plot_temporal(modes, stim2ax, conditions=config['conditions'])
-            fig.savefig(region_savepath + '_activation_lesion.' + config['format'])
+            savename = region_savepath + '_activation_lesion.' + config['format']
             rl.write_csv_wt_labels(region_savepath + '_activation_lesion.csv', modes)
         else:
             fig = plt.figure(figsize=(25, 3))
             fig.suptitle(region_label, y=0.96)
-            stim2ax = rl.axesline_dic(fig, stim_selection)
-            rl.plot_temporal(modes, stim2ax)
-            fig.savefig(region_savepath + '_activation.' + config['format'])
+            stim2ax = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.05, topspace=0.6,
+                                   bottomspace=0.1, inner_axesspace=0.2, gapspace=0.01,
+                                   title_param={'va':'bottom', 'rotation':'90', 'fontsize':8})
+            rl.plot_temporal(modes, stim2ax, linecolor=color_dic[region_label])
+            savename = region_savepath + '_activation.' + config['format']
             rl.write_csv_wt_labels(region_savepath + '_activation.csv', modes)
+
+        for ax in stim2ax['bottom']:
+            my_xaxeslayout(ax, modes, 4, 2)
+            ax.yaxis.set_tick_params(direction='out', left=False, right=False,
+                                 labelleft=False, labelright=False)
+            ax.spines['top'].set_color('none')
+            ax.spines['left'].set_color('none')
+            ax.spines['right'].set_color('none')
+        for ax in stim2ax['left_inner']:
+            ax.yaxis.set_tick_params(left=True)
+            ax.spines['left'].set_color('k')
+        for ax in stim2ax['left']:
+            ax.yaxis.set_tick_params(labelleft=True)
+        fig.savefig(savename)
 
         # ======================================================================
         # region bases: plot
@@ -265,28 +295,50 @@ if config['do_overall_region']:
     with open(config['region_order_file']) as f:
         regions2plot = json.load(f)
     # ==========================================================================
-    # median region activation; calc and plots
+    # median region activation plots
     # ==========================================================================
-    fig = plt.figure(figsize=(25, 3))
-    #ax2stim = rl.axesline_dic(fig, stim_selection, leftspace=0.07)
-    ax2stim = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.07, topspace=0.8,
-                                   inner_axesspace=0.2, gapspace=0.01,
+    fig = plt.figure(figsize=(25, 2))
+    stim2ax = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.05, topspace=0.6,
+                                   bottomspace=0.2, inner_axesspace=0.2, gapspace=0.01,
                                    title_param={'va':'bottom', 'rotation':'90', 'fontsize':8})
-    rl.plot_stim_heatmap(all_region_ts_raw, ax2stim, regions2plot)
+    rl.plot_stim_heatmap(all_region_ts_raw, stim2ax, regions2plot,
+                         imshow_args={'symetric':False, 'aspect':'auto',
+                                      'cmap':utils.colormap_from_lut(config['heatmap_course'])})
+    for ax in stim2ax['bottom']:
+        my_xaxeslayout(ax, all_region_ts_raw, 4, 2)
+        ax.yaxis.set_tick_params(direction='out', left=False, right=False,
+                                 labelleft=False, labelright=False)
+
+    for ax in stim2ax['left']:
+        ax.yaxis.set_tick_params(labelleft=True)
+
     fig.savefig(os.path.join(overall_savepath,
                              'activation_heatmap.' + config['format']))
 
     # ==========================================================================
-    # median integrated region activation; calc and plots
+    # median integrated region activation plots
     # ==========================================================================
-    #plot
-    fig = plt.figure(figsize=(20, 3))
-    ax2stim = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.07, topspace=0.8,
-                                   inner_axesspace=0., gapspace=0.01, noborder=True,
+    fig = plt.figure(figsize=(20, 2))
+    ax2stim = rl.axesgroupline_dic(fig, stim_matrix, leftspace=0.05, topspace=0.6,
+                                   bottomspace=0.2, inner_axesspace= -0.01, gapspace=0.01,
                                    title_param={'va':'bottom', 'rotation':'90', 'fontsize':8})
-    rl.plot_stim_heatmap(all_region_ts, ax2stim, regions2plot)
+    rl.plot_stim_heatmap(all_region_ts, ax2stim, regions2plot,
+                         imshow_args={'symetric':False, 'aspect':'auto',
+                                      'cmap':utils.colormap_from_lut(config['heatmap_point'])})
     for ax in ax2stim['bottom']:
-        ax.set_xticks([])
+        ax.xaxis.set_tick_params(top=False, bottom=False, labeltop=False,
+                                labelbottom=False)
+        ax.yaxis.set_tick_params(left=False, right=False, labelleft=False,
+                                labelright=False)
+        ax.spines['left'].set_color('none')
+        ax.spines['right'].set_color('none')
+    for ax in ax2stim['left_inner']:
+        ax.spines['left'].set_color('k')
+    for ax in ax2stim['right_inner']:
+        ax.spines['right'].set_color('k')
+    for ax in ax2stim['left']:
+        ax.yaxis.set_tick_params(labelleft=True)
+
     fig.savefig(os.path.join(overall_savepath,
                              'activation_heatmap_integrated.' + config['format']))
 
@@ -354,5 +406,3 @@ if config['do_region_concentration_valenz'] and not config['lesion_table_path']:
         ax.set_ylabel('median activation')
         fig.savefig(os.path.join(save_path, 'all_regions', region + '_conc_val.' + config['format']))
         plt.close('all')
-
-

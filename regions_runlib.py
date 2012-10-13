@@ -119,7 +119,7 @@ def plot_splitsort_heatmaps(data_dict, valenz, stim_selection, config):
         ax.set_yticklabels(config['concentrations'])
         ax.set_xticks([])
     ax = fig.add_subplot(len(config['concentrations']) + 1, 1, 4)
-    fig.subplots_adjust(hspace = 0.4)
+    fig.subplots_adjust(hspace=0.4)
     plot_split_valenz_heatmap(ax, valenz, stim_selection, config)
     return fig
 
@@ -183,19 +183,22 @@ def plot_median_overview(region_label, medians, all_stimuli):
     ax.set_xticklabels(list(all_stimuli), rotation='90')
     return fig
 
-def plot_spatial_base(axlist, modes, bg_dic):
+def plot_spatial_base(axlist, modes, bg_dic, old_data=False):
     plotter = vis.VisualizeTimeseries()
     for base_ix, base in enumerate(modes.objects_sample(0)):
         region_label = modes.name[0]
         mode_name = modes.label_objects[base_ix]
-        animal_name = '_'.join(mode_name.split('_')[:-2])
+        if old_data:
+            animal_name = '_'.join(mode_name.split('_')[:-2])
+        else:
+            animal_name = '_'.join(mode_name.split('_')[:-1])
         ax = axlist[base_ix]
         plotter.overlay_workaround(ax, bg_dic[animal_name], {'cmap':plt.cm.bone},
                            base, {'threshold':0.05},
                            {'title':{"label": mode_name, 'fontsize':8}})
 
 #TODO: include plot_single
-def plot_temporal(modes, stim2ax, plot_single=False, conditions={}):
+def plot_temporal(modes, stim2ax, plot_single=False, conditions={}, linecolor='k'):
 
     medians = calc_scoreatpercentile(modes, 0.5).trial_shaped().squeeze()
     p25 = calc_scoreatpercentile(modes, 0.25).trial_shaped().squeeze()
@@ -214,7 +217,7 @@ def plot_temporal(modes, stim2ax, plot_single=False, conditions={}):
             stim, _, cond = stim.rpartition('_')
             color = conditions[cond]
         else:
-            color = '0'
+            color = linecolor
 
         if stim not in stim2ax:
             continue
@@ -222,31 +225,13 @@ def plot_temporal(modes, stim2ax, plot_single=False, conditions={}):
         ax.fill_between(range(modes.timepoints), p25[stim_ix], p75[stim_ix],
                         linewidth=0, color=color, alpha=0.4)
         ax.plot(medians[stim_ix], linewidth=1.5, color=color, label=str(num_modes[stim_ix]))
-
-        # create stimulus bar
-        ax.fill_between(np.array(modes.stim_window), max_y, min_y, color='b',
-                        alpha=0.1, linewidth=0)
-        ax.spines['top'].set_color('none')
-        ax.spines['right'].set_color('none')
-        ax.xaxis.set_ticks_position('bottom')
-        ax.yaxis.set_ticks_position('left')
-        ax.set_ylim([min_y, max_y])
+        ax.set_ylim((min_y, max_y))
         ax.set_yticks([0, max_ytick])
-        ax.set_yticks(np.arange(min_ytick, max_ytick, 0.1), minor=True)
-        ax.set_yticklabels([])
-        xticks = range(0, modes.timepoints, 8)
-        ax.set_xticks(xticks)
-        ax.set_xticks(range(0, modes.timepoints), minor=True)
-        ax.set_xticklabels([])
+
         le = ax.legend(frameon=False, markerscale=0.1, numpoints=1, prop={'size': 6})
-    for ax in stim2ax['left']:
-        ax.set_yticklabels([0, max_ytick])
-    for ax in stim2ax['bottom']:
-        pass
-        #ax.set_xticklabels(['%d' % i for i in np.array(xticks) * 1. / modes.framerate], fontsize=10)
 
 
-def plot_stim_heatmap(ts, stim2ax, object_order=None):
+def plot_stim_heatmap(ts, stim2ax, object_order=None, imshow_args={'symetric':True}):
 
 
     data = ts.trial_shaped()
@@ -258,28 +243,20 @@ def plot_stim_heatmap(ts, stim2ax, object_order=None):
         ylabels = ts.label_objects
 
     max_color = np.max(np.abs(data))
+    if imshow_args.pop('symetric'):
+        min_color = -max_color
+    else:
+        min_color = np.min(data)
 
     for stim_ix, stim in enumerate(ts.label_sample):
         if stim not in stim2ax:
             l.info(stim + 'in heatmap excluded')
             continue
         ax = stim2ax[stim]
-        ax.imshow(data[stim_ix].T, vmin=0, vmax=max_color,
-                  interpolation='none', aspect='auto', cmap=plt.cm.hot)
-
-        if ax in stim2ax['left']:
-            ax.set_yticks(range(len(ylabels)))
-            ax.set_yticklabels(ylabels)
-        else:
-            ax.set_yticks([])
-        xticks = range(0, ts.timepoints, 8)
-        ax.set_xticks(xticks)
-        ax.set_xticks(range(0, ts.timepoints), minor=True)
-        if ax in stim2ax['bottom']:
-            ax.set_xticklabels(['%d' % i for i in np.array(xticks) * 1. / ts.framerate], fontsize=10)
-        else:
-            ax.set_xticklabels([])
-
+        ax.imshow(data[stim_ix].T, vmin=min_color, vmax=max_color,
+                  interpolation='none', **imshow_args)
+        ax.set_yticks(range(len(ylabels)))
+        ax.set_yticklabels(ylabels)
 
 def boxplot(ax, modes, stim_selection):
     """make boxplots of modes for stim in stim_selection in ax object
@@ -303,10 +280,11 @@ def boxplot(ax, modes, stim_selection):
 
     t_modes_ma = [t_modes_ma[ind] for ind in x_index]
     distribution_size = [len(tm) for tm in t_modes_ma]
-    ax.boxplot(t_modes_ma, sym='.')
+    ax.boxplot(t_modes_ma, sym='.k')
     for pos, size in enumerate(distribution_size):
         ax.text(pos + 1, ax.get_ylim()[1] * 0.99, str(size), fontsize=6, va='top')
     ax.set_xticklabels(stim_wt_data, rotation='45', ha='right')
+
 
 def plot_regions_of_animal(ax, modes_bases, bg, mode_labels, color_dic, cut_off=0.3):
     ax.imshow(bg, cmap=plt.cm.bone)
@@ -568,7 +546,7 @@ def axesgroupline_dic(fig, stimlist, **kwargs):
     topspace = kwargs.get('topspace', 0.95)
     inner_axesspace = kwargs.get('inner_axesspace', 0.01)
     gapspace = kwargs.get('gapspace', 0.01)
-    noborder = kwargs.get('noborder', False)
+    bottomspace = kwargs.get('bottomspace', 0.05)
 
     stim2ax = defaultdict(list)
     all_stim = __builtin__.sum(stimlist, [])
@@ -580,26 +558,22 @@ def axesgroupline_dic(fig, stimlist, **kwargs):
         gs.update(left=leftspace + stim_num * ax_width + col_ix * gapspace,
                   right=(leftspace + (stim_num + len(inner_stim)) * ax_width
                          + col_ix * gapspace),
-                  top=topspace,
+                  top=topspace, bottom=bottomspace,
                   wspace=inner_axesspace)
         for col2_ix, stim in enumerate(inner_stim):
             ax = fig.add_subplot(gs[0, col2_ix])
             ax.set_title(stim, **title_param)
-            ax.set_xticks([])
-            ax.set_yticks([])
             stim2ax[stim] = ax
-            # take care of axes borders
-            if noborder:
-                if col2_ix < (len(inner_stim) - 1):
-                    ax.spines['right'].set_color('none')
-                    ax.yaxis.set_ticks_position('left')
-                if col2_ix > 0:
-                    ax.spines['left'].set_color('none')
             # save axespos
             if (col_ix + col2_ix) == 0:
                 stim2ax['left'].append(ax)
-            if (col2_ix) == 0:
+            if col2_ix == 0:
                 stim2ax['left_inner'].append(ax)
+            if col2_ix == (len(inner_stim) - 1):
+                stim2ax['right_inner'].append(ax)
+            if (col2_ix == (len(inner_stim) - 1)) and (col_ix == (len(stimlist) - 1)):
+                stim2ax['right'].append(ax)
+
             stim2ax['bottom'].append(ax)
             stim_num += 1
     return stim2ax
@@ -619,8 +593,6 @@ def axesgrid_list(fig, num_axes, num_col=None):
         ax = fig.add_subplot(gs[row_ix, col_ix])
         axlist.append(ax)
     return axlist
-
-
 
 #===============================================================================
 # helper functions
